@@ -17,7 +17,7 @@ class AuthController {
       next(error);
     }
   };
-      
+
   public googleLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       res.redirect(
@@ -38,7 +38,7 @@ class AuthController {
   //     next(error);
   //   }
   // };
-      
+
   public googleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { code } = req.query;
