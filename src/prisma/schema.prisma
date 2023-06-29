@@ -3,7 +3,7 @@
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://postgres:4126@localhost:5432/dev"
+  url      = "postgresql://postgres:admin@localhost:5432/dev"
 }
 
 generator client {
@@ -11,11 +11,11 @@ generator client {
 }
 
 model User {
-  id          String        @id @default(uuid())
-  email       String?        @unique
+  id          String       @id @default(uuid())
+  email       String?      @unique
   password    String?
   name        String
-  provider    String        // id, google, kakao
+  provider    String // id, google, kakao
   profile     String?
   SocialLogin SocialLogin?
 }

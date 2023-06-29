@@ -10,17 +10,17 @@ import { isEmpty } from '@utils/util';
 class AuthService {
   public users = new PrismaClient().user;
 
-  public async signup(userData: CreateUserDto): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
+  // public async signup(userData: CreateUserDto): Promise<User> {
+  //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
 
-    const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-    if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
+  //   const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
+  //   if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
 
-    const hashedPassword = await hash(userData.password, 10);
-    const createUserData: Promise<User> = this.users.create({ data: { ...userData, password: hashedPassword } });
+  //   const hashedPassword = await hash(userData.password, 10);
+  //   const createUserData: Promise<User> = this.users.create({ data: { ...userData, password: hashedPassword } });
 
-    return createUserData;
-  }
+  //   return createUserData;
+  // }
 
   public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
