@@ -1,6 +1,15 @@
 import { sign } from 'jsonwebtoken';
 import { PrismaClient, SocialLogin, User } from '@prisma/client';
-import { DOMAIN, GOOGLE_CLIENT_KEY, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, SECRET_KEY } from '@config';
+import {
+  DOMAIN,
+  GOOGLE_CLIENT_KEY,
+  GOOGLE_CLIENT_SECRET,
+  GOOGLE_REDIRECT_URI,
+  KAKAO_CLIENT_KEY,
+  KAKAO_CLIENT_SECRET,
+  KAKAO_REDIRECT_URI,
+  SECRET_KEY,
+} from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { isEmpty } from '@utils/util';
@@ -22,6 +31,76 @@ class AuthService {
 
   //   return createUserData;
   // }
+
+  public async kakaoLogin(code: string): Promise<{ cookie: string; findUser: User; redirect?: string }> {
+    const query = qs.stringify({
+      grant_type: 'authorization_code',
+      client_id: KAKAO_CLIENT_KEY,
+      redirect_uri: KAKAO_REDIRECT_URI,
+      code,
+      client_secret: KAKAO_CLIENT_SECRET,
+    });
+
+    try {
+      const { data } = await axios.post('https://kauth.kakao.com/oauth/token', query, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+        },
+      });
+
+      const { data: userData } = await axios.post(
+        'https://kapi.kakao.com/v2/user/me',
+        {
+          property_keys: ['kakao_account', 'profile'],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${data.access_token}`,
+          },
+        },
+      );
+
+      const socialLogin = await this.socialLogin.findUnique({
+        where: {
+          socialId: userData.id.toString(),
+        },
+      });
+
+      if (!socialLogin) {
+        const createUserData: User = await this.users.create({
+          data: {
+            email: userData.kakao_account.email as string,
+            name: userData.kakao_account.profile.nickname as string,
+            provider: 'social',
+            SocialLogin: {
+              create: {
+                provider: 'kakao',
+                socialId: userData.id.toString(),
+                accessToken: data.access_token as string,
+              },
+            },
+          },
+        });
+        const tokenData = this.createToken(createUserData);
+        const cookie = this.createCookie(tokenData);
+        return { cookie, findUser: createUserData, redirect: '/signup/social' };
+      } else {
+        const findUser = await this.users.findUnique({
+          where: {
+            id: socialLogin.userId,
+          },
+        });
+        const tokenData = this.createToken(findUser);
+        const cookie = this.createCookie(tokenData);
+        return { cookie, findUser };
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new HttpException(400, error.response.data.msg);
+      }
+      throw new HttpException(400, error);
+    }
+  }
 
   public async googleLogin(code: string): Promise<{ cookie: string; findUser: User; redirect?: string }> {
     const query = qs.stringify({

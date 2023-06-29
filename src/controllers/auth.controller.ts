@@ -9,7 +9,7 @@ import { RequestHandler } from '@/interfaces/routes.interface';
 class AuthController {
   public authService = new AuthService();
 
-  public kakaoLogin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public kakaoLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       res.redirect(`https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_KEY}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`);
     } catch (error) {
@@ -38,11 +38,11 @@ class AuthController {
   //   }
   // };
 
-  public googleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+  public kakaoLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { code } = req.query;
-      if (!code) return res.redirect('/auth/google');
-      const { cookie, findUser } = await this.authService.googleLogin(code as string);
+      if (!code) return res.redirect('auth/kakao');
+      const { cookie, findUser } = await this.authService.kakaoLogin(code as string);
 
       res.setHeader('Set-Cookie', [cookie]);
       ResponseWrapper(req, res, { data: findUser });
@@ -51,11 +51,14 @@ class AuthController {
     }
   };
 
-  public kakaoLoginCallback = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public googleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { code } = req.query;
-      if (!code) return res.redirect('auth/kakao');
-      // const {cookie, findUser } = await this.authService.
+      if (!code) return res.redirect('/auth/google');
+      const { cookie, findUser } = await this.authService.googleLogin(code as string);
+
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, { data: findUser });
     } catch (error) {
       next(error);
     }
