@@ -16,6 +16,16 @@ class AuthController {
     }
   };
 
+  public kakaoLoginCallback = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { code } = req.query;
+      if (!code) return res.redirect('auth/kakao');
+      // const {cookie, findUser } = await this.authService.
+    } catch (error) {
+      next(error);
+    }
+  };
+
   // public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   //   try {
   //     const userData: CreateUserDto = req.body;
