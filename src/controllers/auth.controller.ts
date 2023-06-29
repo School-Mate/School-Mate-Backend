@@ -3,20 +3,29 @@ import { User } from '@prisma/client';
 import { CreateUserDto } from '@dtos/users.dto';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import AuthService from '@services/auth.service';
+import { KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI } from '@/config';
 
 class AuthController {
   public authService = new AuthService();
 
-  public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public kakaoLogin = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: CreateUserDto = req.body;
-      const signUpUserData: User = await this.authService.signup(userData);
-
-      res.status(201).json({ data: signUpUserData, message: 'signup' });
+      res.redirect(`https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_KEY}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`);
     } catch (error) {
       next(error);
     }
   };
+
+  // public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const userData: CreateUserDto = req.body;
+  //     const signUpUserData: User = await this.authService.signup(userData);
+
+  //     res.status(201).json({ data: signUpUserData, message: 'signup' });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
 
   public logIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
