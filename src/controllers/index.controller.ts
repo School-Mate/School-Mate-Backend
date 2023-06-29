@@ -1,9 +1,11 @@
+import { RequestHandler } from '@/interfaces/routes.interface';
+import ResponseWrapper from '@/utils/responseWarpper';
 import { NextFunction, Request, Response } from 'express';
 
 class IndexController {
-  public index = (req: Request, res: Response, next: NextFunction): void => {
+  public index = (req: RequestHandler, res: Response, next: NextFunction): void => {
     try {
-      res.sendStatus(200);
+      ResponseWrapper(req, res, {});
     } catch (error) {
       next(error);
     }

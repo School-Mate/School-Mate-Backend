@@ -3,32 +3,58 @@ import { User } from '@prisma/client';
 import { CreateUserDto } from '@dtos/users.dto';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import AuthService from '@services/auth.service';
+import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY } from '@/config';
+import ResponseWrapper from '@/utils/responseWarpper';
+import { RequestHandler } from '@/interfaces/routes.interface';
 
 class AuthController {
   public authService = new AuthService();
 
-  public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public googleLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: CreateUserDto = req.body;
-      const signUpUserData: User = await this.authService.signup(userData);
-
-      res.status(201).json({ data: signUpUserData, message: 'signup' });
+      res.redirect(
+        `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_KEY}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`,
+      );
     } catch (error) {
       next(error);
     }
   };
 
-  public logIn = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public googleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: CreateUserDto = req.body;
-      const { cookie, findUser } = await this.authService.login(userData);
+      const { code } = req.query;
+      if (!code) return res.redirect('/auth/google');
+      const { cookie, findUser } = await this.authService.googleLogin(code as string);
 
       res.setHeader('Set-Cookie', [cookie]);
-      res.status(200).json({ data: findUser, message: 'login' });
+      ResponseWrapper(req, res, { data: findUser });
     } catch (error) {
       next(error);
     }
   };
+
+  // public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const userData: CreateUserDto = req.body;
+  //     const signUpUserData: User = await this.authService.signup(userData);
+
+  //     res.status(201).json({ data: signUpUserData, message: 'signup' });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
+
+  // public logIn = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const userData: CreateUserDto = req.body;
+  //     const { cookie, findUser } = await this.authService.login(userData);
+
+  //     res.setHeader('Set-Cookie', [cookie]);
+  //     res.status(200).json({ data: findUser, message: 'login' });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
 
   public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {

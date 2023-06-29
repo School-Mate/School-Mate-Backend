@@ -1,41 +1,108 @@
 import { compare, hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
-import { PrismaClient, User } from '@prisma/client';
-import { SECRET_KEY } from '@config';
+import { PrismaClient, SocialLogin, User } from '@prisma/client';
+import { DOMAIN, GOOGLE_CLIENT_KEY, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, SECRET_KEY } from '@config';
 import { CreateUserDto } from '@dtos/users.dto';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { isEmpty } from '@utils/util';
+import qs from 'qs';
+import axios, { AxiosError } from 'axios';
 
 class AuthService {
   public users = new PrismaClient().user;
+  public socialLogin = new PrismaClient().socialLogin;
 
-  public async signup(userData: CreateUserDto): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
+  // public async signup(userData: CreateUserDto): Promise<User> {
+  //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
 
-    const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-    if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
+  //   const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
+  //   if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
 
-    const hashedPassword = await hash(userData.password, 10);
-    const createUserData: Promise<User> = this.users.create({ data: { ...userData, password: hashedPassword } });
+  //   const hashedPassword = await hash(userData.password, 10);
+  //   const createUserData: Promise<User> = this.users.create({ data: { ...userData, password: hashedPassword } });
 
-    return createUserData;
+  //   return createUserData;
+  // }
+
+  public async googleLogin(code: string): Promise<{ cookie: string; findUser: User; redirect?: string }> {
+    const query = qs.stringify({
+      code,
+      client_id: GOOGLE_CLIENT_KEY,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: GOOGLE_REDIRECT_URI,
+      grant_type: 'authorization_code',
+    });
+
+    try {
+      const { data } = await axios.post('https://oauth2.googleapis.com/token', query, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+
+      const { data: userData } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+        },
+      });
+
+      const socialLogin = await this.socialLogin.findUnique({
+        where: {
+          socialId: userData.id as string,
+        },
+      });
+
+      if (!socialLogin) {
+        const createUserData: User = await this.users.create({
+          data: {
+            email: userData.email as string,
+            name: userData.name as string,
+            provider: 'social',
+            SocialLogin: {
+              create: {
+                provider: 'google',
+                socialId: userData.id as string,
+                accessToken: data.access_token as string,
+              },
+            },
+          },
+        });
+        const tokenData = this.createToken(createUserData);
+        const cookie = this.createCookie(tokenData);
+        return { cookie, findUser: createUserData, redirect: '/signup/social' };
+      } else {
+        const findUser = await this.users.findUnique({
+          where: {
+            id: socialLogin.userId,
+          },
+        });
+        const tokenData = this.createToken(findUser);
+        const cookie = this.createCookie(tokenData);
+        return { cookie, findUser };
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new HttpException(400, error.response.data.message);
+      }
+      throw new HttpException(400, error);
+    }
   }
 
-  public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
-    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
+  // public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
+  //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
 
-    const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-    if (!findUser) throw new HttpException(409, `This email ${userData.email} was not found`);
+  //   const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
+  //   if (!findUser) throw new HttpException(409, `This email ${userData.email} was not found`);
 
-    const isPasswordMatching: boolean = await compare(userData.password, findUser.password);
-    if (!isPasswordMatching) throw new HttpException(409, 'Password is not matching');
+  //   const isPasswordMatching: boolean = await compare(userData.password, findUser.password);
+  //   if (!isPasswordMatching) throw new HttpException(409, 'Password is not matching');
 
-    const tokenData = this.createToken(findUser);
-    const cookie = this.createCookie(tokenData);
+  //   const tokenData = this.createToken(findUser);
+  //   const cookie = this.createCookie(tokenData);
 
-    return { cookie, findUser };
-  }
+  //   return { cookie, findUser };
+  // }
 
   public async logout(userData: User): Promise<User> {
     if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
@@ -55,7 +122,7 @@ class AuthService {
   }
 
   public createCookie(tokenData: TokenData): string {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn};`;
+    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
   }
 }
 
