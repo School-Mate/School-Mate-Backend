@@ -6,7 +6,7 @@ import authMiddleware from '@middlewares/auth.middleware';
 import validationMiddleware from '@middlewares/validation.middleware';
 
 class AuthRoute implements Routes {
-  public path = '/';
+  public path = '/auth';
   public router = Router();
   public authController = new AuthController();
 
@@ -15,8 +15,10 @@ class AuthRoute implements Routes {
   }
 
   private initializeRoutes() {
-    this.router.post(`${this.path}signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
-    this.router.post(`${this.path}login`, validationMiddleware(CreateUserDto, 'body'), this.authController.logIn);
+    this.router.get(`${this.path}/google`, this.authController.googleLogin);
+    this.router.get(`${this.path}/google/callback`, this.authController.googleLoginCallback);
+    // this.router.post(`${this.path}signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
+    // this.router.post(`${this.path}login`, validationMiddleware(CreateUserDto, 'body'), this.authController.logIn);
     this.router.post(`${this.path}logout`, authMiddleware, this.authController.logOut);
   }
 }

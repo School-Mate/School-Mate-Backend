@@ -12,18 +12,21 @@ generator client {
 
 model User {
   id          String       @id @default(uuid())
-  email       String?      @unique
+  email       String?
   password    String?
+  phone       String?
   name        String
-  provider    String // id, google, kakao
+  provider    String // id, social
+  verified    Boolean      @default(false)
   profile     String?
   SocialLogin SocialLogin?
 }
 
 model SocialLogin {
   accessToken  String
-  refreshToken String
+  refreshToken String?
   provider     String // google, kakao
-  userId       String @id @default(uuid())
-  user         User   @relation(fields: [userId], references: [id])
+  userId       String  @id @default(uuid())
+  socialId     String  @unique
+  user         User    @relation(fields: [userId], references: [id])
 }
