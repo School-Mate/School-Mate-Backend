@@ -1,8 +1,6 @@
-import { compare, hash } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import { PrismaClient, SocialLogin, User } from '@prisma/client';
 import { DOMAIN, GOOGLE_CLIENT_KEY, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, SECRET_KEY } from '@config';
-import { CreateUserDto } from '@dtos/users.dto';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { isEmpty } from '@utils/util';
