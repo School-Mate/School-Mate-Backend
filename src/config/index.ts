@@ -24,4 +24,5 @@ export const {
   MESSAGE_FROM,
   SOL_API_KEY,
   SOL_API_SECRET,
+  NEIS_API_KEY,
 } = process.env;
