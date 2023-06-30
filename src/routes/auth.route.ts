@@ -4,7 +4,7 @@ import { CreateUserDto } from '@dtos/users.dto';
 import { Routes } from '@interfaces/routes.interface';
 import authMiddleware from '@middlewares/auth.middleware';
 import validationMiddleware from '@middlewares/validation.middleware';
-
+import { imageUpload } from '@/utils/multer';
 class AuthRoute implements Routes {
   public path = '/auth';
   public router = Router();
@@ -20,6 +20,7 @@ class AuthRoute implements Routes {
     // this.router.post(`${this.path}signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
     // this.router.post(`${this.path}login`, validationMiddleware(CreateUserDto, 'body'), this.authController.logIn);
     this.router.post(`${this.path}logout`, authMiddleware, this.authController.logOut);
+    this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
   }
 }
 

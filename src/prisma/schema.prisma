@@ -20,6 +20,7 @@ model User {
   verified    Boolean      @default(false)
   profile     String?
   SocialLogin SocialLogin?
+  Image       Image[]
 }
 
 model SocialLogin {
@@ -29,4 +30,13 @@ model SocialLogin {
   userId       String  @id @default(uuid())
   socialId     String  @unique
   user         User    @relation(fields: [userId], references: [id])
+}
+
+model Image {
+  id        String   @id @default(uuid())
+  key       String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
