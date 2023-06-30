@@ -85,9 +85,13 @@ class AuthService {
         const cookie = this.createCookie(tokenData);
         return { cookie, findUser: createUserData, redirect: '/signup/social' };
       } else {
-        const findUser = await this.users.findUnique({
+        const findUser = await this.users.update({
           where: {
             id: socialLogin.userId,
+          },
+          data: {
+            email: userData.kakao_account.email as string,
+            name: userData.kakao_account.profile.nickname as string,
           },
         });
         const tokenData = this.createToken(findUser);
