@@ -2,7 +2,6 @@ import { NextFunction, Response } from 'express';
 import { HttpException } from '@exceptions/HttpException';
 import { logger } from '@utils/logger';
 import { RequestWithUser } from '@/interfaces/auth.interface';
-import ResponseWrapper from '@/utils/responseWarpper';
 
 const errorMiddleware = (error: HttpException, req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -14,7 +13,7 @@ const errorMiddleware = (error: HttpException, req: RequestWithUser, res: Respon
         req.headers['user-agent']
       } User :: ${req.user ? `${req.user.name} (${req.user.id})` : 'Not Logged In'}`,
     );
-    ResponseWrapper(req, res, { message, status });
+    res.status(status).json({ message });
   } catch (error) {
     next(error);
   }
