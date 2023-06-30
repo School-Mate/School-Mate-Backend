@@ -13,3 +13,5 @@ export interface TokenData {
 export interface RequestWithUser extends RequestHandler {
   user: User;
 }
+
+export type Provider = 'kakao' | 'google' | 'id';
