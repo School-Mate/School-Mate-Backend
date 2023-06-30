@@ -17,4 +17,7 @@ export const {
   KAKAO_CLIENT_KEY,
   KAKAO_CLIENT_SECRET,
   KAKAO_REDIRECT_URI,
+  MESSAGE_FROM,
+  SOL_API_KEY,
+  SOL_API_SECRET,
 } = process.env;
