@@ -8,17 +8,25 @@ import {
   KAKAO_CLIENT_KEY,
   KAKAO_CLIENT_SECRET,
   KAKAO_REDIRECT_URI,
+  MESSAGE_FROM,
   SECRET_KEY,
+  SOL_API_KEY,
+  SOL_API_SECRET,
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
 import { isEmpty } from '@utils/util';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
+import bcrypt from 'bcrypt';
+import { CreateUserDto } from '@/dtos/users.dto';
+import { SolapiMessageService } from 'solapi';
 
 class AuthService {
   public users = new PrismaClient().user;
   public socialLogin = new PrismaClient().socialLogin;
+  public verifyPhone = new PrismaClient().verifyPhone;
+  public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
   // public async signup(userData: CreateUserDto): Promise<User> {
   //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
@@ -31,6 +39,50 @@ class AuthService {
 
   //   return createUserData;
   // }
+
+  // public async signUp(userData: CreateUserDto): Promise<User> {
+  //   if (userData.provider === 'id') {
+  //     const salt = await bcrypt.genSalt(10);
+  //     const hashedPassword = await bcrypt.hash(userData.password, salt);
+  //   }
+
+  //   return '' as unknown as User;
+  // }
+
+  public async verifyPhoneMessage(phone: string): Promise<string> {
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const verifyPhone = await this.verifyPhone.create({
+      data: {
+        phone,
+        code,
+      },
+    });
+
+    this.messageService.sendOne({
+      to: phone,
+      from: MESSAGE_FROM,
+      text: `[SchoolMate]인증번호는 ${code}입니다.`,
+    });
+
+    return verifyPhone.id;
+  }
+
+  public async verifyPhoneCode(phone: string, code: string, token: string): Promise<boolean> {
+    const verifyPhone = await this.verifyPhone.findUnique({
+      where: {
+        id: token,
+      },
+    });
+
+    if (!verifyPhone) return false;
+
+    if (verifyPhone.phone !== phone) return false;
+
+    if (verifyPhone.code !== code) return false;
+
+    return true;
+  }
 
   public async kakaoLogin(code: string): Promise<{ cookie: string; findUser: User; redirect?: string }> {
     const query = qs.stringify({

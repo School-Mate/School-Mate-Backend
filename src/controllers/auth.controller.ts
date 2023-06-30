@@ -5,9 +5,49 @@ import AuthService from '@services/auth.service';
 import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
+import { CreateUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
 
 class AuthController {
   public authService = new AuthService();
+
+  // public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+  //   try {
+  //     const userData = req.body as CreateUserDto;
+  //     const signUpUserData: User = await this.authService.signUp(userData);
+
+  //     const tokenData = this.authService.createToken(signUpUserData);
+  //     const cookie = this.authService.createCookie(tokenData);
+
+  //     res.setHeader('Set-Cookie', [cookie]);
+  //     ResponseWrapper(req, res, {
+  //       data: signUpUserData,
+  //     });
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // };
+
+  public verifyPhoneMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { phone } = req.body as VerifyPhoneMessageDto;
+      const verifyId = await this.authService.verifyPhoneMessage(phone);
+
+      ResponseWrapper(req, res, { data: verifyId });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public verifyPhoneCode = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { phone, code, token } = req.body as VerifyPhoneCodeDto;
+      const verify = await this.authService.verifyPhoneCode(phone, code, token);
+
+      ResponseWrapper(req, res, { data: verify });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   public kakaoLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
