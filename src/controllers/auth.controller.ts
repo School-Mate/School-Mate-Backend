@@ -16,11 +16,11 @@ class AuthController {
       const uploadImageData = await this.authService.uploadImage(req);
 
       ResponseWrapper(req, res, { data: uploadImageData });
-    } catch(error) {
+    } catch (error) {
       next(error);
     }
   };
-  
+
   // public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
   //   try {
   //     const userData = req.body as CreateUserDto;

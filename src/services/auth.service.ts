@@ -1,8 +1,5 @@
 import { sign } from 'jsonwebtoken';
-import { PrismaClient, SocialLogin, User, Image } from '@prisma/client';
-import { DOMAIN, GOOGLE_CLIENT_KEY, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, SECRET_KEY } from '@config';
-import { CreateUserDto } from '@dtos/users.dto';
-import { PrismaClient, SocialLogin, User } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -21,8 +18,6 @@ import { DataStoredInToken, RequestWithUser, TokenData } from '@interfaces/auth.
 import { isEmpty } from '@utils/util';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
-import bcrypt from 'bcrypt';
-import { CreateUserDto } from '@/dtos/users.dto';
 import { SolapiMessageService } from 'solapi';
 
 class AuthService {
@@ -56,8 +51,8 @@ class AuthService {
     });
 
     return schoolImage.id;
-  };
-  
+  }
+
   // public async signUp(userData: CreateUserDto): Promise<User> {
   //   if (userData.provider === 'id') {
   //     const salt = await bcrypt.genSalt(10);
