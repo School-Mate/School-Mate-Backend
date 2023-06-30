@@ -2,7 +2,8 @@ import { Router } from 'express';
 import AuthController from '@controllers/auth.controller';
 import { Routes } from '@interfaces/routes.interface';
 import authMiddleware from '@middlewares/auth.middleware';
-import validationMiddleware from '@/middlewares/validation.middleware';
+import validationMiddleware from '@middlewares/validation.middleware';
+import { imageUpload } from '@/utils/multer';
 import { CreateUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
 
 class AuthRoute implements Routes {
@@ -23,6 +24,7 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/google`, this.authController.googleLogin);
     this.router.get(`${this.path}/google/callback`, this.authController.googleLoginCallback);
     this.router.post(`${this.path}logout`, authMiddleware, this.authController.logOut);
+    this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
   }
 }
 

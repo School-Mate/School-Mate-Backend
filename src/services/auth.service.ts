@@ -1,4 +1,7 @@
 import { sign } from 'jsonwebtoken';
+import { PrismaClient, SocialLogin, User, Image } from '@prisma/client';
+import { DOMAIN, GOOGLE_CLIENT_KEY, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URI, SECRET_KEY } from '@config';
+import { CreateUserDto } from '@dtos/users.dto';
 import { PrismaClient, SocialLogin, User } from '@prisma/client';
 import {
   DOMAIN,
@@ -14,7 +17,7 @@ import {
   SOL_API_SECRET,
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken, TokenData } from '@interfaces/auth.interface';
+import { DataStoredInToken, RequestWithUser, TokenData } from '@interfaces/auth.interface';
 import { isEmpty } from '@utils/util';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
@@ -25,6 +28,7 @@ import { SolapiMessageService } from 'solapi';
 class AuthService {
   public users = new PrismaClient().user;
   public socialLogin = new PrismaClient().socialLogin;
+  public image = new PrismaClient().image;
   public verifyPhone = new PrismaClient().verifyPhone;
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
@@ -40,6 +44,20 @@ class AuthService {
   //   return createUserData;
   // }
 
+  public async uploadImage(req: RequestWithUser): Promise<string> {
+    if (!req.file) throw new HttpException(500, '사진 업로드를 실패했습니다');
+
+    const file = req.file as Express.MulterS3.File;
+    const schoolImage = await this.image.create({
+      data: {
+        key: file.key,
+        userId: req.user.id,
+      },
+    });
+
+    return schoolImage.id;
+  };
+  
   // public async signUp(userData: CreateUserDto): Promise<User> {
   //   if (userData.provider === 'id') {
   //     const salt = await bcrypt.genSalt(10);

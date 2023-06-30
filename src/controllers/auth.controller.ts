@@ -5,11 +5,22 @@ import AuthService from '@services/auth.service';
 import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
+import { HttpException } from '@/exceptions/HttpException';
 import { CreateUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
 
 class AuthController {
   public authService = new AuthService();
 
+  public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const uploadImageData = await this.authService.uploadImage(req);
+
+      ResponseWrapper(req, res, { data: uploadImageData });
+    } catch(error) {
+      next(error);
+    }
+  };
+  
   // public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
   //   try {
   //     const userData = req.body as CreateUserDto;
