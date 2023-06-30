@@ -2,6 +2,7 @@ import { config } from 'dotenv';
 config({ path: `.env.${process.env.NODE_ENV || 'development'}.local` });
 
 export const CREDENTIALS = process.env.CREDENTIALS === 'true';
+
 export const {
   NODE_ENV,
   PORT,
@@ -17,4 +18,10 @@ export const {
   AWS_SECRET_ACCESS_KEY,
   AWS_REGION,
   AWS_S3_BUCKET,
+  KAKAO_CLIENT_KEY,
+  KAKAO_CLIENT_SECRET,
+  KAKAO_REDIRECT_URI,
+  MESSAGE_FROM,
+  SOL_API_KEY,
+  SOL_API_SECRET,
 } = process.env;
