@@ -6,7 +6,6 @@ export class CreateUserDto {
   @IsOptional()
   public email: string;
 
-  @ValidateIf(o => o.provider === 'id')
   @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;
 
@@ -17,7 +16,7 @@ export class CreateUserDto {
   @IsString({ message: '이름을 입력해주세요.' })
   public name: string;
 
-  @IsIn(['kakao', 'goggle', 'id'])
+  @IsIn(['kakao', 'google', 'id'])
   public provider: Provider;
 
   @IsString({ message: '인증 코드를 입력해주세요.' })
