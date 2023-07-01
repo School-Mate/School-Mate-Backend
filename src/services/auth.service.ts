@@ -29,18 +29,6 @@ class AuthService {
   public verifyPhone = new PrismaClient().verifyPhone;
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
-  // public async signup(userData: CreateUserDto): Promise<User> {
-  //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
-
-  //   const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-  //   if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
-
-  //   const hashedPassword = await hash(userData.password, 10);
-  //   const createUserData: Promise<User> = this.users.create({ data: { ...userData, password: hashedPassword } });
-
-  //   return createUserData;
-  // }
-
   public async uploadImage(req: RequestWithUser): Promise<string> {
     if (!req.file) throw new HttpException(500, '사진 업로드를 실패했습니다');
 
