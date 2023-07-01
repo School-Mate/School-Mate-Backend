@@ -44,49 +44,77 @@ class AuthService {
   }
 
   public async signUp(userData: CreateUserDto): Promise<User> {
+    const findPhone = await this.verifyPhone.findUnique({
+      where: {
+        id: userData.token,
+      },
+    });
+    if (findPhone.code !== userData.code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: userData.phone,
+      },
+    });
+    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+
     if (userData.provider === 'id') {
-      const findUser = await this.users.findUnique({
-        where: {
-          phone: userData.phone,
-        },
-      });
-      if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
-
-      const findPhone = await this.verifyPhone.findUnique({
-        where: {
-          id: userData.token,
-        },
-      });
-      if (findPhone.code !== userData.code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
-
       const hashedPassword = await bcrypt.hash(userData.password, 10);
-      const { token, code, ...rest } = userData;
+
       const createUserData = await this.users.create({
         data: {
-          ...rest,
+          phone: userData.phone,
+          name: userData.name,
+          email: userData.email,
+          provider: 'id',
           password: hashedPassword,
           verified: true,
         },
+        select: {
+          password: false,
+        },
       });
-      return createUserData;
+
+      return createUserData as User;
     }
 
-    const findSocial = await this.socialLogin.findUnique({
+    const findSocialUser = await this.socialLogin.findUnique({
       where: {
         socialId: userData.socialId,
       },
-    });
-    const findUser = await this.users.findUnique({
-      where: {
-        id: findSocial.userId,
+      select: {
+        user: true,
       },
     });
-    findUser.verified = true;
 
-    return findUser;
+    if (findSocialUser) throw new HttpException(409, '이미 가입된 소셜아이디입니다.');
+
+    const updateUser = await this.users.update({
+      where: {
+        id: findSocialUser.user.id,
+      },
+      data: {
+        email: userData.email,
+        name: userData.name,
+        phone: userData.phone,
+        verified: true,
+      },
+      select: {
+        password: false,
+      },
+    });
+
+    return updateUser as User;
   }
 
   public async verifyPhoneMessage(phone: string): Promise<string> {
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: phone,
+      },
+    });
+    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+
     const code = Math.floor(1000 + Math.random() * 9000).toString();
 
     const verifyPhone = await this.verifyPhone.create({
@@ -116,11 +144,11 @@ class AuthService {
       },
     });
 
-    if (!verifyPhone) return false;
+    if (!verifyPhone) throw new HttpException(400, '인증번호가 만료되었습니다.');
 
-    if (verifyPhone.phone !== phone) return false;
+    if (verifyPhone.phone !== phone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
 
-    if (verifyPhone.code !== code) return false;
+    if (verifyPhone.code !== code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
 
     return true;
   }
