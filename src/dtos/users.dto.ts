@@ -28,12 +28,12 @@ export class CreateUserDto {
 }
 
 export class VerifyPhoneMessageDto {
-  @Matches(/^[0-9]{10, 11}$/, { message: '전화번호 형식이 아닙니다.' })
+  @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;
 }
 
 export class VerifyPhoneCodeDto {
-  @Matches(/^[0-9]{10, 11}$/, { message: '전화번호 형식이 아닙니다.' })
+  @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;
 
   @IsString({ message: '인증 코드를 입력해주세요.' })
