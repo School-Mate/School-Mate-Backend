@@ -71,7 +71,7 @@ class AuthService {
           verified: true,
           Agreement: {
             create: {
-              recevie: userData.marketingAgree,
+              receive: userData.marketingAgree,
             },
           },
         },
@@ -106,10 +106,10 @@ class AuthService {
         Agreement: {
           upsert: {
             create: {
-              recevie: userData.marketingAgree,
+              receive: userData.marketingAgree,
             },
             update: {
-              recevie: userData.marketingAgree,
+              receive: userData.marketingAgree,
             },
           },
         },

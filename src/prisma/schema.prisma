@@ -35,7 +35,7 @@ model SocialLogin {
 }
 
 model Agreement {
-  recevie   Boolean  @default(false)
+  receive   Boolean  @default(false)
   updatedAt DateTime @updatedAt
   userId    String   @id @default(uuid())
   user      User     @relation(fields: [userId], references: [id])
