@@ -10,11 +10,11 @@ import { CreateUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos
 class AuthController {
   public authService = new AuthService();
 
-  public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  public me = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const uploadImageData = await this.authService.uploadImage(req);
+      const userData: User = req.user;
 
-      ResponseWrapper(req, res, { data: uploadImageData });
+      ResponseWrapper(req, res, { data: userData });
     } catch (error) {
       next(error);
     }
@@ -110,6 +110,16 @@ class AuthController {
 
       res.setHeader('Set-Cookie', ['Authorization=; Max-age=0']);
       res.status(200).json({ data: logOutUserData, message: 'logout' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const uploadImageData = await this.authService.uploadImage(req);
+
+      ResponseWrapper(req, res, { data: uploadImageData });
     } catch (error) {
       next(error);
     }
