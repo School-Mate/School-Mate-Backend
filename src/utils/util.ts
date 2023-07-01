@@ -1,3 +1,5 @@
+import { User } from '@prisma/client';
+
 /**
  * @method isEmpty
  * @param {String | Number | Object} value
@@ -16,4 +18,15 @@ export const isEmpty = (value: string | number | object): boolean => {
   } else {
     return false;
   }
+};
+
+export const excludeUserPassword = <User, Key extends keyof User>(
+  user: User,
+  keys: Key[],
+): {
+  [K in Exclude<keyof User, Key>]: User[K];
+} => {
+  return Object.fromEntries(Object.entries(user).filter(([key]) => !keys.includes(key as Key))) as {
+    [K in Exclude<keyof User, Key>]: User[K];
+  };
 };
