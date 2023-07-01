@@ -96,11 +96,15 @@ class AuthService {
       },
     });
 
-    this.messageService.sendOne({
-      to: phone,
-      from: MESSAGE_FROM,
-      text: `[SchoolMate]인증번호는 ${code}입니다.`,
-    });
+    try {
+      await this.messageService.sendOne({
+        to: phone,
+        from: MESSAGE_FROM,
+        text: `[SchoolMate] 인증번호는 ${code}입니다.`,
+      });
+    } catch (error) {
+      throw new HttpException(400, '메시지 전송에 실패했습니다.');
+    }
 
     return verifyPhone.id;
   }
