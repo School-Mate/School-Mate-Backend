@@ -19,6 +19,8 @@ import { isEmpty } from '@utils/util';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
+import { CreateUserDto } from '@/dtos/users.dto';
+import bcrypt from 'bcrypt';
 
 class AuthService {
   public users = new PrismaClient().user;
@@ -53,14 +55,48 @@ class AuthService {
     return schoolImage.id;
   }
 
-  // public async signUp(userData: CreateUserDto): Promise<User> {
-  //   if (userData.provider === 'id') {
-  //     const salt = await bcrypt.genSalt(10);
-  //     const hashedPassword = await bcrypt.hash(userData.password, salt);
-  //   }
+  public async signUp(userData: CreateUserDto): Promise<User> {
+    if (userData.provider === 'id') {
+      const findUser = await this.users.findUnique({
+        where: {
+          phone: userData.phone,
+        },
+      });
+      if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
 
-  //   return '' as unknown as User;
-  // }
+      const findPhone = await this.verifyPhone.findUnique({
+        where: {
+          id: userData.token,
+        },
+      });
+      if (findPhone.code !== userData.code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      const { token, code, ...rest } = userData;
+      const createUserData = await this.users.create({
+        data: {
+          ...rest,
+          password: hashedPassword,
+          verified: true,
+        },
+      });
+      return createUserData;
+    }
+
+    const findSocial = await this.socialLogin.findUnique({
+      where: {
+        socialId: userData.socialId,
+      },
+    });
+    const findUser = await this.users.findUnique({
+      where: {
+        id: findSocial.userId,
+      },
+    });
+    findUser.verified = true;
+
+    return findUser;
+  }
 
   public async verifyPhoneMessage(phone: string): Promise<string> {
     const code = Math.floor(1000 + Math.random() * 9000).toString();
