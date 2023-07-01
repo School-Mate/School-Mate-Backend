@@ -21,22 +21,22 @@ class AuthController {
     }
   };
 
-  // public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     const userData = req.body as CreateUserDto;
-  //     const signUpUserData: User = await this.authService.signUp(userData);
+  public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData = req.body as CreateUserDto;
+      const signUpUserData: User = await this.authService.signUp(userData);
 
-  //     const tokenData = this.authService.createToken(signUpUserData);
-  //     const cookie = this.authService.createCookie(tokenData);
+      const tokenData = this.authService.createToken(signUpUserData);
+      const cookie = this.authService.createCookie(tokenData);
 
-  //     res.setHeader('Set-Cookie', [cookie]);
-  //     ResponseWrapper(req, res, {
-  //       data: signUpUserData,
-  //     });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, {
+        data: signUpUserData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   public verifyPhoneMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
