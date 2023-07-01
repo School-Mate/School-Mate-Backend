@@ -25,6 +25,10 @@ export class CreateUserDto {
 
   @IsString({ message: '인증 토큰를 입력해주세요.' })
   public token: string;
+
+  @ValidateIf(o => o.provider === 'kakao' || o.provider === 'google')
+  @IsString({ message: '소셜아이디를 입력해주세요.' })
+  public socialId: string;
 }
 
 export class VerifyPhoneMessageDto {
