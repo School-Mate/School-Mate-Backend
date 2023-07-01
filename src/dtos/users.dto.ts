@@ -1,5 +1,5 @@
 import { Provider } from '@/interfaces/auth.interface';
-import { IsEmail, IsIn, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail({}, { message: '이메일 형식이 아닙니다.' })
@@ -28,6 +28,9 @@ export class CreateUserDto {
   @ValidateIf(o => o.provider === 'kakao' || o.provider === 'google')
   @IsString({ message: '소셜아이디를 입력해주세요.' })
   public socialId: string;
+
+  @IsBoolean({ message: '마케팅 수신 동의 여부를 입력해주세요.' })
+  public marketingAgree: boolean;
 }
 
 export class VerifyPhoneMessageDto {

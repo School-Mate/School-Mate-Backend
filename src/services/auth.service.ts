@@ -69,6 +69,11 @@ class AuthService {
           provider: 'id',
           password: hashedPassword,
           verified: true,
+          Agreement: {
+            create: {
+              recevie: userData.marketingAgree,
+            },
+          },
         },
         select: {
           password: false,
@@ -87,7 +92,7 @@ class AuthService {
       },
     });
 
-    if (findSocialUser) throw new HttpException(409, '이미 가입된 소셜아이디입니다.');
+    if (findSocialUser) throw new HttpException(409, '이미 가입된 소셜 아이디가 있습니다.');
 
     const updateUser = await this.users.update({
       where: {
@@ -98,6 +103,16 @@ class AuthService {
         name: userData.name,
         phone: userData.phone,
         verified: true,
+        Agreement: {
+          upsert: {
+            create: {
+              recevie: userData.marketingAgree,
+            },
+            update: {
+              recevie: userData.marketingAgree,
+            },
+          },
+        },
       },
       select: {
         password: false,
