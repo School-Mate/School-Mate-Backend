@@ -91,7 +91,7 @@ class AuthService {
       },
     });
 
-    if (findSocialUser) throw new HttpException(409, '이미 가입된 소셜 아이디가 있습니다.');
+    if (findSocialUser.user.verified) throw new HttpException(409, '이미 가입된 소셜 아이디가 있습니다.');
 
     const updateUser = await this.users.update({
       where: {
@@ -113,12 +113,11 @@ class AuthService {
           },
         },
       },
-      select: {
-        password: false,
-      },
     });
 
-    return updateUser as User;
+    const removePasswordData = excludeUserPassword(updateUser, ['password']);
+
+    return removePasswordData as User;
   }
 
   public async login(userData: LoginUserDto): Promise<{ cookie: string; findUser: User }> {
