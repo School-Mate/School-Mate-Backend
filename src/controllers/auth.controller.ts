@@ -2,10 +2,10 @@ import { NextFunction, Response } from 'express';
 import { User } from '@prisma/client';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import AuthService from '@services/auth.service';
-import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI } from '@/config';
+import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI, DOMAIN } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
-import { CreateUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
+import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
 
 class AuthController {
   public authService = new AuthService();
@@ -32,6 +32,18 @@ class AuthController {
       ResponseWrapper(req, res, {
         data: signUpUserData,
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public login = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData = req.body as LoginUserDto;
+      const { cookie, findUser } = await this.authService.login(userData);
+
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, { data: findUser });
     } catch (error) {
       next(error);
     }
@@ -108,8 +120,8 @@ class AuthController {
       const userData: User = req.user;
       const logOutUserData: User = await this.authService.logout(userData);
 
-      res.setHeader('Set-Cookie', ['Authorization=; Max-age=0']);
-      res.status(200).json({ data: logOutUserData, message: 'logout' });
+      res.setHeader('Set-Cookie', [`Authorization=; Max-age=0; Path=/; HttpOnly; Domain=${DOMAIN};`]);
+      ResponseWrapper(req, res, { data: logOutUserData });
     } catch (error) {
       next(error);
     }

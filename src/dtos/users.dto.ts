@@ -33,6 +33,14 @@ export class CreateUserDto {
   public marketingAgree: boolean;
 }
 
+export class LoginUserDto {
+  @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
+  public phone: string;
+
+  @IsString({ message: '비밀번호를 입력해주세요.' })
+  public password: string;
+}
+
 export class VerifyPhoneMessageDto {
   @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;

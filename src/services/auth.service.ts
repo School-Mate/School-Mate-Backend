@@ -15,11 +15,11 @@ import {
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, RequestWithUser, TokenData } from '@interfaces/auth.interface';
-import { isEmpty } from '@utils/util';
+import { excludeUserPassword, isEmpty } from '@utils/util';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
-import { CreateUserDto } from '@/dtos/users.dto';
+import { CreateUserDto, LoginUserDto } from '@/dtos/users.dto';
 import bcrypt from 'bcrypt';
 
 class AuthService {
@@ -75,12 +75,11 @@ class AuthService {
             },
           },
         },
-        select: {
-          password: false,
-        },
       });
 
-      return createUserData as User;
+      const removePasswordData = excludeUserPassword(createUserData, ['password']);
+
+      return removePasswordData as User;
     }
 
     const findSocialUser = await this.socialLogin.findUnique({
@@ -120,6 +119,29 @@ class AuthService {
     });
 
     return updateUser as User;
+  }
+
+  public async login(userData: LoginUserDto): Promise<{ cookie: string; findUser: User }> {
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: userData.phone,
+      },
+    });
+
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    const isPasswordMatching: boolean = await bcrypt.compare(userData.password, findUser.password);
+    if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
+
+    const removePasswordData = excludeUserPassword(findUser, ['password']);
+
+    const tokenData = this.createToken(findUser);
+    const cookie = this.createCookie(tokenData);
+
+    return {
+      cookie,
+      findUser: removePasswordData as User,
+    };
   }
 
   public async verifyPhoneMessage(phone: string): Promise<string> {
