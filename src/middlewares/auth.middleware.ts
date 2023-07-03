@@ -1,9 +1,10 @@
 import { NextFunction, Response } from 'express';
 import { verify } from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 import { SECRET_KEY } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, RequestWithUser } from '@interfaces/auth.interface';
+import { excludeUserPassword } from '@/utils/util';
 
 const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -18,16 +19,17 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
       const findUser = await users.findUnique({ where: { id: userId } });
 
       if (findUser) {
-        req.user = findUser;
+        const userWithoutPassword = excludeUserPassword(findUser, ['password']);
+        req.user = userWithoutPassword as User;
         next();
       } else {
-        next(new HttpException(401, 'Wrong authentication token'));
+        next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
       }
     } else {
-      next(new HttpException(404, 'Authentication token missing'));
+      next(new HttpException(404, '로그인 후 이용해주세요.'));
     }
   } catch (error) {
-    next(new HttpException(401, 'Wrong authentication token'));
+    next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
   }
 };
 

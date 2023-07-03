@@ -1,42 +1,41 @@
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Response } from 'express';
 import { User } from '@prisma/client';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import AuthService from '@services/auth.service';
 import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
-import { HttpException } from '@/exceptions/HttpException';
 import { CreateUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
 
 class AuthController {
   public authService = new AuthService();
 
-  public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  public me = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const uploadImageData = await this.authService.uploadImage(req);
+      const userData: User = req.user;
 
-      ResponseWrapper(req, res, { data: uploadImageData });
+      ResponseWrapper(req, res, { data: userData });
     } catch (error) {
       next(error);
     }
   };
 
-  // public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     const userData = req.body as CreateUserDto;
-  //     const signUpUserData: User = await this.authService.signUp(userData);
+  public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData = req.body as CreateUserDto;
+      const signUpUserData: User = await this.authService.signUp(userData);
 
-  //     const tokenData = this.authService.createToken(signUpUserData);
-  //     const cookie = this.authService.createCookie(tokenData);
+      const tokenData = this.authService.createToken(signUpUserData);
+      const cookie = this.authService.createCookie(tokenData);
 
-  //     res.setHeader('Set-Cookie', [cookie]);
-  //     ResponseWrapper(req, res, {
-  //       data: signUpUserData,
-  //     });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, {
+        data: signUpUserData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   public verifyPhoneMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -78,17 +77,6 @@ class AuthController {
     }
   };
 
-  // public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     const userData: CreateUserDto = req.body;
-  //     const signUpUserData: User = await this.authService.signup(userData);
-
-  //     res.status(201).json({ data: signUpUserData, message: 'signup' });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
-
   public kakaoLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { code } = req.query;
@@ -115,29 +103,6 @@ class AuthController {
     }
   };
 
-  // public signUp = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     const userData: CreateUserDto = req.body;
-  //     const signUpUserData: User = await this.authService.signup(userData);
-
-  //     res.status(201).json({ data: signUpUserData, message: 'signup' });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
-
-  // public logIn = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-  //   try {
-  //     const userData: CreateUserDto = req.body;
-  //     const { cookie, findUser } = await this.authService.login(userData);
-
-  //     res.setHeader('Set-Cookie', [cookie]);
-  //     res.status(200).json({ data: findUser, message: 'login' });
-  //   } catch (error) {
-  //     next(error);
-  //   }
-  // };
-
   public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;
@@ -145,6 +110,16 @@ class AuthController {
 
       res.setHeader('Set-Cookie', ['Authorization=; Max-age=0']);
       res.status(200).json({ data: logOutUserData, message: 'logout' });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const uploadImageData = await this.authService.uploadImage(req);
+
+      ResponseWrapper(req, res, { data: uploadImageData });
     } catch (error) {
       next(error);
     }

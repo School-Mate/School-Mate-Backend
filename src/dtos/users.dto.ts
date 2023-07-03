@@ -1,13 +1,12 @@
 import { Provider } from '@/interfaces/auth.interface';
-import { IsEmail, IsIn, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail({}, { message: '이메일 형식이 아닙니다.' })
   @IsOptional()
   public email: string;
 
-  @ValidateIf(o => o.provider === 'id')
-  @Matches(/^[0-9]{10, 11}$/, { message: '전화번호 형식이 아닙니다.' })
+  @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;
 
   @ValidateIf(o => o.provider === 'id')
@@ -17,7 +16,7 @@ export class CreateUserDto {
   @IsString({ message: '이름을 입력해주세요.' })
   public name: string;
 
-  @IsIn(['kakao', 'goggle', 'id'])
+  @IsIn(['kakao', 'google', 'id'])
   public provider: Provider;
 
   @IsString({ message: '인증 코드를 입력해주세요.' })
@@ -25,15 +24,22 @@ export class CreateUserDto {
 
   @IsString({ message: '인증 토큰를 입력해주세요.' })
   public token: string;
+
+  @ValidateIf(o => o.provider === 'kakao' || o.provider === 'google')
+  @IsString({ message: '소셜아이디를 입력해주세요.' })
+  public socialId: string;
+
+  @IsBoolean({ message: '마케팅 수신 동의 여부를 입력해주세요.' })
+  public marketingAgree: boolean;
 }
 
 export class VerifyPhoneMessageDto {
-  @Matches(/^[0-9]{10, 11}$/, { message: '전화번호 형식이 아닙니다.' })
+  @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;
 }
 
 export class VerifyPhoneCodeDto {
-  @Matches(/^[0-9]{10, 11}$/, { message: '전화번호 형식이 아닙니다.' })
+  @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;
 
   @IsString({ message: '인증 코드를 입력해주세요.' })

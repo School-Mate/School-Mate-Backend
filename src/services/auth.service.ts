@@ -19,6 +19,8 @@ import { isEmpty } from '@utils/util';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
+import { CreateUserDto } from '@/dtos/users.dto';
+import bcrypt from 'bcrypt';
 
 class AuthService {
   public users = new PrismaClient().user;
@@ -26,18 +28,6 @@ class AuthService {
   public image = new PrismaClient().image;
   public verifyPhone = new PrismaClient().verifyPhone;
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
-
-  // public async signup(userData: CreateUserDto): Promise<User> {
-  //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
-
-  //   const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-  //   if (findUser) throw new HttpException(409, `This email ${userData.email} already exists`);
-
-  //   const hashedPassword = await hash(userData.password, 10);
-  //   const createUserData: Promise<User> = this.users.create({ data: { ...userData, password: hashedPassword } });
-
-  //   return createUserData;
-  // }
 
   public async uploadImage(req: RequestWithUser): Promise<string> {
     if (!req.file) throw new HttpException(500, '사진 업로드를 실패했습니다');
@@ -53,16 +43,93 @@ class AuthService {
     return schoolImage.id;
   }
 
-  // public async signUp(userData: CreateUserDto): Promise<User> {
-  //   if (userData.provider === 'id') {
-  //     const salt = await bcrypt.genSalt(10);
-  //     const hashedPassword = await bcrypt.hash(userData.password, salt);
-  //   }
+  public async signUp(userData: CreateUserDto): Promise<User> {
+    const findPhone = await this.verifyPhone.findUnique({
+      where: {
+        id: userData.token,
+      },
+    });
+    if (findPhone.code !== userData.code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
 
-  //   return '' as unknown as User;
-  // }
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: userData.phone,
+      },
+    });
+    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+
+    if (userData.provider === 'id') {
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+
+      const createUserData = await this.users.create({
+        data: {
+          phone: userData.phone,
+          name: userData.name,
+          email: userData.email,
+          provider: 'id',
+          password: hashedPassword,
+          verified: true,
+          Agreement: {
+            create: {
+              receive: userData.marketingAgree,
+            },
+          },
+        },
+        select: {
+          password: false,
+        },
+      });
+
+      return createUserData as User;
+    }
+
+    const findSocialUser = await this.socialLogin.findUnique({
+      where: {
+        socialId: userData.socialId,
+      },
+      select: {
+        user: true,
+      },
+    });
+
+    if (findSocialUser) throw new HttpException(409, '이미 가입된 소셜 아이디가 있습니다.');
+
+    const updateUser = await this.users.update({
+      where: {
+        id: findSocialUser.user.id,
+      },
+      data: {
+        email: userData.email,
+        name: userData.name,
+        phone: userData.phone,
+        verified: true,
+        Agreement: {
+          upsert: {
+            create: {
+              receive: userData.marketingAgree,
+            },
+            update: {
+              receive: userData.marketingAgree,
+            },
+          },
+        },
+      },
+      select: {
+        password: false,
+      },
+    });
+
+    return updateUser as User;
+  }
 
   public async verifyPhoneMessage(phone: string): Promise<string> {
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: phone,
+      },
+    });
+    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+
     const code = Math.floor(1000 + Math.random() * 9000).toString();
 
     const verifyPhone = await this.verifyPhone.create({
@@ -72,11 +139,15 @@ class AuthService {
       },
     });
 
-    this.messageService.sendOne({
-      to: phone,
-      from: MESSAGE_FROM,
-      text: `[SchoolMate]인증번호는 ${code}입니다.`,
-    });
+    try {
+      await this.messageService.sendOne({
+        to: phone,
+        from: MESSAGE_FROM,
+        text: `[SchoolMate] 인증번호는 ${code}입니다.`,
+      });
+    } catch (error) {
+      throw new HttpException(400, '메시지 전송에 실패했습니다.');
+    }
 
     return verifyPhone.id;
   }
@@ -88,11 +159,11 @@ class AuthService {
       },
     });
 
-    if (!verifyPhone) return false;
+    if (!verifyPhone) throw new HttpException(400, '인증번호가 만료되었습니다.');
 
-    if (verifyPhone.phone !== phone) return false;
+    if (verifyPhone.phone !== phone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
 
-    if (verifyPhone.code !== code) return false;
+    if (verifyPhone.code !== code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
 
     return true;
   }
