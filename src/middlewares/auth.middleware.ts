@@ -16,11 +16,16 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
       const userId = verificationResponse.id;
 
       const users = new PrismaClient().user;
-      const findUser = await users.findUnique({ where: { id: userId } });
+      const findUser = await users.findUnique({
+        where: { id: userId },
+        include: {
+          SocialLogin: true,
+        },
+      });
 
       if (findUser) {
         const userWithoutPassword = excludeUserPassword(findUser, ['password']);
-        req.user = userWithoutPassword as User;
+        req.user = userWithoutPassword as unknown as User;
         next();
       } else {
         next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
