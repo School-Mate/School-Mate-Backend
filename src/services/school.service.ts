@@ -1,7 +1,8 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { ISchoolInfoResponse, ISchoolInfoRow } from '@/interfaces/neisapi.interface';
+import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow } from '@/interfaces/neisapi.interface';
 import { neisClient } from '@/utils/client';
 import { AxiosError } from 'axios';
+import dayjs from 'dayjs';
 
 class SchoolService {
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
@@ -37,6 +38,62 @@ class SchoolService {
       }
 
       return schoolList;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof AxiosError) {
+        throw new HttpException(500, '나이스 서버에 오류가 발생했습니다.');
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async getSchoolById(schoolId: number): Promise<ISchoolInfoRow> {
+    try {
+      const { data: resp } = await neisClient.get('/hub/schoolInfo', {
+        params: {
+          SD_SCHUL_CODE: schoolId,
+        },
+      });
+
+      const schoolInfo: ISchoolInfoResponse = resp.schoolInfo;
+
+      if (!schoolInfo) {
+        throw new HttpException(404, '해당하는 학교가 없습니다.');
+      }
+
+      return schoolInfo[1].row[0];
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof AxiosError) {
+        throw new HttpException(500, '나이스 서버에 오류가 발생했습니다.');
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async getMeal(schoolId: number, date: any): Promise<Array<IMealInfoRow>> {
+    try {
+      const atpt = (await this.getSchoolById(schoolId)).ATPT_OFCDC_SC_CODE;
+
+      const { data: resp, request: req } = await neisClient.get('/hub/mealServiceDietInfo', {
+        params: {
+          ATPT_OFCDC_SC_CODE: atpt,
+          SD_SCHUL_CODE: schoolId,
+          MLSV_YMD: date.date ? dayjs(date.date).format('YYYYMMDD') : null,
+          MLSV_FROM_YMD: date.startDate ? dayjs(date.startDate).format('YYYYMMDD') : null,
+          MLSV_TO_YMD: date.endDate ? dayjs(date.endDate).format('YYYYMMDD') : null,
+        },
+      });
+
+      const mealInfo: IMealInfoResponse = resp.mealServiceDietInfo;
+      if (!mealInfo) {
+        throw new HttpException(404, '해당하는 급식이 없습니다.');
+      }
+      return mealInfo[1].row;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
