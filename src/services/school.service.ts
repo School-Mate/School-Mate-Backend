@@ -79,7 +79,8 @@ class SchoolService {
     try {
       const atpt = (await this.getSchoolById(schoolId)).ATPT_OFCDC_SC_CODE;
 
-      const { data: resp, request: req } = await neisClient.get('/hub/mealServiceDietInfo', {
+      const atpt = schoolInfo.ATPT_OFCDC_SC_CODE;
+      const { data: resp } = await neisClient.get('/hub/mealServiceDietInfo', {
         params: {
           ATPT_OFCDC_SC_CODE: atpt,
           SD_SCHUL_CODE: schoolId,
