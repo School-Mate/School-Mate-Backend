@@ -75,7 +75,7 @@ class SchoolService {
     }
   }
 
-  public async getMeal(schoolId: number, date: any): Promise<Array<IMealInfoRow>> {
+  public async getMeal(schoolId: number, data: any): Promise<Array<IMealInfoRow>> {
     try {
       const atpt = (await this.getSchoolById(schoolId)).ATPT_OFCDC_SC_CODE;
 
@@ -83,9 +83,9 @@ class SchoolService {
         params: {
           ATPT_OFCDC_SC_CODE: atpt,
           SD_SCHUL_CODE: schoolId,
-          MLSV_YMD: date.date ? dayjs(date.date).format('YYYYMMDD') : null,
-          MLSV_FROM_YMD: date.startDate ? dayjs(date.startDate).format('YYYYMMDD') : null,
-          MLSV_TO_YMD: date.endDate ? dayjs(date.endDate).format('YYYYMMDD') : null,
+          MLSV_YMD: data.date ? dayjs(data.date).format('YYYYMMDD') : null,
+          MLSV_FROM_YMD: data.startDate ? dayjs(data.startDate).format('YYYYMMDD') : null,
+          MLSV_TO_YMD: data.endDate ? dayjs(data.endDate).format('YYYYMMDD') : null,
         },
       });
 
