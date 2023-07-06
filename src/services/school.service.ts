@@ -3,6 +3,8 @@ import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow } 
 import { neisClient } from '@/utils/client';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
+dayjs.extend(isBetween);
 
 class SchoolService {
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
@@ -104,6 +106,19 @@ class SchoolService {
       } else {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
+    }
+  }
+
+  private semesterHandler(): number {
+    const today = dayjs();
+    const endDate = dayjs('2023-07-15');
+
+    if (today.isBetween(dayjs('2023-02-01'), endDate, null, '[]')) {
+      return 1;
+    } else if (today.isBetween(endDate, dayjs('2024-03-31'), null, '[]')) {
+      return 2;
+    } else {
+      return null;
     }
   }
 }
