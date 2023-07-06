@@ -33,7 +33,6 @@ class BusService {
     }
   }
 
-  // TODO: interface
   public async searchStationBySchoolId(schoolId: string): Promise<Array<BusStationInfo>> {
     try {
       const schoolInfo = await this.schoolService.getSchoolById(schoolId as any as number);
