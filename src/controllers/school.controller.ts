@@ -17,6 +17,45 @@ class SchoolController {
       next(error);
     }
   };
+
+  public getSchoolById = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = Number(req.params.schoolId);
+      const schoolData = await this.schoolService.getSchoolById(schoolId);
+
+      ResponseWrapper(req, res, {
+        data: schoolData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getMeal = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = Number(req.params.schoolId);
+      const mealData = await this.schoolService.getMeal(schoolId, req.query);
+
+      ResponseWrapper(req, res, {
+        data: mealData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getTimetable = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = Number(req.params.schoolId);
+      const timetableData = await this.schoolService.getTimetable(schoolId, req.query as object as ITimetableQuery);
+
+      ResponseWrapper(req, res, {
+        data: timetableData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default SchoolController;
