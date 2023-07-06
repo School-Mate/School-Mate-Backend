@@ -43,6 +43,19 @@ class SchoolController {
       next(error);
     }
   };
+
+  public getTimetable = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = Number(req.params.schoolId);
+      const timetableData = await this.schoolService.getTimetable(schoolId, req.query as object as ITimetableQuery);
+
+      ResponseWrapper(req, res, {
+        data: timetableData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default SchoolController;

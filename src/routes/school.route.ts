@@ -17,6 +17,7 @@ class SchoolRoute implements Routes {
     this.router.get(`${this.path}/search`, validationMiddleware(SearchSchoolDto, 'query'), this.schoolController.searchSchool);
     this.router.get(`${this.path}/:schoolId`, this.schoolController.getSchoolById);
     this.router.get(`${this.path}/:schoolId/meals`, validationMiddleware(GetMealDto, 'query'), this.schoolController.getMeal);
+    this.router.get(`${this.path}/:schoolId/timetable`, validationMiddleware(GetMealDto, 'query'), this.schoolController.getTimetable);
   }
 }
 
