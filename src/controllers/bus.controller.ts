@@ -6,7 +6,6 @@ import { NextFunction, Response } from 'express';
 
 class BusController {
   public busService = new BusService();
-  public schoolService = new SchoolService();
 
   public searchBusStation = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
