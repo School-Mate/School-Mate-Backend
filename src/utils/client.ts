@@ -23,4 +23,3 @@ export const kakaoClient = axios.create({
     Authorization: `KakaoAK ${process.env.KAKAO_CLIENT_KEY}`,
   },
 });
-
