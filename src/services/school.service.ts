@@ -75,7 +75,7 @@ class SchoolService {
     }
   }
 
-  public async getMeal(schoolId: number, data: any): Promise<Array<IMealInfoRow>> {
+  public async getMeal(schoolId: number, data: IMealQuery): Promise<Array<IMealInfoRow>> {
     try {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
