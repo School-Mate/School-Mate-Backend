@@ -24,4 +24,3 @@ export const kakaoClient = axios.create({
   },
 });
 
-// https://dapi.kakao.com/v2/local/search/address.json
