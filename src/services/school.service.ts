@@ -77,7 +77,8 @@ class SchoolService {
 
   public async getMeal(schoolId: number, data: any): Promise<Array<IMealInfoRow>> {
     try {
-      const atpt = (await this.getSchoolById(schoolId)).ATPT_OFCDC_SC_CODE;
+      const schoolInfo = await this.getSchoolById(schoolId);
+      if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
       const atpt = schoolInfo.ATPT_OFCDC_SC_CODE;
       const { data: resp } = await neisClient.get('/hub/mealServiceDietInfo', {
