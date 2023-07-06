@@ -1,11 +1,16 @@
 interface IMealQuery {
-  date?: number;
-  startDate?: number;
-  endDate?: number;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 interface ITimetableQuery {
-  date?: number;
-  startDate?: number;
-  endDate?: number;
+  grade: number;
+  class: number;
+  semes?: number;
+  dept?: string;
+  year?: number;
+  date?: string;
+  startDate?: string;
+  endDate?: string;
 }
