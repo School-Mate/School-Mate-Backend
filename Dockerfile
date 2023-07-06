@@ -1,24 +1,15 @@
-# Common build stage
-FROM node:14.14.0-alpine3.12 as common-build-stage
+FROM node:16.14.2
 
 COPY . ./app
 
 WORKDIR /app
 
-RUN npm install
-
-EXPOSE 3000
-
-# Development build stage
-FROM common-build-stage as development-build-stage
-
-ENV NODE_ENV development
-
-CMD ["npm", "run", "dev"]
-
-# Production build stage
-FROM common-build-stage as production-build-stage
-
+COPY .env .env.production.local
+RUN yarn
 ENV NODE_ENV production
+RUN yarn prisma:generate
+RUN yarn build
 
-CMD ["npm", "run", "start"]
+EXPOSE 3001
+
+CMD ["yarn", "start:docker"]
