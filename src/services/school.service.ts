@@ -146,11 +146,21 @@ class SchoolService {
 
   private semesterHandler(): number {
     const today = dayjs();
-    const endDate = dayjs('2023-07-15');
+    const year = today.year();
 
-    if (today.isBetween(dayjs('2023-02-01'), endDate, null, '[]')) {
+    const semester1Start = dayjs(`${year}-02-01`);
+    const semester1End = dayjs(`${year}-07-15`);
+    let semester2End;
+
+    if (today.isAfter(semester1End) && today.isBefore(dayjs(`${year + 1}-04-01`))) {
+      semester2End = dayjs(`${year + 1}-03-31`);
+    } else {
+      semester2End = dayjs(`${year}-03-31`);
+    }
+
+    if (today.isBetween(semester1Start, semester1End, null, '[]')) {
       return 1;
-    } else if (today.isBetween(endDate, dayjs('2024-03-31'), null, '[]')) {
+    } else if (today.isBetween(semester1End, semester2End, null, '[]')) {
       return 2;
     } else {
       return null;
