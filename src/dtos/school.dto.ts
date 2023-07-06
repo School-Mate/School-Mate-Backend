@@ -6,17 +6,14 @@ export class SearchSchoolDto {
 }
 
 export class GetMealDto {
-  @IsOptional()
   @ValidateIf(o => o.endDate)
   @IsDateString({ strict: true }, { message: '날짜 형식이 아닙니다.' })
   public startDate: string;
 
-  @IsOptional()
   @ValidateIf(o => o.startDate)
   @IsDateString({ strict: true }, { message: '날짜 형식이 아닙니다.' })
   public endDate: string;
 
-  @IsOptional()
   @ValidateIf(o => !o.startDate && !o.endDate)
   @IsDateString({ strict: true }, { message: '날짜 형식이 아닙니다.' })
   public date: string;
