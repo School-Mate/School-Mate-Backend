@@ -46,3 +46,8 @@ export class GetTimetableDto {
   @IsDateString({ strict: true }, { message: '날짜 형식이 아닙니다.' })
   public endDate: string;
 }
+
+export class VerifySchoolImageDto {
+  @IsString({ message: '' })
+  public imageId: string;
+}

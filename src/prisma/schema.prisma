@@ -59,7 +59,7 @@ model VerifyPhone {
 
 model UserVerify {
   userId  String            @id @default(uuid())
-  imageId String
+  imageId String            @unique
   image   Image             @relation(fields: [imageId], references: [id])
   process UserVerifyProcess @default(pending)
   message String?
