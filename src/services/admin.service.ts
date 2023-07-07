@@ -2,7 +2,7 @@ import { DOMAIN, SECRET_KEY } from '@/config';
 import { AdminDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
-import { excludeAdminPassword } from '@/utils/util';
+import { excludeAdminPassword, isEmpty } from '@/utils/util';
 import { Admin, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
@@ -49,6 +49,15 @@ class AdminService {
       cookie,
       findAdmin: removePasswordData as Admin,
     };
+  }
+
+  public async logout(adminData: Admin): Promise<Admin> {
+    if (isEmpty(adminData)) throw new HttpException(400, 'adminData is empty');
+
+    const findAdmin: Admin = await this.admin.findFirst({ where: { id: adminData.id } });
+    if (!findAdmin) throw new HttpException(409, "User doesn't exist");
+
+    return findAdmin;
   }
 
   public createToken(admin: Admin): TokenData {

@@ -5,6 +5,7 @@ import { Admin } from '@prisma/client';
 import { NextFunction, Response } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithAdmin } from '@/interfaces/admin.interface';
+import { DOMAIN } from '@/config';
 
 class AdminController {
   public adminService = new AdminService();
@@ -39,6 +40,18 @@ class AdminController {
 
       res.setHeader('Set-Cookie', [cookie]);
       ResponseWrapper(req, res, { data: findAdmin });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public logOut = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const adminData: Admin = req.admin;
+      const logOutAdminData: Admin = await this.adminService.logout(adminData);
+
+      res.setHeader('Set-Cookie', [`Authorization=; Max-age=0; Path=/; HttpOnly; Domain=${DOMAIN};`]);
+      ResponseWrapper(req, res, { data: logOutAdminData });
     } catch (error) {
       next(error);
     }

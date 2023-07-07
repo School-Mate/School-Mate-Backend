@@ -18,6 +18,7 @@ class AdminRoute implements Routes {
     this.router.get(`${this.path}/me`, adminMiddleware, this.adminController.me);
     this.router.post(`${this.path}/signup`, validationMiddleware(AdminDto, 'body'), this.adminController.signUp);
     this.router.post(`${this.path}/login`, validationMiddleware(AdminDto, 'body'), this.adminController.login);
+    this.router.get(`${this.path}/logout`, adminMiddleware, this.adminController.logOut);
   }
 }
 
