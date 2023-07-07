@@ -96,14 +96,14 @@ model BusRoute {
 }
 
 model BusArrival {
-  busStationId      String @id
+  busStationId      String   @id
   busStationName    String
   busRouteNum       String
   busRouteTp        String
   arrprevStationCnt String // 도착예정버스 남은 정류장 수
   arrTime           String // 도착예정버스 도착예정시간
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 enum UserVerifyProcess {
@@ -120,4 +120,11 @@ enum SocialLoginProviderType {
 enum UserLoginProviderType {
   id // 아이디
   social // 소셜
+}
+
+model Admin {
+  id       String @id @default(uuid())
+  loginId  String @unique
+  password String
+  flags    Int
 }
