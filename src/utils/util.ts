@@ -28,3 +28,14 @@ export const excludeUserPassword = <User, Key extends keyof User>(
     [K in Exclude<keyof User, Key>]: User[K];
   };
 };
+
+export const excludeAdminPassword = <Admin, Key extends keyof Admin>(
+  admin: Admin,
+  keys: Key[],
+): {
+  [K in Exclude<keyof Admin, Key>]: Admin[K];
+} => {
+  return Object.fromEntries(Object.entries(admin).filter(([key]) => !keys.includes(key as Key))) as {
+    [K in Exclude<keyof Admin, Key>]: Admin[K];
+  };
+};
