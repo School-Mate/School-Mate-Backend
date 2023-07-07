@@ -1,6 +1,5 @@
 import { RequestHandler } from '@/interfaces/routes.interface';
 import BusService from '@/services/bus.service';
-import SchoolService from '@/services/school.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { NextFunction, Response } from 'express';
 

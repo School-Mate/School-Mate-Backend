@@ -1,6 +1,6 @@
 import { RequestHandler } from '@/interfaces/routes.interface';
 import ResponseWrapper from '@/utils/responseWarpper';
-import { NextFunction, Request, Response } from 'express';
+import { NextFunction, Response } from 'express';
 
 class IndexController {
   public index = (req: RequestHandler, res: Response, next: NextFunction): void => {

@@ -1,5 +1,3 @@
-import { User } from '@prisma/client';
-
 /**
  * @method isEmpty
  * @param {String | Number | Object} value
