@@ -14,11 +14,11 @@ class BusService {
           gpsLong: long,
         },
       });
-
+      if (busStationfetch.response.body.totalCount === 0) throw new HttpException(404, '검색 결과가 없습니다.');
       const busStationList: BusStationInfo[] = busStationfetch.response.body.items.item;
 
       if (!busStationList) {
-        throw new HttpException(404, '해당하는 정류장이 없습니다.');
+        throw new HttpException(404, '검색 결과가 없습니다.');
       }
 
       return busStationList;
