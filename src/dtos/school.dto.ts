@@ -48,6 +48,6 @@ export class GetTimetableDto {
 }
 
 export class VerifySchoolImageDto {
-  @IsString({ message: '' })
+  @IsString({ message: '이미지 아이디를 입력해주세요,' })
   public imageId: string;
 }
