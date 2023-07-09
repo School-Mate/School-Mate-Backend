@@ -91,6 +91,7 @@ class SchoolService {
       const { data: resp } = await neisClient.get('/hub/mealServiceDietInfo', {
         params: {
           ATPT_OFCDC_SC_CODE: atpt,
+          MMEAL_SC_CODE: data.mealType,
           SD_SCHUL_CODE: schoolId,
           MLSV_YMD: data.date ? dayjs(data.date).format('YYYYMMDD') : null,
           MLSV_FROM_YMD: data.startDate ? dayjs(data.startDate).format('YYYYMMDD') : null,
@@ -102,6 +103,7 @@ class SchoolService {
       if (!mealInfo) {
         throw new HttpException(404, '해당하는 급식이 없습니다.');
       }
+      console.log(mealInfo[0].head);
       return mealInfo[1].row;
     } catch (error) {
       if (error instanceof HttpException) {
