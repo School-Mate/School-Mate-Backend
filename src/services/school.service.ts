@@ -1,12 +1,17 @@
+import { VerifySchoolImageDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient } from '@/utils/client';
+import { PrismaClient, User, UserVerifyProcess } from '@prisma/client';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 dayjs.extend(isBetween);
 
 class SchoolService {
+  public image = new PrismaClient().image;
+  public userSchoolVerify = new PrismaClient().userSchoolVerify;
+
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {
       const { data: middleSchoolfetch } = await neisClient.get('/hub/schoolInfo', {
@@ -164,6 +169,40 @@ class SchoolService {
       return 2;
     } else {
       return null;
+    }
+  }
+
+  public async verifySchoolImage(user: User, verifyData: VerifySchoolImageDto): Promise<any> {
+    try {
+      const findImage = await this.image.findFirst({
+        where: {
+          id: verifyData.imageId,
+        },
+      });
+
+      if (!findImage) throw new HttpException(404, '인증용 이미지를 업로드 해주세요.');
+
+      const createVerifyImage = await this.userSchoolVerify.create({
+        data: {
+          userId: user.id,
+          imageId: findImage.id,
+          process: UserVerifyProcess.pending,
+          schoolId: verifyData.schoolId,
+          grade: verifyData.grade,
+          class: verifyData.class,
+          dept: verifyData.dept,
+        },
+      });
+
+      return createVerifyImage;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof AxiosError) {
+        throw new HttpException(500, '오류가 발생했습니다.');
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
     }
   }
 }
