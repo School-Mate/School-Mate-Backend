@@ -56,6 +56,16 @@ class AdminController {
       next(error);
     }
   };
+
+  public deleteImage = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const deleteImage = await this.adminService.deleteImage(id);
+      ResponseWrapper(req, res, { data: deleteImage });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;
