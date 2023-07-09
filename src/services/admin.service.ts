@@ -2,6 +2,7 @@ import { DOMAIN, SECRET_KEY } from '@/config';
 import { AdminDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
+import { deleteObject } from '@/utils/multer';
 import { excludeAdminPassword, isEmpty } from '@/utils/util';
 import { Admin, PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
@@ -9,6 +10,7 @@ import { sign } from 'jsonwebtoken';
 
 class AdminService {
   public admin = new PrismaClient().admin;
+  public image = new PrismaClient().image;
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -71,6 +73,21 @@ class AdminService {
   public createCookie(tokenData: TokenData): string {
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
   }
+
+  public deleteImage = async (imageId: string): Promise<boolean> => {
+    const findImage = await this.image.findUnique({ where: { id: imageId } });
+    if (!findImage) throw new HttpException(409, '이미지를 찾을 수 없습니다.');
+
+    const deleteImage = await this.image.delete({ where: { id: imageId } });
+
+    try {
+      await deleteObject(deleteImage.key);
+    } catch (error) {
+      throw error;
+    }
+
+    return true;
+  };
 }
 
 export default AdminService;

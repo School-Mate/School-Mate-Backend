@@ -4,6 +4,7 @@ import { S3 } from '@aws-sdk/client-s3';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
 import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET } from '@/config';
+import { HttpException } from '@/exceptions/HttpException';
 
 export const s3 = new S3({
   credentials: {
@@ -29,6 +30,18 @@ export const ImageStorage = multerS3({
     });
   },
 });
+
+export const deleteObject = async (key: string) => {
+  try {
+    const params = {
+      Bucket: AWS_S3_BUCKET,
+      Key: key,
+    };
+    await s3.deleteObject(params);
+  } catch (error) {
+    throw new HttpException(500, '이미지 삭제를 실패했습니다.');
+  }
+};
 
 export const imageUpload = multer({
   storage: ImageStorage,
