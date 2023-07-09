@@ -50,4 +50,16 @@ export class GetTimetableDto {
 export class VerifySchoolImageDto {
   @IsString({ message: '이미지 아이디를 입력해주세요,' })
   public imageId: string;
+
+  @IsString({ message: '학교를 선택해주세요.' })
+  public schoolId: string;
+
+  @IsString({ message: '학년을 입력해주세요.' })
+  public grade: string;
+
+  @IsString({ message: '반을 입력해주세요.' })
+  public class: string;
+
+  @IsString({ message: '학과(계열)을 입력해주세요.' })
+  public dept: string;
 }

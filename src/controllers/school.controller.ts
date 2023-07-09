@@ -1,4 +1,5 @@
 import { VerifySchoolImageDto } from '@/dtos/school.dto';
+import { RequestWithUser } from '@/interfaces/auth.interface';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import SchoolService from '@/services/school.service';
 import ResponseWrapper from '@/utils/responseWarpper';
@@ -58,9 +59,9 @@ class SchoolController {
     }
   };
 
-  public verifySchoolImage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+  public verifySchoolImage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const schoolImageId = await this.schoolService.verifySchoolImage(req.body as VerifySchoolImageDto);
+      const schoolImageId = await this.schoolService.verifySchoolImage(req.user, req.body as VerifySchoolImageDto);
 
       ResponseWrapper(req, res, {
         data: schoolImageId,
