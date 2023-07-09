@@ -2,7 +2,7 @@ import { VerifySchoolImageDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient } from '@/utils/client';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User, UserVerifyProcess } from '@prisma/client';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -10,7 +10,7 @@ dayjs.extend(isBetween);
 
 class SchoolService {
   public image = new PrismaClient().image;
-  public userVerify = new PrismaClient().userVerify;
+  public userSchoolVerify = new PrismaClient().userSchoolVerify;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {
@@ -172,27 +172,30 @@ class SchoolService {
     }
   }
 
-  public async verifySchoolImage(imageInfo: VerifySchoolImageDto): Promise<any> {
+  public async verifySchoolImage(user: User, verifyData: VerifySchoolImageDto): Promise<any> {
     try {
       const findImage = await this.image.findFirst({
         where: {
-          id: imageInfo.imageId,
+          id: verifyData.imageId,
         },
       });
 
-      if (!findImage) throw new HttpException(404, '존재하지 않는 이미지 아이디입니다.');
+      if (!findImage) throw new HttpException(404, '인증용 이미지를 업로드 해주세요.');
 
-      const createVerifyImage = await this.userVerify.create({
+      const createVerifyImage = await this.userSchoolVerify.create({
         data: {
-          userId: findImage.userId,
+          userId: user.id,
           imageId: findImage.id,
-          process: 'pending',
+          process: UserVerifyProcess.pending,
+          schoolId: verifyData.schoolId,
+          grade: verifyData.grade,
+          class: verifyData.class,
+          dept: verifyData.dept,
         },
       });
 
       return createVerifyImage;
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else if (error instanceof AxiosError) {

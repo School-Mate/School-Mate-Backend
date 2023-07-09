@@ -11,18 +11,21 @@ generator client {
 }
 
 model User {
-  id          String                @id @default(uuid())
-  email       String?
-  password    String?
-  phone       String?               @unique
-  name        String
-  provider    UserLoginProviderType // id, social
-  verified    Boolean               @default(false)
-  profile     String?
-  createdAt   DateTime              @default(now())
-  SocialLogin SocialLogin?
-  Agreement   Agreement?
-  Image       Image[]
+  id               String                @id @default(uuid())
+  email            String?
+  password         String?
+  phone            String?               @unique
+  name             String
+  provider         UserLoginProviderType // id, social
+  verified         Boolean               @default(false)
+  profile          String?
+  createdAt        DateTime              @default(now())
+  userSchoolId     String?
+  SocialLogin      SocialLogin?
+  Agreement        Agreement?
+  Image            Image[]
+  UserSchoolVerify UserSchoolVerify[]
+  UserSchool       UserSchool?
 }
 
 model SocialLogin {
@@ -42,13 +45,12 @@ model Agreement {
 }
 
 model Image {
-  id         String       @id @default(uuid())
-  key        String
-  userId     String
-  user       User         @relation(fields: [userId], references: [id])
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  UserVerify UserVerify[]
+  id               String             @id @default(uuid())
+  key              String
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  createdAt        DateTime           @default(now())
+  UserSchoolVerify UserSchoolVerify[]
 }
 
 model VerifyPhone {
@@ -57,21 +59,38 @@ model VerifyPhone {
   code  String
 }
 
-model UserVerify {
-  userId  String            @id @default(uuid())
-  imageId String            @unique
-  image   Image             @relation(fields: [imageId], references: [id])
-  process UserVerifyProcess @default(pending)
-  message String?
+model UserSchoolVerify {
+  id       String            @id @default(uuid())
+  userId   String
+  imageId  String
+  schoolId String
+  dept     String
+  grade    String
+  class    String
+  message  String? // 거절사유
+  process  UserVerifyProcess @default(pending)
+  image    Image             @relation(fields: [imageId], references: [id])
+  user     User              @relation(fields: [userId], references: [id])
+}
+
+model UserSchool {
+  userId   String @id
+  schoolId String
+  dept     String
+  grade    String
+  class    String
+  user     User   @relation(fields: [userId], references: [id])
+  school   School @relation(fields: [schoolId], references: [schoolId])
 }
 
 model School {
-  schoolId   String @id
+  schoolId   String       @id
   schoolName String
   schoolCode String
   address    String
   x          Float
   y          Float
+  UserSchool UserSchool[]
 }
 
 model BusStation {
@@ -96,14 +115,14 @@ model BusRoute {
 }
 
 model BusArrival {
-  busStationId      String @id
+  busStationId      String   @id
   busStationName    String
   busRouteNum       String
   busRouteTp        String
   arrprevStationCnt String // 도착예정버스 남은 정류장 수
   arrTime           String // 도착예정버스 도착예정시간
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 enum UserVerifyProcess {
