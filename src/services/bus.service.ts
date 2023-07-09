@@ -35,7 +35,7 @@ class BusService {
 
   public async searchStationBySchoolId(schoolId: string): Promise<Array<BusStationInfo>> {
     try {
-      const schoolInfo = await this.schoolService.getSchoolById(schoolId as any as number);
+      const schoolInfo = await this.schoolService.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
       const org = schoolInfo.ORG_RDNMA;

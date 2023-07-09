@@ -56,7 +56,7 @@ class SchoolService {
     }
   }
 
-  public async getSchoolById(schoolId: number): Promise<ISchoolInfoRow> {
+  public async getSchoolById(schoolId: string): Promise<ISchoolInfoRow> {
     try {
       const { data: resp } = await neisClient.get('/hub/schoolInfo', {
         params: {
@@ -82,7 +82,7 @@ class SchoolService {
     }
   }
 
-  public async getMeal(schoolId: number, data: IMealQuery): Promise<Array<IMealInfoRow>> {
+  public async getMeal(schoolId: string, data: IMealQuery): Promise<Array<IMealInfoRow>> {
     try {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
@@ -116,7 +116,7 @@ class SchoolService {
     }
   }
 
-  public async getTimetable(schoolId: number, data: ITimetableQuery): Promise<any> {
+  public async getTimetable(schoolId: string, data: ITimetableQuery): Promise<any> {
     try {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');

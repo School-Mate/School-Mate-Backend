@@ -22,7 +22,7 @@ class SchoolController {
 
   public getSchoolById = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
-      const schoolId = Number(req.params.schoolId);
+      const schoolId = req.params.schoolId;
       const schoolData = await this.schoolService.getSchoolById(schoolId);
 
       ResponseWrapper(req, res, {
@@ -35,7 +35,7 @@ class SchoolController {
 
   public getMeal = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
-      const schoolId = Number(req.params.schoolId);
+      const schoolId = req.params.schoolId;
       const mealData = await this.schoolService.getMeal(schoolId, req.query);
 
       ResponseWrapper(req, res, {
@@ -48,7 +48,7 @@ class SchoolController {
 
   public getTimetable = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
-      const schoolId = Number(req.params.schoolId);
+      const schoolId = req.params.schoolId;
       const timetableData = await this.schoolService.getTimetable(schoolId, req.query as object as ITimetableQuery);
 
       ResponseWrapper(req, res, {
