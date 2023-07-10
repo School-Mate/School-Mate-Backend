@@ -4,3 +4,11 @@ interface IBoardRequestQuery {
   detail: string;
   userId: string;
 }
+
+interface IArticleQuery {
+  title: string;
+  content: string;
+  images: string[];
+  userId: string;
+  isAnonymous: boolean;
+}
