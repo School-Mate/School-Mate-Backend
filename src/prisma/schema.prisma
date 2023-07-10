@@ -92,6 +92,8 @@ model School {
   x           Float
   y           Float
   UserSchool  UserSchool[]
+  atptOfcdc   String
+  kndsc       String
 }
 
 model BusStation {
