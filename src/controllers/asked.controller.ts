@@ -19,6 +19,17 @@ class AskedController {
     }
   };
 
+  public getAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const page = req.query.page as string;
+      const askedUserData = await this.askedService.getAsked(req.user, page);
+
+      ResponseWrapper(req, res, { data: askedUserData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public getAskedById = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const askedId = req.params.askedId;

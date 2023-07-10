@@ -1,5 +1,7 @@
 import { AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
 import { HttpException } from '@/exceptions/HttpException';
+import { UserWithSchool } from '@/interfaces/auth.interface';
+import { getDummyData } from '@/utils/util';
 import { PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 
@@ -7,6 +9,46 @@ class AskedService {
   public asked = new PrismaClient().asked;
   public askedUser = new PrismaClient().askedUser;
   public user = new PrismaClient().user;
+
+  public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
+    try {
+      if (!user.userSchoolId) return getDummyData('asked');
+      const schoolUsers = await this.user.findMany({
+        where: {
+          userSchoolId: user.userSchoolId,
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+      });
+
+      const askedList = await this.askedUser.findMany({
+        where: {
+          userId: {
+            in: schoolUsers.map(user => user.id),
+          },
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      const askedUserList = askedList.map(asked => ({
+        ...asked,
+        user: {
+          name: asked.user.name,
+          profile: asked.user.profile,
+        },
+      }));
+
+      return askedUserList;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
 
   public getAskedUser = async (userId: string, page: string): Promise<any> => {
     try {

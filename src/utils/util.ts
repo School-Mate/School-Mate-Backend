@@ -39,3 +39,35 @@ export const excludeAdminPassword = <Admin, Key extends keyof Admin>(
     [K in Exclude<keyof Admin, Key>]: Admin[K];
   };
 };
+
+export const getDummyData = (type: 'asked' | 'board') => {
+  switch (type) {
+    case 'asked':
+      const asked = [];
+      for (let i = 0; i < 10; i++) {
+        asked.push({
+          statusMessage: '학교 인증후 이용가능합니다.',
+          user: {
+            name: '학교 인증후 확인가능',
+            profile: null,
+          },
+        });
+      }
+      return asked;
+    case 'board':
+      const board = [];
+      for (let i = 0; i < 10; i++) {
+        board.push({
+          title: '학교 인증후 이용가능합니다.',
+          content: '학교 인증후 이용가능합니다.',
+          user: {
+            name: '학교 인증후 이용가능합니다.',
+            profile: null,
+          },
+        });
+      }
+      return board;
+    default:
+      return [];
+  }
+};

@@ -15,6 +15,7 @@ class AskedRoute implements Routes {
   }
 
   private initializeRoutes() {
+    this.router.get(`${this.path}`, authMiddleware, this.askedController.getAsked);
     this.router.get(`${this.path}/:userId`, authMiddleware, this.askedController.getAskedUser);
     this.router.get(`${this.path}/:userId/:askedId`, authMiddleware, this.askedController.getAskedById);
     this.router.post(`${this.path}/:userId`, authMiddleware, validationMiddleware(AskedDto, 'body'), this.askedController.createAsked);
