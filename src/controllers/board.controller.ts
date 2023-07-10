@@ -31,6 +31,20 @@ class BoardController {
       next(error);
     }
   };
+
+  public sendBoardRequest = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const boardRequestData = req.body as IBoardRequestQuery;
+      await this.boardService.sendBoardRequest(boardRequestData);
+
+      ResponseWrapper(req, res, {
+        status: 201,
+        message: '게시판 신청이 완료되었습니다.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default BoardController;

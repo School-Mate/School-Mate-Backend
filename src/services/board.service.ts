@@ -50,6 +50,21 @@ class BoardService {
       }
     }
   }
+
+  public async sendBoardRequest(data: IBoardRequestQuery): Promise<void> {
+    try {
+      await this.boardRequest.create({
+        data: {
+          name: data.name,
+          description: data.description,
+          detail: data.detail,
+          userId: data.userId,
+        },
+      });
+    } catch (error) {
+      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
 }
 
 export default BoardService;

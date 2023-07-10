@@ -14,6 +14,7 @@ class BoardRoute implements Routes {
   private initializeRoutes() {
     this.router.get(`${this.path}/:boardId`, this.boardController.getBoard);
     this.router.get(`${this.path}/article/:articleId`, this.boardController.getArticle);
+    this.router.post(`${this.path}/request`, this.boardController.sendBoardRequest);
   }
 }
 
