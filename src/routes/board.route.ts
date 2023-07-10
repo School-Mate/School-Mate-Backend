@@ -12,7 +12,7 @@ class BoardRoute implements Routes {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/:boardId`, this.boardController.getBoardInfo);
+    this.router.get(`${this.path}/:boardId`, this.boardController.getBoard);
   }
 }
 

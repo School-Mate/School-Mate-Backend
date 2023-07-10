@@ -6,7 +6,7 @@ import { RequestHandler } from '@/interfaces/routes.interface';
 class BoardController {
   public boardService = new BoardService();
 
-  public getBoardInfo = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public getBoard = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
       const boardId = req.params.boardId;
       const boardData = await this.boardService.getBoard(boardId);
