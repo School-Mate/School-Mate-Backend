@@ -112,7 +112,7 @@ class SchoolService {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
-      const atpt = schoolInfo.ATPT_OFCDC_SC_CODE;
+      const atpt = schoolInfo.code;
       const { data: resp } = await neisClient.get('/hub/mealServiceDietInfo', {
         params: {
           ATPT_OFCDC_SC_CODE: atpt,
@@ -146,10 +146,10 @@ class SchoolService {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
-      const url = schoolInfo.SCHUL_KND_SC_NM === '고등학교' ? '/hub/hisTimetable' : '/hub/misTimetable';
+      const url = schoolInfo.kndsc === '고등학교' ? '/hub/hisTimetable' : '/hub/misTimetable';
       const { data: resp } = await neisClient.get(url, {
         params: {
-          ATPT_OFCDC_SC_CODE: schoolInfo.ATPT_OFCDC_SC_CODE,
+          ATPT_OFCDC_SC_CODE: schoolInfo.code,
           SD_SCHUL_CODE: schoolId,
           GRADE: data.grade,
           CLASS_NM: data.class,
@@ -162,7 +162,7 @@ class SchoolService {
         },
       });
 
-      const timetableInfo: ITimeTableResponse = schoolInfo.SCHUL_KND_SC_NM === '고등학교' ? resp.hisTimetable : resp.misTimetable;
+      const timetableInfo: ITimeTableResponse = schoolInfo.kndsc === '고등학교' ? resp.hisTimetable : resp.misTimetable;
       if (!timetableInfo) throw new HttpException(404, '해당하는 시간표가 없습니다.');
       return timetableInfo[1].row;
     } catch (error) {
