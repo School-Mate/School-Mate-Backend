@@ -18,6 +18,19 @@ class BoardController {
       next(error);
     }
   };
+
+  public getArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const articleId = req.params.articleId;
+      const articleData = await this.boardService.getArticle(articleId);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default BoardController;

@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Board, PrismaClient } from '@prisma/client';
+import { Article, Board, PrismaClient } from '@prisma/client';
 
 class BoardService {
   public board = new PrismaClient().board;
@@ -20,6 +20,28 @@ class BoardService {
       }
 
       return findBoard;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async getArticle(articleId: string): Promise<Article> {
+    try {
+      const findArticle = await this.article.findUnique({
+        where: {
+          id: articleId as any as number,
+        },
+      });
+
+      if (!findArticle) {
+        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      }
+
+      return findArticle;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
