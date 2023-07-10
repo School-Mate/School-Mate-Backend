@@ -1,8 +1,9 @@
 import { VerifySchoolImageDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
-import { neisClient } from '@/utils/client';
-import { PrismaClient, User, UserVerifyProcess } from '@prisma/client';
+import { kakaoClient, neisClient } from '@/utils/client';
+import { PrismaClient, School, User, UserVerifyProcess } from '@prisma/client';
+import { float } from 'aws-sdk/clients/cloudfront';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -11,6 +12,7 @@ dayjs.extend(isBetween);
 class SchoolService {
   public image = new PrismaClient().image;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
+  public school = new PrismaClient().school;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {
@@ -56,21 +58,44 @@ class SchoolService {
     }
   }
 
-  public async getSchoolById(schoolId: string): Promise<ISchoolInfoRow> {
+  public async getSchoolById(schoolId: string): Promise<School> {
     try {
+      const findSchool = await this.school.findUnique({
+        where: {
+          schoolId: schoolId,
+        },
+      });
+      if (findSchool) return findSchool;
+
       const { data: resp } = await neisClient.get('/hub/schoolInfo', {
         params: {
           SD_SCHUL_CODE: schoolId,
         },
       });
-
       const schoolInfo: ISchoolInfoResponse = resp.schoolInfo;
 
-      if (!schoolInfo) {
-        throw new HttpException(404, '해당하는 학교가 없습니다.');
-      }
+      const org = schoolInfo[1].row[0].ORG_RDNMA;
+      const { data: addressfetch } = await kakaoClient.get('/v2/local/search/address.json', {
+        params: {
+          query: org,
+          analyze_type: 'similar',
+        },
+      });
+      const addressList: IAddressDocuments[] = addressfetch.documents;
 
-      return schoolInfo[1].row[0];
+      const createSchool = await this.school.create({
+        data: {
+          schoolId: schoolId,
+          defaultName: schoolInfo[1].row[0].SCHUL_NM,
+          code: schoolInfo[1].row[0].ATPT_OFCDC_SC_CODE,
+          address: schoolInfo[1].row[0].ORG_RDNMA,
+          x: Number(addressList[0].x) as any as float,
+          y: Number(addressList[0].y) as any as float,
+          kndsc: schoolInfo[1].row[0].SCHUL_KND_SC_NM,
+        },
+      });
+
+      return createSchool;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
