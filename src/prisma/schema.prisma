@@ -27,6 +27,8 @@ model User {
   UserSchoolVerify   UserSchoolVerify[]
   UserSchool         UserSchool?
   BoardOrganizations BoardManager[]
+  AskedUser        AskedUser?
+  Asked            Asked[]
 }
 
 model SocialLogin {
@@ -61,7 +63,7 @@ model VerifyPhone {
 }
 
 model UserSchoolVerify {
-  id       String            @id @default(uuid())
+  id       String  @id @default(uuid())
   userId   String
   imageId  String
   schoolId String
@@ -69,9 +71,9 @@ model UserSchoolVerify {
   grade    String
   class    String
   message  String? // 거절사유
-  process  UserVerifyProcess @default(pending)
-  image    Image             @relation(fields: [imageId], references: [id])
-  user     User              @relation(fields: [userId], references: [id])
+  process  Process @default(pending)
+  image    Image   @relation(fields: [imageId], references: [id])
+  user     User    @relation(fields: [userId], references: [id])
 }
 
 model UserSchool {
@@ -128,10 +130,34 @@ model BusArrival {
   updatedAt         DateTime @updatedAt
 }
 
-enum UserVerifyProcess {
-  pending // 심사대기
-  deny // 심사거절
-  success // 심사수락
+model AskedUser {
+  userId            String  @id
+  customId          String?
+  statusMessage     String?
+  user              User    @relation(fields: [userId], references: [id])
+  receiveAnonymous   Boolean @default(true)
+  receiveOtherSchool Boolean @default(false)
+  Asked             Asked[]
+}
+
+model Asked {
+  id           String    @id @default(uuid())
+  userId       String
+  askedUserId  String
+  process      Process   @default(pending)
+  question     String
+  answer       String?
+  isAnonymous  Boolean
+  AskedUser    AskedUser @relation(fields: [askedUserId], references: [userId])
+  QuestionUser User      @relation(fields: [userId], references: [id])
+  createdAt    DateTime  @default(now())
+  answerTimeAt DateTime?
+}
+
+enum Process {
+  pending // 대기
+  deny // 거절
+  success // 수락
 }
 
 enum SocialLoginProviderType {
