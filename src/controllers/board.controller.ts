@@ -19,6 +19,21 @@ class BoardController {
     }
   };
 
+  public postArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const boardId = req.params.boardId;
+      const articleData = req.body as IArticleQuery;
+      await this.boardService.postArticle(boardId, articleData);
+
+      ResponseWrapper(req, res, {
+        status: 201,
+        message: '게시글이 성공적으로 작성되었습니다.',
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public getArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
       const articleId = req.params.articleId;

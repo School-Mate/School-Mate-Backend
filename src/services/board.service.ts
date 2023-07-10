@@ -29,6 +29,31 @@ class BoardService {
     }
   }
 
+  public async postArticle(boardId: string, data: IArticleQuery): Promise<void> {
+    try {
+      const findBoard = await this.board.findUnique({
+        where: {
+          id: Number(boardId) as number,
+        },
+      });
+      if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
+
+      await this.article.create({
+        data: {
+          schoolId: findBoard.schoolId,
+          title: data.title,
+          content: data.content,
+          images: data.images,
+          isAnonymous: data.isAnonymous,
+          userId: data.userId,
+          boardId: Number(boardId) as number,
+        },
+      });
+    } catch (error) {
+      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
+
   public async getArticle(articleId: string): Promise<Article> {
     try {
       const findArticle = await this.article.findUnique({
