@@ -2,7 +2,7 @@ import { VerifySchoolImageDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient } from '@/utils/client';
-import { PrismaClient, User, UserVerifyProcess } from '@prisma/client';
+import { PrismaClient, User, Process } from '@prisma/client';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -103,7 +103,7 @@ class SchoolService {
       if (!mealInfo) {
         throw new HttpException(404, '해당하는 급식이 없습니다.');
       }
-      console.log(mealInfo[0].head);
+
       return mealInfo[1].row;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -188,7 +188,7 @@ class SchoolService {
         data: {
           userId: user.id,
           imageId: findImage.id,
-          process: UserVerifyProcess.pending,
+          process: Process.pending,
           schoolId: verifyData.schoolId,
           grade: verifyData.grade,
           class: verifyData.class,
