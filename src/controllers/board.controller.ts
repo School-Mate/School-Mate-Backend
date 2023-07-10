@@ -9,7 +9,7 @@ class BoardController {
   public getBoardInfo = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
       const boardId = req.params.boardId;
-      const boardData = await this.boardService.getBoardInfo(boardId);
+      const boardData = await this.boardService.getBoard(boardId);
 
       ResponseWrapper(req, res, {
         data: boardData,

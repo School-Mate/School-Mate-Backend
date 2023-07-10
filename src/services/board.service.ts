@@ -7,7 +7,7 @@ class BoardService {
   public article = new PrismaClient().article;
   public boardRequest = new PrismaClient().boardRequest;
 
-  public async getBoardInfo(boardId: string): Promise<Board> {
+  public async getBoard(boardId: string): Promise<Board> {
     try {
       const findBoard = await this.board.findUnique({
         where: {
