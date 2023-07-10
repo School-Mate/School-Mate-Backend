@@ -1,4 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
+import { UserWithSchool } from '@/interfaces/auth.interface';
 import { Article, Board, PrismaClient } from '@prisma/client';
 
 class BoardService {
@@ -6,6 +7,21 @@ class BoardService {
   public manager = new PrismaClient().boardManager;
   public article = new PrismaClient().article;
   public boardRequest = new PrismaClient().boardRequest;
+
+  public async getBoards(user: UserWithSchool): Promise<Board[]> {
+    if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
+    try {
+      const findBoards = await this.board.findMany({
+        where: {
+          schoolId: user.userSchoolId,
+        },
+      });
+
+      return findBoards;
+    } catch (error) {
+      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
 
   public async getBoard(boardId: string): Promise<Board> {
     try {

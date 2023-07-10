@@ -2,9 +2,22 @@ import BoardService from '@/services/board.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Response, NextFunction } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
+import { RequestWithUser } from '@/interfaces/auth.interface';
 
 class BoardController {
   public boardService = new BoardService();
+
+  public getBoards = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const boardData = await this.boardService.getBoards(req.user);
+
+      ResponseWrapper(req, res, {
+        data: boardData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 
   public getBoard = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {

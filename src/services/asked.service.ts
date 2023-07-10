@@ -1,7 +1,6 @@
 import { AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { UserWithSchool } from '@/interfaces/auth.interface';
-import { getDummyData } from '@/utils/util';
 import { PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 
@@ -11,8 +10,8 @@ class AskedService {
   public user = new PrismaClient().user;
 
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
+    if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
     try {
-      if (!user.userSchoolId) return getDummyData('asked');
       const schoolUsers = await this.user.findMany({
         where: {
           userSchoolId: user.userSchoolId,
