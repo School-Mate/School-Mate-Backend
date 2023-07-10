@@ -1,5 +1,5 @@
 import { sign } from 'jsonwebtoken';
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, User, UserSchool } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -21,13 +21,57 @@ import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
 import { CreateUserDto, LoginUserDto } from '@/dtos/users.dto';
 import bcrypt from 'bcrypt';
+import SchoolService from './school.service';
+import { ISchoolInfoRow } from '@/interfaces/neisapi.interface';
 
 class AuthService {
+  public schoolService = new SchoolService();
   public users = new PrismaClient().user;
   public socialLogin = new PrismaClient().socialLogin;
   public image = new PrismaClient().image;
   public verifyPhone = new PrismaClient().verifyPhone;
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
+
+  public async authInitiate(userData: User): Promise<{
+    user: User & {
+      UserSchool: UserSchool & {
+        school: ISchoolInfoRow;
+      };
+    };
+    isSchoolSelected: boolean;
+    isVerifySchool: boolean;
+  }> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+      include: {
+        UserSchool: true,
+        UserSchoolVerify: true,
+      },
+    });
+
+    if (findUser.UserSchoolVerify.length === 0)
+      return {
+        user: findUser as any,
+        isSchoolSelected: false,
+        isVerifySchool: false,
+      };
+
+    const findSchool = await this.schoolService.getSchoolById(findUser.UserSchoolVerify[0].schoolId);
+
+    return {
+      user: {
+        ...findUser,
+        UserSchool: {
+          ...findUser.UserSchoolVerify[0],
+          school: findSchool,
+        },
+      },
+      isSchoolSelected: findUser.UserSchool !== null || findUser.UserSchoolVerify[0].schoolId !== null,
+      isVerifySchool: findUser.UserSchool !== null,
+    };
+  }
 
   public async uploadImage(req: RequestWithUser): Promise<string> {
     if (!req.file) throw new HttpException(500, '사진 업로드를 실패했습니다');

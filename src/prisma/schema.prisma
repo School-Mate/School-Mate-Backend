@@ -86,13 +86,15 @@ model UserSchool {
 }
 
 model School {
-  schoolId   String       @id
-  schoolName String
-  schoolCode String
-  address    String
-  x          Float
-  y          Float
-  UserSchool UserSchool[]
+  schoolId    String       @id @unique
+  name        String?
+  code        String
+  defaultName String
+  address     String
+  x           Float
+  y           Float
+  kndsc       String
+  UserSchool  UserSchool[]
 }
 
 model BusStation {
