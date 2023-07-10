@@ -17,6 +17,7 @@ class AuthRoute implements Routes {
 
   private initializeRoutes() {
     this.router.get(`${this.path}/me`, authMiddleware, this.authController.me);
+    this.router.get(`${this.path}/initiate`, authMiddleware, this.authController.authInitiate);
     this.router.get(`${this.path}/logout`, authMiddleware, this.authController.logOut);
     this.router.get(`${this.path}/kakao`, this.authController.kakaoLogin);
     this.router.get(`${this.path}/kakao/callback`, this.authController.kakaoLoginCallback);

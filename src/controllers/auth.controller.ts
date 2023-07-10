@@ -20,6 +20,17 @@ class AuthController {
     }
   };
 
+  public authInitiate = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const authInitiateData = await this.authService.authInitiate(userData);
+
+      ResponseWrapper(req, res, { data: authInitiateData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData = req.body as CreateUserDto;

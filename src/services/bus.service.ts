@@ -38,7 +38,7 @@ class BusService {
       const schoolInfo = await this.schoolService.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
-      const org = schoolInfo.ORG_RDNMA;
+      const org = schoolInfo.address;
       const { data: addressfetch } = await kakaoClient.get('/v2/local/search/address.json', {
         params: {
           query: org,
