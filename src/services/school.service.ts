@@ -103,7 +103,6 @@ class SchoolService {
       if (!mealInfo) {
         throw new HttpException(404, '해당하는 급식이 없습니다.');
       }
-      console.log(mealInfo[0].head);
       return mealInfo[1].row;
     } catch (error) {
       if (error instanceof HttpException) {
