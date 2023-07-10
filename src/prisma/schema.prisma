@@ -91,9 +91,8 @@ model School {
   address     String
   x           Float
   y           Float
-  UserSchool  UserSchool[]
-  atptOfcdc   String
   kndsc       String
+  UserSchool  UserSchool[]
 }
 
 model BusStation {
