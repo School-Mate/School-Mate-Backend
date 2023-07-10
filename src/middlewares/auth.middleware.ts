@@ -12,6 +12,7 @@ const schoolService = new SchoolService();
 const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     const Authorization = req.cookies['Authorization'] || (req.header('Authorization') ? req.header('Authorization').split('Bearer ')[1] : null);
+    const SchoolId = req.header('schoolId');
 
     if (Authorization) {
       const secretKey: string = SECRET_KEY;
@@ -24,21 +25,35 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
         include: {
           SocialLogin: true,
           UserSchool: true,
+          UserSchoolVerify: true,
         },
       });
 
       if (findUser) {
-        const userWithoutPassword = excludeUserPassword(findUser, ['password']);
+        const userDetail: UserWithSchool = {
+          ...findUser,
+          password: undefined,
+          userSchoolId: findUser.userSchoolId
+            ? findUser.userSchoolId
+            : findUser.UserSchoolVerify.length != 0
+            ? findUser.UserSchoolVerify[0].schoolId
+            : SchoolId
+            ? SchoolId
+            : null,
+          UserSchool: undefined,
+          UserSchoolVerify: undefined,
+        };
+
         req.user = {
-          ...userWithoutPassword,
-          UserSchool: userWithoutPassword.userSchoolId
+          ...userDetail,
+          UserSchool: userDetail.userSchoolId
             ? {
-                ...userWithoutPassword.UserSchool,
-                school: await schoolService.getSchoolById(userWithoutPassword.UserSchool.schoolId),
+                ...userDetail.UserSchool,
+                school: await schoolService.getSchoolById(userDetail.userSchoolId),
               }
             : null,
           SocialLogin: findUser.SocialLogin,
-        } as UserWithSchool;
+        } as unknown as UserWithSchool;
         next();
       } else {
         next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
@@ -47,6 +62,7 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
       next(new HttpException(404, '로그인 후 이용해주세요.'));
     }
   } catch (error) {
+    console.log(error);
     next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
   }
 };
