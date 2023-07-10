@@ -2,8 +2,7 @@ import { VerifySchoolImageDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { kakaoClient, neisClient } from '@/utils/client';
-import { PrismaClient, School, User, UserVerifyProcess } from '@prisma/client';
-import { float } from 'aws-sdk/clients/cloudfront';
+import { PrismaClient, School, User, Process } from '@prisma/client';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -89,8 +88,8 @@ class SchoolService {
           defaultName: schoolInfo[1].row[0].SCHUL_NM,
           code: schoolInfo[1].row[0].ATPT_OFCDC_SC_CODE,
           address: schoolInfo[1].row[0].ORG_RDNMA,
-          x: Number(addressList[0].x) as any as float,
-          y: Number(addressList[0].y) as any as float,
+          x: Number(addressList[0].x) as any,
+          y: Number(addressList[0].y) as any,
           kndsc: schoolInfo[1].row[0].SCHUL_KND_SC_NM,
         },
       });
@@ -212,7 +211,7 @@ class SchoolService {
         data: {
           userId: user.id,
           imageId: findImage.id,
-          process: UserVerifyProcess.pending,
+          process: Process.pending,
           schoolId: verifyData.schoolId,
           grade: verifyData.grade,
           class: verifyData.class,
