@@ -1,5 +1,5 @@
 import { sign } from 'jsonwebtoken';
-import { PrismaClient, User, UserSchool } from '@prisma/client';
+import { PrismaClient, School, User, UserSchool } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -35,7 +35,7 @@ class AuthService {
   public async authInitiate(userData: User): Promise<{
     user: User & {
       UserSchool: UserSchool & {
-        school: ISchoolInfoRow;
+        school: School;
       };
     };
     isSchoolSelected: boolean;

@@ -3,8 +3,11 @@ import { verify } from 'jsonwebtoken';
 import { PrismaClient, User } from '@prisma/client';
 import { SECRET_KEY } from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken, RequestWithUser } from '@interfaces/auth.interface';
+import { DataStoredInToken, RequestWithUser, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@/utils/util';
+import SchoolService from '@/services/school.service';
+
+const schoolService = new SchoolService();
 
 const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -20,12 +23,22 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
         where: { id: userId },
         include: {
           SocialLogin: true,
+          UserSchool: true,
         },
       });
 
       if (findUser) {
         const userWithoutPassword = excludeUserPassword(findUser, ['password']);
-        req.user = userWithoutPassword as unknown as User;
+        req.user = {
+          ...userWithoutPassword,
+          UserSchool: userWithoutPassword.userSchoolId
+            ? {
+                ...userWithoutPassword.UserSchool,
+                school: await schoolService.getSchoolById(userWithoutPassword.UserSchool.schoolId),
+              }
+            : null,
+          SocialLogin: findUser.SocialLogin,
+        } as UserWithSchool;
         next();
       } else {
         next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
@@ -34,6 +47,7 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
       next(new HttpException(404, '로그인 후 이용해주세요.'));
     }
   } catch (error) {
+    console.log(error);
     next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
   }
 };

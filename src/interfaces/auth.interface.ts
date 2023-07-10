@@ -1,4 +1,4 @@
-import { User } from '@prisma/client';
+import { School, SocialLogin, User, UserSchool } from '@prisma/client';
 import { RequestHandler } from './routes.interface';
 
 export interface DataStoredInToken {
@@ -11,7 +11,12 @@ export interface TokenData {
 }
 
 export interface RequestWithUser extends RequestHandler {
-  user: User;
+  user: UserWithSchool;
+}
+
+export interface UserWithSchool extends User {
+  UserSchool?: UserSchool & { school: School };
+  SocialLogin?: SocialLogin;
 }
 
 export type Provider = 'kakao' | 'google' | 'id';
