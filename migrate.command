@@ -1,2 +1,2 @@
-yarn prisma generate
-yarn prisma migrate
+yarn prisma:generate
+yarn prisma:migrate
