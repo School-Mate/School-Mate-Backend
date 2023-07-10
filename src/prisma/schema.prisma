@@ -84,7 +84,7 @@ model UserSchool {
 }
 
 model School {
-  schoolId    String       @id
+  schoolId    String       @id @unique
   name        String?
   code        String
   defaultName String
