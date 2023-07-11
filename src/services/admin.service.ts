@@ -63,18 +63,6 @@ class AdminService {
     return findAdmin;
   }
 
-  public createToken(admin: Admin): TokenData {
-    const dataStoredInToken: DataStoredInToken = { id: admin.id };
-    const secretKey: string = SECRET_KEY;
-    const expiresIn: number = 60 * 60;
-
-    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
-  }
-
-  public createCookie(tokenData: TokenData): string {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
-  }
-
   public deleteImage = async (imageId: string): Promise<boolean> => {
     const findImage = await this.image.findUnique({ where: { id: imageId } });
     if (!findImage) throw new HttpException(409, '이미지를 찾을 수 없습니다.');
@@ -99,6 +87,17 @@ class AdminService {
     return requests;
   };
 
+  public createToken(admin: Admin): TokenData {
+    const dataStoredInToken: DataStoredInToken = { id: admin.id };
+    const secretKey: string = SECRET_KEY;
+    const expiresIn: number = 60 * 60;
+
+    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
+  }
+
+  public createCookie(tokenData: TokenData): string {
+    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
+  }
 }
 
 export default AdminService;
