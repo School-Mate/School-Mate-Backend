@@ -27,8 +27,10 @@ model User {
   UserSchoolVerify   UserSchoolVerify[]
   UserSchool         UserSchool?
   BoardOrganizations BoardManager[]
-  AskedUser        AskedUser?
-  Asked            Asked[]
+  AskedUser          AskedUser?
+  Asked              Asked[]
+  Comment            Comment[]
+  ReComment          ReComment[]
 }
 
 model SocialLogin {
@@ -131,13 +133,13 @@ model BusArrival {
 }
 
 model AskedUser {
-  userId            String  @id
-  customId          String?
-  statusMessage     String?
-  user              User    @relation(fields: [userId], references: [id])
+  userId             String  @id
+  customId           String?
+  statusMessage      String?
+  user               User    @relation(fields: [userId], references: [id])
   receiveAnonymous   Boolean @default(true)
   receiveOtherSchool Boolean @default(false)
-  Asked             Asked[]
+  Asked              Asked[]
 }
 
 model Asked {
@@ -197,16 +199,18 @@ model BoardManager {
 }
 
 model Article {
-  id          Int      @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
   schoolId    String
   title       String
   content     String
   images      String[]
   isAnonymous Boolean
   userId      String
-  createdAt   DateTime @default(now())
-  Board       Board    @relation(fields: [boardId], references: [id])
+  createdAt   DateTime    @default(now())
+  Board       Board       @relation(fields: [boardId], references: [id])
   boardId     Int
+  Comment     Comment[]
+  ReComment   ReComment[]
 }
 
 model BoardRequest {
@@ -223,4 +227,31 @@ enum BoardRequestProcess {
   pending // 심사대기
   deny // 심사거절
   success // 심사수락
+}
+
+model Comment {
+  id          Int         @id @default(autoincrement())
+  articleId   Int
+  userId      String
+  content     String
+  isAnonymous Boolean
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  Article     Article     @relation(fields: [articleId], references: [id])
+  User        User        @relation(fields: [userId], references: [id])
+  recomments  ReComment[]
+}
+
+model ReComment {
+  id          Int      @id @default(autoincrement())
+  articleId   Int
+  userId      String
+  content     String
+  isAnonymous Boolean
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  Article     Article  @relation(fields: [articleId], references: [id])
+  User        User     @relation(fields: [userId], references: [id])
+  Comment     Comment? @relation(fields: [commentId], references: [id])
+  commentId   Int?
 }

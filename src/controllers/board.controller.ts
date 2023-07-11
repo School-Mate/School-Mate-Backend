@@ -73,6 +73,42 @@ class BoardController {
       next(error);
     }
   };
+
+  public getComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const commentData = await this.boardService.getComment(req.params.commentId);
+
+      ResponseWrapper(req, res, {
+        data: commentData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public postComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const createdComment = await this.boardService.postComment(req.body, req.params.articleId);
+
+      ResponseWrapper(req, res, {
+        data: createdComment,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public postReComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const createdComment = await this.boardService.postReComment(req.body, req.params.commentId);
+
+      ResponseWrapper(req, res, {
+        data: createdComment,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default BoardController;
