@@ -12,3 +12,10 @@ interface IArticleQuery {
   userId: string;
   isAnonymous: boolean;
 }
+
+interface ICommentQuery {
+  commentId: string;
+  userId: string;
+  content: string;
+  isAnonymous: boolean;
+}

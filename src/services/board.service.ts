@@ -1,11 +1,13 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, PrismaClient } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient } from '@prisma/client';
 
 class BoardService {
   public board = new PrismaClient().board;
   public manager = new PrismaClient().boardManager;
   public article = new PrismaClient().article;
   public boardRequest = new PrismaClient().boardRequest;
+  public comment = new PrismaClient().comment;
+  public reComment = new PrismaClient().reComment;
 
   public async getBoard(boardId: string): Promise<Board> {
     try {
@@ -88,6 +90,89 @@ class BoardService {
       });
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
+
+  public async getComment(commentId: string): Promise<Comment> {
+    try {
+      const findComment = await this.comment.findUnique({
+        where: {
+          id: Number(commentId),
+        },
+        include: {
+          recomments: true,
+        },
+      });
+
+      if (!findComment) {
+        throw new HttpException(404, '해당하는 댓글이 없습니다.');
+      }
+
+      return findComment;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async postComment(commentData: Comment, articleId: string): Promise<Comment> {
+    try {
+      const findArticle = await this.article.findUnique({
+        where: {
+          id: Number(articleId),
+        },
+      });
+
+      if (!findArticle) {
+        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      }
+
+      const createComment = await this.comment.create({
+        data: {
+          ...commentData,
+          articleId: Number(articleId),
+        },
+      });
+
+      return createComment;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async postReComment(reCommentData: Comment, commentId: string): Promise<Comment> {
+    try {
+      const findComment = await this.comment.findUnique({
+        where: {
+          id: Number(commentId),
+        },
+      });
+
+      if (!findComment) {
+        throw new HttpException(404, '해당하는 댓글이 없습니다.');
+      }
+
+      const createReComment = await this.reComment.create({
+        data: {
+          ...reCommentData,
+          commentId: Number(commentId),
+        },
+      });
+
+      return createReComment;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
     }
   }
 }
