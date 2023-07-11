@@ -1,5 +1,5 @@
 import AdminController from '@/controllers/admin.controller';
-import { AdminDto, VerifyRequestDto } from '@/dtos/admin.dto';
+import { AdminDto, GetVerifyRequestDto, PostVerifyRequestDto } from '@/dtos/admin.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import adminMiddleware from '@/middlewares/admin.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -20,8 +20,13 @@ class AdminRoute implements Routes {
     this.router.post(`${this.path}/login`, validationMiddleware(AdminDto, 'body'), this.adminController.login);
     this.router.get(`${this.path}/logout`, adminMiddleware, this.adminController.logOut);
     this.router.delete(`${this.path}/image/:id`, adminMiddleware, this.adminController.deleteImage);
-    this.router.get(`${this.path}/verify`, adminMiddleware, this.adminController.verifyRequests);
-    this.router.post(`${this.path}/verify`, validationMiddleware(VerifyRequestDto, 'body'), adminMiddleware, this.adminController.postVerifyRequest);
+    this.router.get(`${this.path}/verify`, adminMiddleware, validationMiddleware(GetVerifyRequestDto, 'query'), this.adminController.verifyRequests);
+    this.router.post(
+      `${this.path}/verify`,
+      adminMiddleware,
+      validationMiddleware(PostVerifyRequestDto, 'body'),
+      this.adminController.postVerifyRequest,
+    );
   }
 }
 

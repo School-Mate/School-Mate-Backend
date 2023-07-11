@@ -81,10 +81,19 @@ class AdminService {
     return true;
   };
 
-  public verifyRequests = async (): Promise<Array<UserSchoolVerify>> => {
+  public getVerifyRequests = async (status: string): Promise<Array<UserSchoolVerify>> => {
+    let process;
+    if (status === 'pending') {
+      process = Process.pending;
+    } else if (status === 'success') {
+      process = Process.success;
+    } else if (status === 'deny') {
+      process = Process.deny;
+    }
+
     const requests = await this.userSchoolVerify.findMany({
       where: {
-        process: Process.pending,
+        process: process,
       },
     });
     return requests;
