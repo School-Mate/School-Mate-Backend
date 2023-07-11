@@ -16,3 +16,9 @@ interface ITimetableQuery {
   startDate?: string;
   endDate?: string;
 }
+
+interface IClassInfoQuery {
+  grade: number;
+  class: number;
+  dept?: string;
+}

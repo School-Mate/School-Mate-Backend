@@ -1,6 +1,13 @@
 import { VerifySchoolImageDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { IMealInfoResponse, IMealInfoRow, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
+import {
+  IClassInfoResponse,
+  IMealInfoResponse,
+  IMealInfoRow,
+  ISchoolInfoResponse,
+  ISchoolInfoRow,
+  ITimeTableResponse,
+} from '@/interfaces/neisapi.interface';
 import { kakaoClient, neisClient } from '@/utils/client';
 import { PrismaClient, School, User, Process } from '@prisma/client';
 import { AxiosError } from 'axios';
@@ -228,6 +235,34 @@ class SchoolService {
       });
 
       return createVerifyImage;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof AxiosError) {
+        throw new HttpException(500, '오류가 발생했습니다.');
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async getSchoolDetail(schoolId: string): Promise<any> {
+    try {
+      const schoolInfo = await this.getSchoolById(schoolId);
+      if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
+
+      const { data: schoolDetailfetch } = await neisClient.get('/hub/classInfo', {
+        params: {
+          ATPT_OFCDC_SC_CODE: schoolInfo.code,
+          SD_SCHUL_CODE: schoolId,
+          AY: dayjs().format('YYYY'),
+        },
+      });
+
+      const schoolDetail: IClassInfoResponse = schoolDetailfetch.classInfo;
+      if (!schoolDetail) throw new HttpException(404, '해당하는 반 정보가 없습니다.');
+
+      return schoolDetail[1].row;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

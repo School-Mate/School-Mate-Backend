@@ -31,44 +31,28 @@ class AuthService {
   public verifyPhone = new PrismaClient().verifyPhone;
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
-  public async authInitiate(userData: User): Promise<{
-    user: User & {
-      UserSchool: UserSchool & {
-        school: School;
-      };
-    };
-    isSchoolSelected: boolean;
-    isVerifySchool: boolean;
-  }> {
+  public async meSchool(userData: User): Promise<
+    UserSchool & {
+      school: School;
+    }
+  > {
     const findUser = await this.users.findUnique({
       where: {
         id: userData.id,
       },
       include: {
         UserSchool: true,
-        UserSchoolVerify: true,
       },
     });
+    console.log(findUser);
 
-    if (findUser.UserSchoolVerify.length === 0)
-      return {
-        user: findUser as any,
-        isSchoolSelected: false,
-        isVerifySchool: false,
-      };
+    if (!findUser.userSchoolId) throw new HttpException(400, '인증된 학교가 없습니다');
 
-    const findSchool = await this.schoolService.getSchoolById(findUser.UserSchoolVerify[0].schoolId);
+    const findSchool = await this.schoolService.getSchoolById(findUser.UserSchool.schoolId);
 
     return {
-      user: {
-        ...findUser,
-        UserSchool: {
-          ...findUser.UserSchoolVerify[0],
-          school: findSchool,
-        },
-      },
-      isSchoolSelected: findUser.UserSchool !== null || findUser.UserSchoolVerify[0].schoolId !== null,
-      isVerifySchool: findUser.UserSchool !== null,
+      ...findUser.UserSchool,
+      school: findSchool,
     };
   }
 

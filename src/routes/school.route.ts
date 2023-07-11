@@ -25,6 +25,7 @@ class SchoolRoute implements Routes {
       validationMiddleware(VerifySchoolImageDto, 'body'),
       this.schoolController.verifySchoolImage,
     );
+    this.router.get(`${this.path}/:schoolId/detail`, this.schoolController.getSchoolDetail);
   }
 }
 

@@ -16,8 +16,6 @@ export interface RequestWithUser extends RequestHandler {
 
 export interface UserWithSchool extends User {
   UserSchool?: UserSchool & { school: School };
-  SocialLogin?: SocialLogin;
-  UserSchoolVerify?: UserSchoolVerify;
 }
 
 export type Provider = 'kakao' | 'google' | 'id';
