@@ -7,11 +7,14 @@ import { excludeAdminPassword, isEmpty } from '@/utils/util';
 import { Admin, PrismaClient, Process, UserSchoolVerify } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
+import SchoolService from './school.service';
 
 class AdminService {
   public admin = new PrismaClient().admin;
   public image = new PrismaClient().image;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
+  public userSchool = new PrismaClient().userSchool;
+  public schoolService = new SchoolService();
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -85,6 +88,33 @@ class AdminService {
       },
     });
     return requests;
+  };
+
+  public postVerifyRequest = async (userId: string, message: string, process: string): Promise<void> => {
+    const findUser = await this.userSchoolVerify.findFirst({ where: { userId: userId } });
+    if (!findUser) throw new HttpException(409, '해당 유저의 신청을 찾을 수 없습니다.');
+
+    const updateRequest = await this.userSchoolVerify.update({
+      where: { id: findUser.id },
+      data: {
+        message: message,
+        process: Process.success === process ? Process.success : Process.deny,
+      },
+    });
+
+    if (updateRequest.process === Process.success) {
+      const schoolInfo = await this.schoolService.getSchoolById(updateRequest.schoolId);
+
+      await this.userSchool.create({
+        data: {
+          userId: updateRequest.userId,
+          schoolId: updateRequest.schoolId,
+          dept: schoolInfo.code,
+          class: updateRequest.class,
+          grade: updateRequest.grade,
+        },
+      });
+    }
   };
 
   public createToken(admin: Admin): TokenData {
