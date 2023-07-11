@@ -27,8 +27,8 @@ model User {
   UserSchoolVerify   UserSchoolVerify[]
   UserSchool         UserSchool?
   BoardOrganizations BoardManager[]
-  AskedUser        AskedUser?
-  Asked            Asked[]
+  AskedUser          AskedUser?
+  Asked              Asked[]
 }
 
 model SocialLogin {
@@ -63,17 +63,19 @@ model VerifyPhone {
 }
 
 model UserSchoolVerify {
-  id       String  @id @default(uuid())
-  userId   String
-  imageId  String
-  schoolId String
-  dept     String
-  grade    String
-  class    String
-  message  String? // 거절사유
-  process  Process @default(pending)
-  image    Image   @relation(fields: [imageId], references: [id])
-  user     User    @relation(fields: [userId], references: [id])
+  id         String   @id @default(uuid())
+  userId     String
+  userName   String
+  imageId    String
+  schoolId   String
+  schoolName String
+  grade      String
+  class      String
+  createdAt  DateTime @default(now())
+  message    String?
+  process    Process  @default(pending)
+  image      Image    @relation(fields: [imageId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model UserSchool {
@@ -131,13 +133,13 @@ model BusArrival {
 }
 
 model AskedUser {
-  userId            String  @id
-  customId          String?
-  statusMessage     String?
-  user              User    @relation(fields: [userId], references: [id])
+  userId             String  @id
+  customId           String?
+  statusMessage      String?
+  user               User    @relation(fields: [userId], references: [id])
   receiveAnonymous   Boolean @default(true)
   receiveOtherSchool Boolean @default(false)
-  Asked             Asked[]
+  Asked              Asked[]
 }
 
 model Asked {
