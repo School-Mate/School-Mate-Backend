@@ -15,9 +15,11 @@ class BoardRoute implements Routes {
   }
 
   private initializeRoutes() {
+    this.router.get(`${this.path}`, authMiddleware, this.boardController.getBoards);
     this.router.get(`${this.path}/:boardId`, authMiddleware, this.boardController.getBoard);
-    this.router.post(`${this.path}/:boardId`, authMiddleware, this.boardController.postArticle);
     this.router.get(`${this.path}/article/:articleId`, authMiddleware, this.boardController.getArticle);
+    this.router.post(`${this.path}/request`, authMiddleware, this.boardController.sendBoardRequest);
+    this.router.post(`${this.path}/:boardId`, authMiddleware, this.boardController.postArticle);
     this.router.post(
       `${this.path}/article/:articleId/comment`,
       authMiddleware,
@@ -30,7 +32,6 @@ class BoardRoute implements Routes {
       validationMiddleware(CommentDto, 'body'),
       this.boardController.postReComment,
     );
-    this.router.post(`${this.path}/request`, this.boardController.sendBoardRequest);
   }
 }
 
