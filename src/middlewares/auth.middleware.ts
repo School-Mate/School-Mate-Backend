@@ -59,10 +59,9 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
         next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
       }
     } else {
-      next(new HttpException(404, '로그인 후 이용해주세요.'));
+      next(new HttpException(401, '로그인 후 이용해주세요.'));
     }
   } catch (error) {
-    console.log(error);
     next(new HttpException(401, '올바르지 않은 인증 토큰입니다.'));
   }
 };
