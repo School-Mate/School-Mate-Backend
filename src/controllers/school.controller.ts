@@ -70,6 +70,19 @@ class SchoolController {
       next(error);
     }
   };
+
+  public getSchoolDetail = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const schoolId = req.params.schoolId;
+      const schoolDetailData = await this.schoolService.getSchoolDetail(schoolId);
+
+      ResponseWrapper(req, res, {
+        data: schoolDetailData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default SchoolController;
