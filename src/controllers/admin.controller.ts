@@ -66,6 +66,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public verifyRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const verifyRequests = await this.adminService.verifyRequests();
+      ResponseWrapper(req, res, { data: verifyRequests });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;

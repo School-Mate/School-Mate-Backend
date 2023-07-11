@@ -4,13 +4,14 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { deleteObject } from '@/utils/multer';
 import { excludeAdminPassword, isEmpty } from '@/utils/util';
-import { Admin, PrismaClient } from '@prisma/client';
+import { Admin, PrismaClient, Process, UserSchoolVerify } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 
 class AdminService {
   public admin = new PrismaClient().admin;
   public image = new PrismaClient().image;
+  public userSchoolVerify = new PrismaClient().userSchoolVerify;
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -88,6 +89,16 @@ class AdminService {
 
     return true;
   };
+
+  public verifyRequests = async (): Promise<Array<UserSchoolVerify>> => {
+    const requests = await this.userSchoolVerify.findMany({
+      where: {
+        process: Process.pending,
+      },
+    });
+    return requests;
+  };
+
 }
 
 export default AdminService;
