@@ -45,7 +45,6 @@ class AuthService {
         UserSchool: true,
       },
     });
-    console.log(findUser);
 
     if (!findUser.userSchoolId) throw new HttpException(400, '인증된 학교가 없습니다');
 

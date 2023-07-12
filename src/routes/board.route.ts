@@ -1,4 +1,5 @@
 import BoardController from '@/controllers/board.controller';
+import { ArticleRequestQuery } from '@/dtos/article.dto';
 import { CommentDto } from '@/dtos/comment.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import authMiddleware from '@/middlewares/auth.middleware';
@@ -17,6 +18,12 @@ class BoardRoute implements Routes {
   private initializeRoutes() {
     this.router.get(`${this.path}`, authMiddleware, this.boardController.getBoards);
     this.router.get(`${this.path}/:boardId`, authMiddleware, this.boardController.getBoard);
+    this.router.get(
+      `${this.path}/:boardId/articles`,
+      validationMiddleware(ArticleRequestQuery, 'query'),
+      authMiddleware,
+      this.boardController.getArticles,
+    );
     this.router.get(`${this.path}/article/:articleId`, authMiddleware, this.boardController.getArticle);
     this.router.post(`${this.path}/request`, authMiddleware, this.boardController.sendBoardRequest);
     this.router.post(`${this.path}/:boardId`, authMiddleware, this.boardController.postArticle);
