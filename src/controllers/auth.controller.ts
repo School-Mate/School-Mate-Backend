@@ -147,6 +147,16 @@ class AuthController {
       next(error);
     }
   };
+
+  public deleteImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const deleteImageData = await this.authService.deleteImage(req.params.imageId, req.user);
+
+      ResponseWrapper(req, res, { data: deleteImageData });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AuthController;

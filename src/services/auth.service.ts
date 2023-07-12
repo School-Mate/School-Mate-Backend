@@ -1,5 +1,5 @@
 import { sign } from 'jsonwebtoken';
-import { PrismaClient, School, User, UserSchool } from '@prisma/client';
+import { Image, PrismaClient, School, User, UserSchool } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -22,6 +22,7 @@ import { SolapiMessageService } from 'solapi';
 import { CreateUserDto, LoginUserDto } from '@/dtos/users.dto';
 import bcrypt from 'bcrypt';
 import SchoolService from './school.service';
+import { deleteObject } from '@/utils/multer';
 
 class AuthService {
   public schoolService = new SchoolService();
@@ -53,6 +54,28 @@ class AuthService {
       ...findUser.UserSchool,
       school: findSchool,
     };
+  }
+
+  public async deleteImage(imageId: string, userData: User): Promise<Image> {
+    const findImage = await this.image.findUnique({
+      where: {
+        id: imageId,
+      },
+    });
+
+    if (!findImage) throw new HttpException(400, '이미지를 찾을 수 없습니다');
+
+    if (findImage.userId !== userData.id) throw new HttpException(400, '이미지를 삭제할 권한이 없습니다');
+
+    await deleteObject(findImage.key);
+
+    const deleteImage = await this.image.delete({
+      where: {
+        id: imageId,
+      },
+    });
+
+    return deleteImage;
   }
 
   public async uploadImage(req: RequestWithUser): Promise<string> {
