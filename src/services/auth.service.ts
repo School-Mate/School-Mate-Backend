@@ -22,7 +22,6 @@ import { SolapiMessageService } from 'solapi';
 import { CreateUserDto, LoginUserDto } from '@/dtos/users.dto';
 import bcrypt from 'bcrypt';
 import SchoolService from './school.service';
-import { ISchoolInfoRow } from '@/interfaces/neisapi.interface';
 
 class AuthService {
   public schoolService = new SchoolService();

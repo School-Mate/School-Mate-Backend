@@ -19,6 +19,7 @@ class SchoolService {
   public image = new PrismaClient().image;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
   public school = new PrismaClient().school;
+  public user = new PrismaClient().user;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {
@@ -214,15 +215,22 @@ class SchoolService {
 
       if (!findImage) throw new HttpException(404, '인증용 이미지를 업로드 해주세요.');
 
+      const findUser = await this.user.findUnique({
+        where: {
+          id: user.id,
+        },
+      });
+      const findSchool = await this.getSchoolById(verifyData.schoolId);
       const createVerifyImage = await this.userSchoolVerify.create({
         data: {
           userId: user.id,
+          userName: findUser.name,
           imageId: findImage.id,
           process: Process.pending,
           schoolId: verifyData.schoolId,
+          schoolName: findSchool.name,
           grade: verifyData.grade,
           class: verifyData.class,
-          dept: verifyData.dept,
         },
       });
 

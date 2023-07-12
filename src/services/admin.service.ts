@@ -4,13 +4,17 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { deleteObject } from '@/utils/multer';
 import { excludeAdminPassword, isEmpty } from '@/utils/util';
-import { Admin, PrismaClient } from '@prisma/client';
+import { Admin, PrismaClient, Process, UserSchoolVerify } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
+import SchoolService from './school.service';
 
 class AdminService {
   public admin = new PrismaClient().admin;
   public image = new PrismaClient().image;
+  public userSchoolVerify = new PrismaClient().userSchoolVerify;
+  public userSchool = new PrismaClient().userSchool;
+  public schoolService = new SchoolService();
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -62,18 +66,6 @@ class AdminService {
     return findAdmin;
   }
 
-  public createToken(admin: Admin): TokenData {
-    const dataStoredInToken: DataStoredInToken = { id: admin.id };
-    const secretKey: string = SECRET_KEY;
-    const expiresIn: number = 60 * 60;
-
-    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
-  }
-
-  public createCookie(tokenData: TokenData): string {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
-  }
-
   public deleteImage = async (imageId: string): Promise<boolean> => {
     const findImage = await this.image.findUnique({ where: { id: imageId } });
     if (!findImage) throw new HttpException(409, '이미지를 찾을 수 없습니다.');
@@ -88,6 +80,63 @@ class AdminService {
 
     return true;
   };
+
+  public getVerifyRequests = async (status: string): Promise<Array<UserSchoolVerify>> => {
+    let process;
+    if (status === 'pending') {
+      process = Process.pending;
+    } else if (status === 'success') {
+      process = Process.success;
+    } else if (status === 'deny') {
+      process = Process.deny;
+    }
+
+    const requests = await this.userSchoolVerify.findMany({
+      where: {
+        process: process,
+      },
+    });
+    return requests;
+  };
+
+  public postVerifyRequest = async (userId: string, message: string, process: string): Promise<void> => {
+    const findUser = await this.userSchoolVerify.findFirst({ where: { userId: userId } });
+    if (!findUser) throw new HttpException(409, '해당 유저의 신청을 찾을 수 없습니다.');
+
+    const updateRequest = await this.userSchoolVerify.update({
+      where: { id: findUser.id },
+      data: {
+        message: message,
+        process: Process.success === process ? Process.success : Process.deny,
+      },
+    });
+
+    if (updateRequest.process === Process.success) {
+      const schoolInfo = await this.schoolService.getSchoolById(updateRequest.schoolId);
+
+      await this.userSchool.create({
+        data: {
+          userId: updateRequest.userId,
+          schoolId: updateRequest.schoolId,
+          dept: schoolInfo.code,
+          class: updateRequest.class,
+          grade: updateRequest.grade,
+        },
+      });
+    }
+  };
+
+  public createToken(admin: Admin): TokenData {
+    const dataStoredInToken: DataStoredInToken = { id: admin.id };
+    const secretKey: string = SECRET_KEY;
+    const expiresIn: number = 60 * 60;
+
+    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
+  }
+
+  public createCookie(tokenData: TokenData): string {
+    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
+  }
 }
 
 export default AdminService;
