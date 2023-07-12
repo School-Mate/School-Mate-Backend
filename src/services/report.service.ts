@@ -40,10 +40,17 @@ class ReportService {
           throw new HttpException(400, '잘못된 타겟 타입입니다.');
       }
 
+      const findUser = await this.user.findUnique({
+        where: {
+          id: user.id,
+        },
+      });
+
       const createReport = await this.report.create({
         data: {
           targetId: data.targetId,
           reportUserId: user.id,
+          reportUserName: findUser.name,
           targetType: data.targetType,
           message: data.message,
         },
