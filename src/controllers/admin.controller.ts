@@ -1,4 +1,4 @@
-import { AdminDto } from '@/dtos/admin.dto';
+import { AdminDto, PostVerifyRequestDto } from '@/dtos/admin.dto';
 import AdminService from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin } from '@prisma/client';
@@ -6,6 +6,7 @@ import { NextFunction, Response } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithAdmin } from '@/interfaces/admin.interface';
 import { DOMAIN } from '@/config';
+import { VerifyRequest } from 'aws-sdk/clients/kms';
 
 class AdminController {
   public adminService = new AdminService();
@@ -78,8 +79,8 @@ class AdminController {
 
   public postVerifyRequest = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = req.body;
-      const verifyRequest = await this.adminService.postVerifyRequest(data.userId, data.message, data.process);
+      const data = req.body as PostVerifyRequestDto;
+      const verifyRequest = await this.adminService.postVerifyRequest(data.requestId, data.message, data.process);
       ResponseWrapper(req, res, { data: verifyRequest });
     } catch (error) {
       next(error);

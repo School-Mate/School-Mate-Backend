@@ -73,6 +73,7 @@ model UserSchoolVerify {
   schoolName String
   grade      String
   class      String
+  dept       String
   createdAt  DateTime @default(now())
   message    String?
   process    Process  @default(pending)

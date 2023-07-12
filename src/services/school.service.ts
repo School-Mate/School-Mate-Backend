@@ -232,6 +232,7 @@ class SchoolService {
           schoolName: findSchool.name ? findSchool.name : findSchool.defaultName,
           grade: verifyData.grade,
           class: verifyData.class,
+          dept: verifyData.dept,
         },
       });
 

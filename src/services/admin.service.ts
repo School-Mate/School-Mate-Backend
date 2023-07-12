@@ -14,6 +14,7 @@ class AdminService {
   public image = new PrismaClient().image;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
   public userSchool = new PrismaClient().userSchool;
+  public users = new PrismaClient().user;
   public schoolService = new SchoolService();
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
@@ -103,28 +104,36 @@ class AdminService {
     return requests;
   };
 
-  public postVerifyRequest = async (userId: string, message: string, process: string): Promise<void> => {
-    const findUser = await this.userSchoolVerify.findFirst({ where: { userId: userId } });
-    if (!findUser) throw new HttpException(409, '해당 유저의 신청을 찾을 수 없습니다.');
+  public postVerifyRequest = async (requestId: string, message: string, process: Process): Promise<void> => {
+    const findRequest = await this.userSchoolVerify.findUnique({ where: { id: requestId } });
+    if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
 
     const updateRequest = await this.userSchoolVerify.update({
-      where: { id: findUser.id },
+      where: { id: findRequest.id },
       data: {
         message: message,
-        process: Process.success === process ? Process.deny : Process.success,
+        process: process,
       },
     });
 
     if (updateRequest.process === Process.success) {
       const schoolInfo = await this.schoolService.getSchoolById(updateRequest.schoolId);
+      if (!schoolInfo) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
 
       await this.userSchool.create({
         data: {
           userId: updateRequest.userId,
-          schoolId: updateRequest.schoolId,
-          dept: schoolInfo.code,
+          schoolId: schoolInfo.schoolId,
+          dept: updateRequest.dept,
           class: updateRequest.class,
           grade: updateRequest.grade,
+        },
+      });
+
+      await this.users.update({
+        where: { id: updateRequest.userId },
+        data: {
+          userSchoolId: updateRequest.schoolId,
         },
       });
     }
