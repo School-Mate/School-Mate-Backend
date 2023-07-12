@@ -95,6 +95,10 @@ class AdminService {
       where: {
         process: process,
       },
+      include: {
+        user: true,
+        image: true,
+      },
     });
     return requests;
   };
