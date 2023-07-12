@@ -111,7 +111,7 @@ class AdminService {
       where: { id: findUser.id },
       data: {
         message: message,
-        process: Process.success === process ? Process.success : Process.deny,
+        process: Process.success === process ? Process.deny : Process.success,
       },
     });
 
