@@ -257,3 +257,18 @@ model ReComment {
   Comment     Comment? @relation(fields: [commentId], references: [id])
   commentId   Int?
 }
+
+model Report {
+  id             String @id @default(uuid())
+  reportUserId   String
+  reportUserName String
+  targetId       String
+  targetType     ReportTargetType
+  message        String
+}
+
+enum ReportTargetType {
+  user // 유저
+  article // 게시글
+  comment // 댓글
+}
