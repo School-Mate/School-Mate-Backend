@@ -292,7 +292,7 @@ class BoardService {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
 
-      const createArticleLike = await this.like.create({
+      const createArticledisLike = await this.like.create({
         data: {
           userId: userId,
           targetId: articleId,
@@ -301,7 +301,7 @@ class BoardService {
         },
       });
 
-      return createArticleLike;
+      return createArticledisLike;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -354,7 +354,7 @@ class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      const createCommentLike = await this.like.create({
+      const createCommentdisLike = await this.like.create({
         data: {
           userId: userId,
           targetId: commentId,
@@ -363,7 +363,7 @@ class BoardService {
         },
       });
 
-      return createCommentLike;
+      return createCommentdisLike;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -416,7 +416,7 @@ class BoardService {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
       }
 
-      const createReCommentLike = await this.like.create({
+      const createReCommentdisLike = await this.like.create({
         data: {
           userId: userId,
           targetId: reCommentId,
@@ -425,7 +425,7 @@ class BoardService {
         },
       });
 
-      return createReCommentLike;
+      return createReCommentdisLike;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
