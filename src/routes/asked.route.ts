@@ -26,6 +26,7 @@ class AskedRoute implements Routes {
       validationMiddleware(AskedReceiveDto, 'body'),
       this.askedController.createAsked,
     );
+    this.router.delete(`${this.path}/:userId/:askedId`, authMiddleware, this.askedController.deleteAsked);
   }
 }
 
