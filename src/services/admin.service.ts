@@ -4,7 +4,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { deleteObject } from '@/utils/multer';
 import { excludeAdminPassword, isEmpty } from '@/utils/util';
-import { Admin, BoardRequest, BoardRequestProcess, PrismaClient, Process, UserSchoolVerify } from '@prisma/client';
+import { Admin, BoardRequest, BoardRequestProcess, PrismaClient, Process, Report, UserSchoolVerify } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import SchoolService from './school.service';
@@ -18,6 +18,7 @@ class AdminService {
   public board = new PrismaClient().board;
   public boardRequest = new PrismaClient().boardRequest;
   public schoolService = new SchoolService();
+  public report = new PrismaClient().report;
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -193,6 +194,22 @@ class AdminService {
   public createCookie(tokenData: TokenData): string {
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
   }
+
+  public getReports = async (status: string): Promise<Array<Report>> => {
+    let process;
+    if (status === 'pending') {
+      process = Process.pending;
+    } else if (status === 'success') {
+      process = Process.success;
+    }
+
+    const requests = await this.report.findMany({
+      where: {
+        process: process,
+      },
+    });
+    return requests;
+  };
 }
 
 export default AdminService;
