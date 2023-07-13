@@ -6,7 +6,6 @@ import { NextFunction, Response } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithAdmin } from '@/interfaces/admin.interface';
 import { DOMAIN } from '@/config';
-import { VerifyRequest } from 'aws-sdk/clients/kms';
 
 class AdminController {
   public adminService = new AdminService();
