@@ -223,6 +223,7 @@ model BoardRequest {
   description String
   detail      String
   userId      String
+  schoolId    String
   process     BoardRequestProcess @default(pending)
   message     String?
 }
