@@ -71,6 +71,18 @@ class BoardController {
     }
   };
 
+  public getComments = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const commentData = await this.boardService.getComments(req.params.articleId, req.query.page as string);
+
+      ResponseWrapper(req, res, {
+        data: commentData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public sendBoardRequest = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
       const boardRequestData = req.body as IBoardRequestQuery;
@@ -97,9 +109,9 @@ class BoardController {
     }
   };
 
-  public postComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public postComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const createdComment = await this.boardService.postComment(req.body, req.params.articleId);
+      const createdComment = await this.boardService.postComment(req.body, req.params.articleId, req.user);
 
       ResponseWrapper(req, res, {
         data: createdComment,
@@ -109,9 +121,9 @@ class BoardController {
     }
   };
 
-  public postReComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public postReComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const createdComment = await this.boardService.postReComment(req.body, req.params.commentId);
+      const createdComment = await this.boardService.postReComment(req.body, req.params.commentId, req.user);
 
       ResponseWrapper(req, res, {
         data: createdComment,

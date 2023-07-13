@@ -1,4 +1,4 @@
-import { Article } from '@prisma/client';
+import { Article, Comment } from '@prisma/client';
 
 export interface IBoardRequestQuery {
   name: string;
@@ -32,4 +32,12 @@ export interface ArticleWithImage extends Article {
 
 export interface Image {
   key: string;
+}
+
+export interface CommentWithUser extends Comment {
+  User: {
+    id: string;
+    name: string;
+  };
+  recomments?: CommentWithUser[];
 }

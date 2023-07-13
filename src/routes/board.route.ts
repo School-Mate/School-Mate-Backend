@@ -25,13 +25,14 @@ class BoardRoute implements Routes {
       this.boardController.getArticles,
     );
     this.router.get(`${this.path}/:boardId/article/:articleId`, authMiddleware, this.boardController.getArticle);
+    this.router.get(`${this.path}/:boardId/article/:articleId/comments`, authMiddleware, this.boardController.getComments);
     this.router.post(`${this.path}/request`, authMiddleware, this.boardController.sendBoardRequest);
     this.router.post(`${this.path}/:boardId`, authMiddleware, validationMiddleware(BoardDto, 'body'), this.boardController.postArticle);
     this.router.post(
       `${this.path}/article/:articleId/comment`,
       authMiddleware,
       validationMiddleware(CommentDto, 'body'),
-      this.boardController.getComment,
+      this.boardController.postComment,
     );
     this.router.post(
       `${this.path}/article/:articleId/comment/:commentId/recomment`,

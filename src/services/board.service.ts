@@ -1,7 +1,7 @@
 import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, PrismaClient, User, Like, LikeTargetType, LikeType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
-import { ArticleWithImage, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
+import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 
 class BoardService {
   public board = new PrismaClient().board;
@@ -287,6 +287,95 @@ class BoardService {
     }
   }
 
+  public async getComments(
+    articleId: string,
+    page: string,
+  ): Promise<{
+    comments: Comment[];
+    totalPage: number;
+  }> {
+    try {
+      const findComments = await this.comment.findMany({
+        where: {
+          articleId: Number(articleId),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          recomments: {
+            include: {
+              User: true,
+            },
+          },
+          User: true,
+        },
+      });
+
+      const findCommentsExcludAnUser: CommentWithUser[] = [];
+
+      for await (const comment of findComments) {
+        const reCommentsExcludAnUser: CommentWithUser[] = [];
+        if (comment.recomments.length != 0) {
+          for await (const reComment of comment.recomments) {
+            if (reComment.isAnonymous) {
+              console.log(reComment);
+              reCommentsExcludAnUser.push({
+                ...reComment,
+                userId: null,
+                User: undefined,
+              });
+            } else {
+              reCommentsExcludAnUser.push({
+                ...reComment,
+                userId: reComment.User.id,
+                User: {
+                  name: reComment.User.name,
+                  id: reComment.User.id,
+                },
+              });
+            }
+          }
+        }
+
+        if (comment.isAnonymous) {
+          findCommentsExcludAnUser.push({
+            ...comment,
+            userId: null,
+            User: undefined,
+            recomments: reCommentsExcludAnUser,
+          });
+        } else {
+          findCommentsExcludAnUser.push({
+            ...comment,
+            User: {
+              name: comment.User.name,
+              id: comment.User.id,
+            },
+            recomments: reCommentsExcludAnUser,
+          });
+        }
+      }
+
+      const findCommentsCount = await this.comment.count({
+        where: {
+          articleId: Number(articleId),
+        },
+      });
+
+      return {
+        comments: findCommentsExcludAnUser,
+        totalPage: Math.ceil(findCommentsCount / 10),
+      };
+    } catch (e) {
+      if (e instanceof HttpException) {
+        throw e;
+      }
+    }
+  }
+
   public async getComment(commentId: string): Promise<Comment> {
     try {
       const findComment = await this.comment.findUnique({
@@ -312,7 +401,7 @@ class BoardService {
     }
   }
 
-  public async postComment(commentData: Comment, articleId: string): Promise<Comment> {
+  public async postComment(commentData: Comment, articleId: string, user: User): Promise<Comment> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
@@ -328,11 +417,13 @@ class BoardService {
         data: {
           ...commentData,
           articleId: Number(articleId),
+          userId: user.id,
         },
       });
 
       return createComment;
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else {
@@ -341,7 +432,7 @@ class BoardService {
     }
   }
 
-  public async postReComment(reCommentData: Comment, commentId: string): Promise<Comment> {
+  public async postReComment(reCommentData: Comment, commentId: string, user: User): Promise<Comment> {
     try {
       const findComment = await this.comment.findUnique({
         where: {
@@ -357,6 +448,8 @@ class BoardService {
         data: {
           ...reCommentData,
           commentId: Number(commentId),
+          articleId: findComment.articleId,
+          userId: user.id,
         },
       });
 
