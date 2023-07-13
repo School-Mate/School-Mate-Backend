@@ -8,6 +8,8 @@ class ReportService {
   public article = new PrismaClient().article;
   public comment = new PrismaClient().comment;
   public report = new PrismaClient().report;
+  public asked = new PrismaClient().asked;
+  public reComment = new PrismaClient().reComment;
 
   public async postReport(user: User, data: ReportDto): Promise<any> {
     try {
@@ -28,6 +30,14 @@ class ReportService {
           });
           if (!findArticle) throw new HttpException(404, '찾을 수 없는 게시글입니다.');
           break;
+        case ReportTargetType.asked:
+          const findAsked = await this.asked.findUnique({
+            where: {
+              id: data.targetId,
+            },
+          });
+          if (!findAsked) throw new HttpException(404, '찾을 수 없는 질문입니다.');
+          break;
         case ReportTargetType.comment:
           const findComment = await this.comment.findUnique({
             where: {
@@ -35,6 +45,14 @@ class ReportService {
             },
           });
           if (!findComment) throw new HttpException(404, '찾을 수 없는 댓글입니다.');
+          break;
+        case ReportTargetType.recomment:
+          const findReComment = await this.reComment.findUnique({
+            where: {
+              id: Number(data.targetId),
+            },
+          });
+          if (!findReComment) throw new HttpException(404, '찾을 수 없는 대댓글입니다.');
           break;
         default:
           throw new HttpException(400, '잘못된 타겟 타입입니다.');

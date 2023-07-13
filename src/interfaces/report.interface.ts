@@ -1,1 +1,1 @@
-export type targetType = 'user' | 'article' | 'comment';
+export type targetType = 'user' | 'article' | 'asked' | 'comment' | 'recomment';
