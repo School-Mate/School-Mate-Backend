@@ -10,9 +10,6 @@ export class BoardDto {
   @IsArray({ message: '이미지를 입력해주세요.' })
   public images: string[];
 
-  @IsString({ message: '유저 아이디를 입력해주세요.' })
-  public userId: string;
-
   @IsBoolean({ message: '익명여부를 선택해주세요.' })
   public isAnonymous: boolean;
 }
