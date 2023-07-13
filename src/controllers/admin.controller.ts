@@ -1,4 +1,4 @@
-import { AdminDto, PostVerifyRequestDto } from '@/dtos/admin.dto';
+import { AdminDto, PostBoardRequestDto, PostVerifyRequestDto } from '@/dtos/admin.dto';
 import AdminService from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin } from '@prisma/client';
@@ -81,6 +81,25 @@ class AdminController {
       const data = req.body as PostVerifyRequestDto;
       const verifyRequest = await this.adminService.postVerifyRequest(data.requestId, data.message, data.process);
       ResponseWrapper(req, res, { data: verifyRequest });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public boardRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const boardRequests = await this.adminService.getBoardRequests(req.params.process);
+      ResponseWrapper(req, res, { data: boardRequests });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public postBoardRequest = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const data = req.body as PostBoardRequestDto;
+      const boardRequest = await this.adminService.postBoardRequest(data.requestId, data.message, data.process);
+      ResponseWrapper(req, res, { data: boardRequest });
     } catch (error) {
       next(error);
     }
