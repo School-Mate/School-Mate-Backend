@@ -53,6 +53,13 @@ class BoardRoute implements Routes {
       authMiddleware,
       this.boardController.disLikeReComment,
     );
+    this.router.delete(`${this.path}/article/:articleId`, authMiddleware, this.boardController.deleteArticle);
+    this.router.delete(`${this.path}/article/:articleId/comment/:commentId`, authMiddleware, this.boardController.deleteComment);
+    this.router.delete(
+      `${this.path}/article/:articleId/comment/:commentId/recomment/:recommentId`,
+      authMiddleware,
+      this.boardController.deleteReComment,
+    );
   }
 }
 
