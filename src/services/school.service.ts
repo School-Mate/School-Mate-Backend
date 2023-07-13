@@ -221,6 +221,7 @@ class SchoolService {
         },
       });
       const findSchool = await this.getSchoolById(verifyData.schoolId);
+
       const createVerifyImage = await this.userSchoolVerify.create({
         data: {
           userId: user.id,
@@ -228,9 +229,10 @@ class SchoolService {
           imageId: findImage.id,
           process: Process.pending,
           schoolId: verifyData.schoolId,
-          schoolName: findSchool.name,
+          schoolName: findSchool.name ? findSchool.name : findSchool.defaultName,
           grade: verifyData.grade,
           class: verifyData.class,
+          dept: verifyData.dept,
         },
       });
 

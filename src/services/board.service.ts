@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, Like, LikeTargetType, LikeType, PrismaClient } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, Like, LikeTargetType, LikeType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 
 class BoardService {
@@ -104,7 +104,7 @@ class BoardService {
     }
   }
 
-  public async postArticle(boardId: string, data: IArticleQuery): Promise<void> {
+  public async postArticle(boardId: string, user: User, data: IArticleQuery): Promise<Article> {
     try {
       const findBoard = await this.board.findUnique({
         where: {
@@ -113,17 +113,19 @@ class BoardService {
       });
       if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
 
-      await this.article.create({
+      const article = await this.article.create({
         data: {
           schoolId: findBoard.schoolId,
           title: data.title,
           content: data.content,
           images: data.images,
           isAnonymous: data.isAnonymous,
-          userId: data.userId,
-          boardId: Number(boardId),
+          userId: user.id,
+          boardId: findBoard.id,
         },
       });
+
+      return article;
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
@@ -148,6 +150,34 @@ class BoardService {
       } else {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
+    }
+  }
+
+  public async getArticles(boardId: string, page: string): Promise<{ articles: Article[]; totalPage: number }> {
+    try {
+      const findArticles = await this.article.findMany({
+        where: {
+          boardId: Number(boardId),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      const findArticlesCount = await this.article.count({
+        where: {
+          boardId: Number(boardId),
+        },
+      });
+
+      return {
+        articles: findArticles,
+        totalPage: Math.ceil(findArticlesCount / 10),
+      };
+    } catch (error) {
+      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
   }
 

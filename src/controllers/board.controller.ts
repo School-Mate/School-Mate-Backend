@@ -32,15 +32,26 @@ class BoardController {
     }
   };
 
-  public postArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public postArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const boardId = req.params.boardId;
       const articleData = req.body as IArticleQuery;
-      await this.boardService.postArticle(boardId, articleData);
+      const article = await this.boardService.postArticle(boardId, req.user, articleData);
 
       ResponseWrapper(req, res, {
-        status: 201,
-        message: '게시글이 성공적으로 작성되었습니다.',
+        data: article,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getArticles = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const articleData = await this.boardService.getArticles(req.params.boardId, req.query.page as string);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
       });
     } catch (error) {
       next(error);
@@ -49,8 +60,7 @@ class BoardController {
 
   public getArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
-      const articleId = req.params.articleId;
-      const articleData = await this.boardService.getArticle(articleId);
+      const articleData = await this.boardService.getArticle(req.params.articleId);
 
       ResponseWrapper(req, res, {
         data: articleData,

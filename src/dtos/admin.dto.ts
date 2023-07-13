@@ -1,4 +1,5 @@
-import { IsString } from 'class-validator';
+import { Process } from '@prisma/client';
+import { IsIn, IsString } from 'class-validator';
 
 export class AdminDto {
   @IsString({ message: '아이디를 입력해주세요.' })
@@ -14,12 +15,13 @@ export class GetVerifyRequestDto {
 }
 
 export class PostVerifyRequestDto {
-  @IsString({ message: '유저 아이디를 입력해주세요.' })
-  public userId: string;
+  @IsString({ message: '인증 요청 아이디를 입력해주세요.' })
+  public requestId: string;
 
   @IsString({ message: '메세지를 입력해주세요.' })
   public message: string;
 
   @IsString({ message: '처리 상태를 입력해주세요.' })
-  public process: string;
+  @IsIn(['pending', 'success', 'deny'], { message: 'pending, success, deny 중 하나를 입력해주세요.' })
+  public process: Process;
 }
