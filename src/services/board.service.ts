@@ -464,6 +464,102 @@ class BoardService {
       }
     }
   };
+
+  public async deleteArticle(articleId: string, userId: string): Promise<any> {
+    try {
+      const findArticle = await this.article.findUnique({
+        where: {
+          id: Number(articleId),
+        },
+      });
+
+      if (!findArticle) {
+        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      }
+
+      if (findArticle.userId !== userId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      await this.article.delete({
+        where: {
+          id: Number(articleId),
+        },
+      });
+
+      return true;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
+  public async deleteComment(commentId: string, userId: string): Promise<any> {
+    try {
+      const findComment = await this.comment.findUnique({
+        where: {
+          id: Number(commentId),
+        },
+      });
+
+      if (!findComment) {
+        throw new HttpException(404, '해당하는 댓글이 없습니다.');
+      }
+
+      if (findComment.userId !== userId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      await this.comment.delete({
+        where: {
+          id: Number(commentId),
+        },
+      });
+
+      return true;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
+  public async deleteReComment(reCommentId: string, userId: string): Promise<any> {
+    try {
+      const findReComment = await this.reComment.findUnique({
+        where: {
+          id: Number(reCommentId),
+        },
+      });
+
+      if (!findReComment) {
+        throw new HttpException(404, '해당하는 대댓글이 없습니다.');
+      }
+
+      if (findReComment.userId !== userId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      await this.reComment.delete({
+        where: {
+          id: Number(reCommentId),
+        },
+      });
+
+      return true;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
 }
 
 export default BoardService;

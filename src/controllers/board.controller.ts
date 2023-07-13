@@ -203,6 +203,48 @@ class BoardController {
       next(error);
     }
   };
+
+  public deleteArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const articleId = req.params.articleId;
+      const userId = req.params.userId;
+      const deleteArticle = await this.boardService.deleteArticle(articleId, userId);
+
+      ResponseWrapper(req, res, {
+        data: deleteArticle,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public deleteComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const commentId = req.params.commentId;
+      const userId = req.params.userId;
+      const deleteComment = await this.boardService.deleteComment(commentId, userId);
+
+      ResponseWrapper(req, res, {
+        data: deleteComment,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public deleteReComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const recommentId = req.params.recommentId;
+      const userId = req.params.userId;
+      const deleteReComment = await this.boardService.deleteReComment(recommentId, userId);
+
+      ResponseWrapper(req, res, {
+        data: deleteReComment,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default BoardController;
