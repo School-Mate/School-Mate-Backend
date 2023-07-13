@@ -269,6 +269,7 @@ model Report {
   reportUserName String
   targetId       String
   targetType     ReportTargetType
+  process        ReportProcess    @default(pending)
   message        String
 }
 
@@ -278,6 +279,11 @@ enum ReportTargetType {
   asked // 에스크
   comment // 댓글
   recomment // 대댓글
+}
+
+enum ReportProcess {
+  pending // 처리대기
+  success // 처리완료
 }
 
 model Like {

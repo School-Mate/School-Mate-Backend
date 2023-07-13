@@ -104,6 +104,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public reportRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const reportRequests = await this.adminService.getReports(req.params.process);
+      ResponseWrapper(req, res, { data: reportRequests });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;
