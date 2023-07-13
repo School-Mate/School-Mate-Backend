@@ -113,6 +113,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public deleteBoardArticle = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const deleteBoardArticle = await this.adminService.deleteBoardArticle(req.params.boardId, req.params.articleId);
+      ResponseWrapper(req, res, { data: deleteBoardArticle });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;

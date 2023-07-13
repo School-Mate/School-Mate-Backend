@@ -19,6 +19,7 @@ class AdminService {
   public boardRequest = new PrismaClient().boardRequest;
   public schoolService = new SchoolService();
   public report = new PrismaClient().report;
+  public article = new PrismaClient().article;
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -209,6 +210,22 @@ class AdminService {
       },
     });
     return requests;
+  };
+
+  public deleteBoardArticle = async (boardId: string, articleId: string): Promise<boolean> => {
+    const findBoard = await this.board.findUnique({ where: { id: Number(boardId) } });
+    if (!findBoard) throw new HttpException(409, '해당 게시판을 찾을 수 없습니다.');
+
+    const findArticle = await this.article.findUnique({ where: { id: Number(articleId) } });
+    if (!findArticle) throw new HttpException(409, '해당 게시글을 찾을 수 없습니다.');
+
+    try {
+      await this.article.delete({ where: { id: Number(articleId) } });
+    } catch (error) {
+      throw error;
+    }
+
+    return true;
   };
 }
 
