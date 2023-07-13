@@ -1,5 +1,5 @@
 import BoardController from '@/controllers/board.controller';
-import { CommentDto } from '@/dtos/comment.dto';
+import { BoardDto, CommentDto } from '@/dtos/board.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import authMiddleware from '@/middlewares/auth.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -19,7 +19,7 @@ class BoardRoute implements Routes {
     this.router.get(`${this.path}/:boardId`, authMiddleware, this.boardController.getBoard);
     this.router.get(`${this.path}/article/:articleId`, authMiddleware, this.boardController.getArticle);
     this.router.post(`${this.path}/request`, authMiddleware, this.boardController.sendBoardRequest);
-    this.router.post(`${this.path}/:boardId`, authMiddleware, this.boardController.postArticle);
+    this.router.post(`${this.path}/:boardId`, authMiddleware, validationMiddleware(BoardDto, 'body'), this.boardController.postArticle);
     this.router.post(
       `${this.path}/article/:articleId/comment`,
       authMiddleware,
@@ -31,6 +31,20 @@ class BoardRoute implements Routes {
       authMiddleware,
       validationMiddleware(CommentDto, 'body'),
       this.boardController.postReComment,
+    );
+    this.router.post(`${this.path}/article/:articleId/like`, authMiddleware, this.boardController.likeArticle);
+    this.router.post(`${this.path}/article/:articleId/disLike`, authMiddleware, this.boardController.disLikeArticle);
+    this.router.post(`${this.path}/article/:articleId/comment/:commentId/like`, authMiddleware, this.boardController.likeComment);
+    this.router.post(`${this.path}/article/:articleId/comment/:commentId/disLike`, authMiddleware, this.boardController.disLikeComment);
+    this.router.post(
+      `${this.path}/article/:articleId/comment/:commentId/recomment/:recommentId/like`,
+      authMiddleware,
+      this.boardController.likeReComment,
+    );
+    this.router.post(
+      `${this.path}/article/:articleId/comment/:commentId/recomment/:recommentId/disLike`,
+      authMiddleware,
+      this.boardController.disLikeReComment,
     );
   }
 }
