@@ -28,7 +28,7 @@ class AuthRoute implements Routes {
     this.router.post(`${this.path}/verify/phone`, validationMiddleware(VerifyPhoneCodeDto, 'body'), this.authController.verifyPhoneCode);
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.verifyPhoneMessage);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
-    this.router.delete(`/image/:id`, authMiddleware, this.authController.deleteImage);
+    this.router.delete(`/image/:imageId`, authMiddleware, this.authController.deleteImage);
   }
 }
 

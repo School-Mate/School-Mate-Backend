@@ -1,11 +1,13 @@
-interface IBoardRequestQuery {
+import { Article } from '@prisma/client';
+
+export interface IBoardRequestQuery {
   name: string;
   description: string;
   detail: string;
   userId: string;
 }
 
-interface IArticleQuery {
+export interface IArticleQuery {
   title: string;
   content: string;
   images: string[];
@@ -13,9 +15,21 @@ interface IArticleQuery {
   isAnonymous: boolean;
 }
 
-interface ICommentQuery {
+export interface ICommentQuery {
   commentId: string;
   userId: string;
   content: string;
   isAnonymous: boolean;
+}
+
+export interface ArticleWithImage extends Article {
+  keyOfImages: string[];
+  User: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface Image {
+  key: string;
 }

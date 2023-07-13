@@ -3,6 +3,7 @@ import ResponseWrapper from '@/utils/responseWarpper';
 import { Response, NextFunction } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithUser } from '@/interfaces/auth.interface';
+import { IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 
 class BoardController {
   public boardService = new BoardService();
@@ -58,9 +59,9 @@ class BoardController {
     }
   };
 
-  public getArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public getArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const articleData = await this.boardService.getArticle(req.params.articleId);
+      const articleData = await this.boardService.getArticle(req.params.boardId, req.params.articleId, req.user);
 
       ResponseWrapper(req, res, {
         data: articleData,

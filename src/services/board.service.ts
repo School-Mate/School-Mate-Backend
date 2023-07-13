@@ -1,6 +1,7 @@
 import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, PrismaClient, User } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
+import { ArticleWithImage, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 
 class BoardService {
   public board = new PrismaClient().board;
@@ -9,6 +10,8 @@ class BoardService {
   public boardRequest = new PrismaClient().boardRequest;
   public comment = new PrismaClient().comment;
   public reComment = new PrismaClient().reComment;
+  public user = new PrismaClient().user;
+  public image = new PrismaClient().image;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -129,19 +132,50 @@ class BoardService {
     }
   }
 
-  public async getArticle(articleId: string): Promise<Article> {
+  public async getArticle(boardId: string, articleId: string, user: User): Promise<ArticleWithImage> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
           id: Number(articleId),
         },
+        include: {
+          Board: true,
+          User: true,
+        },
       });
 
-      if (!findArticle) {
-        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
+
+      if (findArticle.Board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+
+      const keyOfImages: string[] = [];
+
+      for await (const imageId of findArticle.images) {
+        const findImage = await this.image.findUnique({
+          where: {
+            id: imageId,
+          },
+        });
+        if (!findImage) continue;
+        keyOfImages.push(findImage.key);
       }
 
-      return findArticle;
+      if (findArticle.isAnonymous)
+        return {
+          ...findArticle,
+          keyOfImages: keyOfImages,
+          userId: null,
+          User: undefined,
+        } as unknown as ArticleWithImage;
+
+      return {
+        ...findArticle,
+        keyOfImages: keyOfImages,
+        User: {
+          name: findArticle.User.name,
+          id: findArticle.User.id,
+        } as User,
+      } as unknown as ArticleWithImage;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -162,7 +196,39 @@ class BoardService {
         orderBy: {
           createdAt: 'desc',
         },
+        include: {
+          User: true,
+        },
       });
+
+      const articlesWithImage: ArticleWithImage[] = [];
+
+      for await (const article of findArticles) {
+        if (article.images.length == 0) {
+          articlesWithImage.push({
+            ...article,
+            keyOfImages: [],
+          });
+          continue;
+        }
+
+        const ketOfImages: string[] = [];
+
+        for await (const imageId of article.images) {
+          const findImage = await this.image.findUnique({
+            where: {
+              id: imageId,
+            },
+          });
+          if (!findImage) continue;
+          ketOfImages.push(findImage.key);
+        }
+
+        articlesWithImage.push({
+          ...article,
+          keyOfImages: ketOfImages,
+        });
+      }
 
       const findArticlesCount = await this.article.count({
         where: {
@@ -171,7 +237,23 @@ class BoardService {
       });
 
       return {
-        articles: findArticles,
+        articles: articlesWithImage.map(article => {
+          if (article.isAnonymous)
+            return {
+              ...article,
+              userId: null,
+              User: undefined,
+            } as Article;
+          else
+            return {
+              ...article,
+              User: {
+                ...article.User,
+                password: undefined,
+                phone: undefined,
+              },
+            };
+        }),
         totalPage: Math.ceil(findArticlesCount / 10),
       };
     } catch (error) {
