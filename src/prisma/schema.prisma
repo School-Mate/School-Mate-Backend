@@ -32,6 +32,7 @@ model User {
   Comment            Comment[]
   ReComment          ReComment[]
   Article            Article[]
+  Like               Like[]
 }
 
 model SocialLogin {
@@ -224,6 +225,7 @@ model BoardRequest {
   description String
   detail      String
   userId      String
+  schoolId    String
   process     BoardRequestProcess @default(pending)
   message     String?
 }
@@ -273,5 +275,27 @@ model Report {
 enum ReportTargetType {
   user // 유저
   article // 게시글
+  asked // 에스크
   comment // 댓글
+  recomment // 대댓글
+}
+
+model Like {
+  id         String         @id @default(uuid())
+  userId     String
+  targetId   String
+  targetType LikeTargetType
+  likeType   LikeType
+  user       User           @relation(fields: [userId], references: [id])
+}
+
+enum LikeType {
+  like // 좋아요
+  dislike // 싫어요
+}
+
+enum LikeTargetType {
+  article // 게시글
+  comment // 댓글
+  recomment // 대댓글
 }

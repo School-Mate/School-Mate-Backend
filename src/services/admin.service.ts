@@ -4,7 +4,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { deleteObject } from '@/utils/multer';
 import { excludeAdminPassword, isEmpty } from '@/utils/util';
-import { Admin, PrismaClient, Process, UserSchoolVerify } from '@prisma/client';
+import { Admin, BoardRequest, BoardRequestProcess, PrismaClient, Process, UserSchoolVerify } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import SchoolService from './school.service';
@@ -15,6 +15,8 @@ class AdminService {
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
   public userSchool = new PrismaClient().userSchool;
   public users = new PrismaClient().user;
+  public board = new PrismaClient().board;
+  public boardRequest = new PrismaClient().boardRequest;
   public schoolService = new SchoolService();
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
@@ -134,6 +136,47 @@ class AdminService {
         where: { id: updateRequest.userId },
         data: {
           userSchoolId: updateRequest.schoolId,
+        },
+      });
+    }
+  };
+
+  public getBoardRequests = async (status: string): Promise<Array<BoardRequest>> => {
+    let process;
+    if (status === 'pending') {
+      process = BoardRequestProcess.pending;
+    } else if (status === 'success') {
+      process = BoardRequestProcess.success;
+    } else if (status === 'deny') {
+      process = BoardRequestProcess.deny;
+    }
+
+    const requests = await this.boardRequest.findMany({
+      where: {
+        process: process,
+      },
+    });
+    return requests;
+  };
+
+  public postBoardRequest = async (requestId: string, message: string, process: BoardRequestProcess): Promise<void> => {
+    const findRequest = await this.boardRequest.findUnique({ where: { id: requestId } });
+    if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
+
+    const updateRequest = await this.boardRequest.update({
+      where: { id: findRequest.id },
+      data: {
+        message: message,
+        process: process,
+      },
+    });
+
+    if (process === BoardRequestProcess.success) {
+      await this.board.create({
+        data: {
+          name: updateRequest.name,
+          description: updateRequest.description,
+          schoolId: updateRequest.schoolId,
         },
       });
     }

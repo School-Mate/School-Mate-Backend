@@ -220,6 +220,33 @@ class AskedService {
 
     return updatedAsked;
   };
+
+  public deleteAsked = async (user: User, askedId: string): Promise<any> => {
+    try {
+      const findAskedInfo = await this.asked.findFirst({
+        where: {
+          id: askedId,
+        },
+      });
+
+      if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 질문입니다.');
+      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '삭제할 권한이 없습니다.');
+
+      const deletedAsked = await this.asked.delete({
+        where: {
+          id: askedId,
+        },
+      });
+
+      return deletedAsked;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
 }
 
 export default AskedService;

@@ -76,6 +76,17 @@ class AskedController {
       next(error);
     }
   };
+
+  public deleteAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const askedId = req.params.askedId;
+      const askedData = await this.askedService.deleteAsked(req.user, askedId);
+
+      ResponseWrapper(req, res, { data: askedData });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AskedController;
