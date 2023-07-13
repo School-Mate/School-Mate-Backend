@@ -182,6 +182,15 @@ class BoardService {
   }
 
   public async sendBoardRequest(data: IBoardRequestQuery): Promise<void> {
+    const userData = await this.user.findUnique({
+      where: {
+        id: data.userId,
+      },
+      include: {
+        UserSchool: true,
+      },
+    });
+
     try {
       await this.boardRequest.create({
         data: {
@@ -189,6 +198,7 @@ class BoardService {
           description: data.description,
           detail: data.detail,
           userId: data.userId,
+          schoolId: userData.UserSchool.schoolId,
         },
       });
     } catch (error) {
