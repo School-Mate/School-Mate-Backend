@@ -31,6 +31,7 @@ model User {
   Asked              Asked[]
   Comment            Comment[]
   ReComment          ReComment[]
+  Like               Like[]
 }
 
 model SocialLogin {
@@ -260,7 +261,7 @@ model ReComment {
 }
 
 model Report {
-  id             String @id @default(uuid())
+  id             String           @id @default(uuid())
   reportUserId   String
   reportUserName String
   targetId       String
@@ -272,4 +273,24 @@ enum ReportTargetType {
   user // 유저
   article // 게시글
   comment // 댓글
+}
+
+model Like {
+  id         String         @id @default(uuid())
+  userId     String
+  targetId   String
+  targetType LikeTargetType
+  likeType   LikeType
+  user       User           @relation(fields: [userId], references: [id])
+}
+
+enum LikeType {
+  like // 좋아요
+  dislike // 싫어요
+}
+
+enum LikeTargetType {
+  article // 게시글
+  comment // 댓글
+  recomment // 대댓글
 }

@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, PrismaClient, User } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, Like, LikeTargetType, LikeType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 
 class BoardService {
@@ -9,6 +9,8 @@ class BoardService {
   public boardRequest = new PrismaClient().boardRequest;
   public comment = new PrismaClient().comment;
   public reComment = new PrismaClient().reComment;
+  public user = new PrismaClient().user;
+  public like = new PrismaClient().like;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -276,6 +278,192 @@ class BoardService {
       }
     }
   }
+
+  public async likeArticle(articleId: string, userId: string): Promise<any> {
+    try {
+      const findArticle = await this.article.findUnique({
+        where: {
+          id: Number(articleId),
+        },
+      });
+
+      if (!findArticle) {
+        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      }
+
+      const createArticleLike = await this.like.create({
+        data: {
+          userId: userId,
+          targetId: articleId,
+          targetType: LikeTargetType.article,
+          likeType: LikeType.like,
+        },
+      });
+
+      return createArticleLike;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public disLikeArticle = async (articleId: string, userId: string): Promise<any> => {
+    try {
+      const findArticle = await this.article.findUnique({
+        where: {
+          id: Number(articleId),
+        },
+      });
+
+      if (!findArticle) {
+        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      }
+
+      const createArticledisLike = await this.like.create({
+        data: {
+          userId: userId,
+          targetId: articleId,
+          targetType: LikeTargetType.article,
+          likeType: LikeType.dislike,
+        },
+      });
+
+      return createArticledisLike;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  public likeComment = async (commentId: string, userId: string): Promise<any> => {
+    try {
+      const findComment = await this.comment.findUnique({
+        where: {
+          id: Number(commentId),
+        },
+      });
+
+      if (!findComment) {
+        throw new HttpException(404, '해당하는 댓글이 없습니다.');
+      }
+
+      const createCommentLike = await this.like.create({
+        data: {
+          userId: userId,
+          targetId: commentId,
+          targetType: LikeTargetType.comment,
+          likeType: LikeType.like,
+        },
+      });
+
+      return createCommentLike;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  public disLikeComment = async (commentId: string, userId: string): Promise<any> => {
+    try {
+      const findComment = await this.comment.findUnique({
+        where: {
+          id: Number(commentId),
+        },
+      });
+
+      if (!findComment) {
+        throw new HttpException(404, '해당하는 댓글이 없습니다.');
+      }
+
+      const createCommentdisLike = await this.like.create({
+        data: {
+          userId: userId,
+          targetId: commentId,
+          targetType: LikeTargetType.comment,
+          likeType: LikeType.dislike,
+        },
+      });
+
+      return createCommentdisLike;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  public likeReComment = async (reCommentId: string, userId: string): Promise<any> => {
+    try {
+      const findReComment = await this.reComment.findUnique({
+        where: {
+          id: Number(reCommentId),
+        },
+      });
+
+      if (!findReComment) {
+        throw new HttpException(404, '해당하는 대댓글이 없습니다.');
+      }
+
+      const createReCommentLike = await this.like.create({
+        data: {
+          userId: userId,
+          targetId: reCommentId,
+          targetType: LikeTargetType.recomment,
+          likeType: LikeType.like,
+        },
+      });
+
+      return createReCommentLike;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  public disLikeReComment = async (reCommentId: string, userId: string): Promise<any> => {
+    try {
+      const findReComment = await this.reComment.findUnique({
+        where: {
+          id: Number(reCommentId),
+        },
+      });
+
+      if (!findReComment) {
+        throw new HttpException(404, '해당하는 대댓글이 없습니다.');
+      }
+
+      const createReCommentdisLike = await this.like.create({
+        data: {
+          userId: userId,
+          targetId: reCommentId,
+          targetType: LikeTargetType.recomment,
+          likeType: LikeType.dislike,
+        },
+      });
+
+      return createReCommentdisLike;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
 }
 
 export default BoardService;
