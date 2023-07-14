@@ -163,7 +163,7 @@ model Asked {
 
 enum Process {
   pending // 대기
-  deny // 거절
+  denied // 거절
   success // 수락
 }
 
@@ -232,7 +232,7 @@ model BoardRequest {
 
 enum BoardRequestProcess {
   pending // 심사대기
-  deny // 심사거절
+  denied // 심사거절
   success // 심사수락
 }
 

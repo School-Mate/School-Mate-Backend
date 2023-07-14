@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, PrismaClient, User, Like, LikeTargetType, LikeType } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 
