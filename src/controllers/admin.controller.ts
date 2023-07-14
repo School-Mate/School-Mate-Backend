@@ -131,6 +131,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public getUserInfo = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const getUserInfo = await this.adminService.getUserInfo(req.params.userId);
+      ResponseWrapper(req, res, { data: getUserInfo });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;
