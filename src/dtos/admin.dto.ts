@@ -46,6 +46,9 @@ export class PostBoardRequestDto {
 export class GetReportRequestDto {
   @IsString({ message: '처리 상태를 입력해주세요.' })
   public process: string;
+
+  @IsString({ message: '신고 타입을 입력해주세요.' })
+  public targetType: string;
 }
 
 export class PostReportRequestDto {

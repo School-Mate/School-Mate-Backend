@@ -37,7 +37,7 @@ class AdminRoute implements Routes {
     );
     this.router.get(`${this.path}/board`, adminMiddleware, validationMiddleware(GetBoardRequestDto, 'query'), this.adminController.boardRequests);
     this.router.post(`${this.path}/board`, adminMiddleware, validationMiddleware(PostBoardRequestDto, 'body'), this.adminController.postBoardRequest);
-    this.router.get(`${this.path}/report`, adminMiddleware, validationMiddleware(GetReportRequestDto, 'query'), this.adminController.reportRequests);
+    this.router.get(`${this.path}/report`, adminMiddleware, validationMiddleware(GetReportRequestDto, 'query'), this.adminController.reports);
     this.router.post(`${this.path}/report`, adminMiddleware, validationMiddleware(CompleteReportDto, 'query'), this.adminController.completeReport);
     this.router.delete(`${this.path}/board/:boardId/article/:articleId`, adminMiddleware, this.adminController.deleteBoardArticle);
   }

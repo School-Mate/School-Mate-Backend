@@ -1,7 +1,7 @@
 import { AdminDto, PostBoardRequestDto, PostVerifyRequestDto } from '@/dtos/admin.dto';
 import AdminService from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
-import { Admin } from '@prisma/client';
+import { Admin, ReportTargetType } from '@prisma/client';
 import { NextFunction, Response } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithAdmin } from '@/interfaces/admin.interface';
@@ -105,10 +105,10 @@ class AdminController {
     }
   };
 
-  public reportRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+  public reports = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const reportRequests = await this.adminService.getReports(req.params.process);
-      ResponseWrapper(req, res, { data: reportRequests });
+      const reports = await this.adminService.getReports(req.params.process, req.params.targetType as ReportTargetType);
+      ResponseWrapper(req, res, { data: reports });
     } catch (error) {
       next(error);
     }
