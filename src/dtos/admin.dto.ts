@@ -60,3 +60,8 @@ export class PostReportRequestDto {
   public process: Process;
 }
 // #TODO: 이후에도 요청 DTO 변경 없으면 하나로 병합
+
+export class CompleteReportDto {
+  @IsString({ message: '신고ID를 입력해주세요.' })
+  public reportId: string;
+}
