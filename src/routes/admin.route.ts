@@ -1,13 +1,5 @@
 import AdminController from '@/controllers/admin.controller';
-import {
-  AdminDto,
-  CompleteReportDto,
-  GetBoardRequestDto,
-  GetReportRequestDto,
-  GetVerifyRequestDto,
-  PostBoardRequestDto,
-  PostVerifyRequestDto,
-} from '@/dtos/admin.dto';
+import { AdminDto, CompleteReportDto, GetBoardRequestDto, GetReportRequestDto, GetVerifyRequestDto, AdminRequestDto } from '@/dtos/admin.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import adminMiddleware from '@/middlewares/admin.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -29,14 +21,9 @@ class AdminRoute implements Routes {
     this.router.get(`${this.path}/logout`, adminMiddleware, this.adminController.logOut);
     this.router.delete(`${this.path}/image/:id`, adminMiddleware, this.adminController.deleteImage);
     this.router.get(`${this.path}/verify`, adminMiddleware, validationMiddleware(GetVerifyRequestDto, 'query'), this.adminController.verifyRequests);
-    this.router.post(
-      `${this.path}/verify`,
-      adminMiddleware,
-      validationMiddleware(PostVerifyRequestDto, 'body'),
-      this.adminController.postVerifyRequest,
-    );
+    this.router.post(`${this.path}/verify`, adminMiddleware, validationMiddleware(AdminRequestDto, 'body'), this.adminController.postVerifyRequest);
     this.router.get(`${this.path}/board`, adminMiddleware, validationMiddleware(GetBoardRequestDto, 'query'), this.adminController.boardRequests);
-    this.router.post(`${this.path}/board`, adminMiddleware, validationMiddleware(PostBoardRequestDto, 'body'), this.adminController.postBoardRequest);
+    this.router.post(`${this.path}/board`, adminMiddleware, validationMiddleware(AdminRequestDto, 'body'), this.adminController.postBoardRequest);
     this.router.get(`${this.path}/report`, adminMiddleware, validationMiddleware(GetReportRequestDto, 'query'), this.adminController.reports);
     this.router.post(`${this.path}/report`, adminMiddleware, validationMiddleware(CompleteReportDto, 'query'), this.adminController.completeReport);
     this.router.delete(`${this.path}/board/:boardId/article/:articleId`, adminMiddleware, this.adminController.deleteBoardArticle);
