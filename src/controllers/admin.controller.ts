@@ -122,6 +122,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public completeReport = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const completeReport = await this.adminService.completeReport(req.params.reportId);
+      ResponseWrapper(req, res, { data: completeReport });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;

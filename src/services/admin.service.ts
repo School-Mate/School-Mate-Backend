@@ -212,6 +212,19 @@ class AdminService {
     return requests;
   };
 
+  public completeReport = async (reportId: string): Promise<Report> => {
+    const findReport = await this.report.findUnique({ where: { id: reportId } });
+    if (!findReport) throw new HttpException(409, '해당 신고를 찾을 수 없습니다.');
+
+    const updateReport = await this.report.update({
+      where: { id: findReport.id },
+      data: {
+        process: Process.success,
+      },
+    });
+    return updateReport;
+  };
+
   public deleteBoardArticle = async (boardId: string, articleId: string): Promise<boolean> => {
     const findBoard = await this.board.findUnique({ where: { id: Number(boardId) } });
     if (!findBoard) throw new HttpException(409, '해당 게시판을 찾을 수 없습니다.');
