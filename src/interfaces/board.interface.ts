@@ -24,6 +24,7 @@ export interface ICommentQuery {
 
 export interface ArticleWithImage extends Article {
   keyOfImages: string[];
+  commentCounts: number;
   User: {
     id: string;
     name: string;
@@ -37,7 +38,7 @@ export interface Image {
 export interface CommentWithUser extends Comment {
   User: {
     id: string;
-    name: string;
+    name?: string;
   };
   recomments?: CommentWithUser[];
 }

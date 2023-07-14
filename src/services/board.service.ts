@@ -151,6 +151,22 @@ class BoardService {
 
       const keyOfImages: string[] = [];
 
+      const likeCounts = await this.like.count({
+        where: {
+          targetId: articleId,
+          targetType: LikeTargetType.article,
+          likeType: LikeType.like,
+        },
+      });
+
+      const disLikeCounts = await this.like.count({
+        where: {
+          targetId: articleId,
+          targetType: LikeTargetType.article,
+          likeType: LikeType.dislike,
+        },
+      });
+
       for await (const imageId of findArticle.images) {
         const findImage = await this.image.findUnique({
           where: {
@@ -167,11 +183,15 @@ class BoardService {
           keyOfImages: keyOfImages,
           userId: null,
           User: undefined,
+          likeCounts: likeCounts,
+          disLikeCounts: disLikeCounts,
         } as unknown as ArticleWithImage;
 
       return {
         ...findArticle,
         keyOfImages: keyOfImages,
+        likeCounts: likeCounts,
+        disLikeCounts: disLikeCounts,
         User: {
           name: findArticle.User.name,
           id: findArticle.User.id,
@@ -205,10 +225,22 @@ class BoardService {
       const articlesWithImage: ArticleWithImage[] = [];
 
       for await (const article of findArticles) {
+        const commentCounts = await this.comment.count({
+          where: {
+            articleId: article.id,
+          },
+        });
+        const reCommentCounts = await this.reComment.count({
+          where: {
+            articleId: article.id,
+          },
+        });
+
         if (article.images.length == 0) {
           articlesWithImage.push({
             ...article,
             keyOfImages: [],
+            commentCounts: reCommentCounts + commentCounts,
           });
           continue;
         }
@@ -227,6 +259,7 @@ class BoardService {
 
         articlesWithImage.push({
           ...article,
+          commentCounts: commentCounts + reCommentCounts,
           keyOfImages: ketOfImages,
         });
       }
@@ -321,20 +354,31 @@ class BoardService {
         if (comment.recomments.length != 0) {
           for await (const reComment of comment.recomments) {
             if (reComment.isAnonymous) {
-              console.log(reComment);
               reCommentsExcludAnUser.push({
                 ...reComment,
-                userId: null,
-                User: undefined,
+                content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                userId: reComment.userId,
+                User: reComment.isDeleted
+                  ? {
+                      name: '(삭제됨)',
+                      id: null,
+                    }
+                  : undefined,
               });
             } else {
               reCommentsExcludAnUser.push({
                 ...reComment,
-                userId: reComment.User.id,
-                User: {
-                  name: reComment.User.name,
-                  id: reComment.User.id,
-                },
+                content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                userId: reComment.isDeleted ? undefined : reComment.User.id,
+                User: reComment.isDeleted
+                  ? {
+                      name: '(삭제됨)',
+                      id: null,
+                    }
+                  : {
+                      name: reComment.User.name,
+                      id: reComment.User.id,
+                    },
               });
             }
           }
@@ -343,18 +387,38 @@ class BoardService {
         if (comment.isAnonymous) {
           findCommentsExcludAnUser.push({
             ...comment,
-            userId: null,
-            User: undefined,
-            recomments: reCommentsExcludAnUser,
+            content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
+            userId: comment.userId,
+            User: comment.isDeleted
+              ? {
+                  name: '(삭제됨)',
+                  id: null,
+                }
+              : undefined,
+            recomments: reCommentsExcludAnUser.sort((a, b) => {
+              if (a.createdAt > b.createdAt) return 1;
+              else if (a.createdAt < b.createdAt) return -1;
+              else return 0;
+            }),
           });
         } else {
           findCommentsExcludAnUser.push({
             ...comment,
-            User: {
-              name: comment.User.name,
-              id: comment.User.id,
-            },
-            recomments: reCommentsExcludAnUser,
+            content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
+            User: comment.isDeleted
+              ? {
+                  name: '(삭제됨)',
+                  id: null,
+                }
+              : {
+                  name: comment.User.name,
+                  id: comment.User.id,
+                },
+            recomments: reCommentsExcludAnUser.sort((a, b) => {
+              if (a.createdAt > b.createdAt) return 1;
+              else if (a.createdAt < b.createdAt) return -1;
+              else return 0;
+            }),
           });
         }
       }
@@ -366,7 +430,11 @@ class BoardService {
       });
 
       return {
-        comments: findCommentsExcludAnUser,
+        comments: findCommentsExcludAnUser.sort((a, b) => {
+          if (a.createdAt > b.createdAt) return 1;
+          else if (a.createdAt < b.createdAt) return -1;
+          else return 0;
+        }),
         totalPage: Math.ceil(findCommentsCount / 10),
       };
     } catch (e) {
@@ -474,17 +542,47 @@ class BoardService {
       if (!findArticle) {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
-
-      const createArticleLike = await this.like.create({
-        data: {
+      const ArticleLike = await this.like.findFirst({
+        where: {
           userId: userId,
           targetId: articleId,
           targetType: LikeTargetType.article,
-          likeType: LikeType.like,
         },
       });
 
-      return createArticleLike;
+      if (!ArticleLike) {
+        const createArticleLike = await this.like.create({
+          data: {
+            userId: userId,
+            targetId: articleId,
+            targetType: LikeTargetType.article,
+            likeType: LikeType.like,
+          },
+        });
+
+        return createArticleLike;
+      }
+
+      if (ArticleLike.likeType === LikeType.like) {
+        const updateArticleLike = await this.like.delete({
+          where: {
+            id: ArticleLike.id,
+          },
+        });
+
+        return null;
+      } else {
+        const updateArticleLike = await this.like.update({
+          where: {
+            id: ArticleLike.id,
+          },
+          data: {
+            likeType: LikeType.like,
+          },
+        });
+
+        return updateArticleLike;
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -506,16 +604,47 @@ class BoardService {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
 
-      const createArticledisLike = await this.like.create({
-        data: {
+      const ArticleLike = await this.like.findFirst({
+        where: {
           userId: userId,
           targetId: articleId,
           targetType: LikeTargetType.article,
-          likeType: LikeType.dislike,
         },
       });
 
-      return createArticledisLike;
+      if (!ArticleLike) {
+        const createArticleLike = await this.like.create({
+          data: {
+            userId: userId,
+            targetId: articleId,
+            targetType: LikeTargetType.article,
+            likeType: LikeType.dislike,
+          },
+        });
+
+        return createArticleLike;
+      }
+
+      if (ArticleLike.likeType === LikeType.dislike) {
+        const updateArticleLike = await this.like.delete({
+          where: {
+            id: ArticleLike.id,
+          },
+        });
+
+        return null;
+      } else {
+        const updateArticleLike = await this.like.update({
+          where: {
+            id: ArticleLike.id,
+          },
+          data: {
+            likeType: LikeType.dislike,
+          },
+        });
+
+        return updateArticleLike;
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -697,9 +826,12 @@ class BoardService {
         throw new HttpException(403, '권한이 없습니다.');
       }
 
-      await this.comment.delete({
+      await this.comment.update({
         where: {
           id: Number(commentId),
+        },
+        data: {
+          isDeleted: true,
         },
       });
 
@@ -729,9 +861,12 @@ class BoardService {
         throw new HttpException(403, '권한이 없습니다.');
       }
 
-      await this.reComment.delete({
+      await this.reComment.update({
         where: {
           id: Number(reCommentId),
+        },
+        data: {
+          isDeleted: true,
         },
       });
 

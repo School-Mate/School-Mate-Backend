@@ -242,6 +242,7 @@ model Comment {
   userId      String
   content     String
   isAnonymous Boolean
+  isDeleted   Boolean     @default(false)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   Article     Article     @relation(fields: [articleId], references: [id])
@@ -250,17 +251,18 @@ model Comment {
 }
 
 model ReComment {
-  id          Int      @id @default(autoincrement())
+  id          Int     @id @default(autoincrement())
   articleId   Int
   userId      String
   content     String
   isAnonymous Boolean
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  Article     Article  @relation(fields: [articleId], references: [id])
-  User        User     @relation(fields: [userId], references: [id])
-  Comment     Comment? @relation(fields: [commentId], references: [id])
-  commentId   Int?
+  isDeleted   Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Article   Article  @relation(fields: [articleId], references: [id])
+  User      User     @relation(fields: [userId], references: [id])
+  Comment   Comment? @relation(fields: [commentId], references: [id])
+  commentId Int?
 }
 
 model Report {
