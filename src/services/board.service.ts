@@ -3,6 +3,7 @@ import { Article, Board, Comment, PrismaClient, User, Like, LikeTargetType, Like
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 import { deleteObject } from '@/utils/multer';
+import { logger } from '@/utils/logger';
 
 class BoardService {
   public board = new PrismaClient().board;
@@ -234,7 +235,7 @@ class BoardService {
         }
       });
     } catch (error) {
-      console.log(error);
+      logger.error(error);
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
   }
