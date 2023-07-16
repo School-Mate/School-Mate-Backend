@@ -33,6 +33,19 @@ class BoardController {
     }
   };
 
+  public getSuggestArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const suggestArticles = await this.boardService.getSuggestArticles(user);
+
+      ResponseWrapper(req, res, {
+        data: suggestArticles,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public postArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const boardId = req.params.boardId;

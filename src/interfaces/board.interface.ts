@@ -25,6 +25,8 @@ export interface ICommentQuery {
 export interface ArticleWithImage extends Article {
   keyOfImages: string[];
   commentCounts: number;
+  likeCounts?: number;
+  dislikeCounts?: number;
   User: {
     id: string;
     name: string;

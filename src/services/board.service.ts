@@ -116,6 +116,129 @@ class BoardService {
     }
   }
 
+  public async getSuggestArticles(user: User): Promise<ArticleWithImage[]> {
+    try {
+      const findArticle = await this.article.findMany({
+        where: {
+          schoolId: user.userSchoolId,
+        },
+        take: 100,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          User: true,
+          Board: true,
+        },
+      });
+
+      if (findArticle.length === 0) {
+        return [];
+      }
+
+      let articlesWithLikes: ArticleWithImage[] = [];
+
+      for await (const article of findArticle) {
+        const likeCounts = await this.like.count({
+          where: {
+            targetId: article.id.toString(),
+            targetType: LikeTargetType.article,
+            likeType: LikeType.like,
+          },
+        });
+
+        const disLikeCounts = await this.like.count({
+          where: {
+            targetId: article.id.toString(),
+            targetType: LikeTargetType.article,
+            likeType: LikeType.dislike,
+          },
+        });
+
+        articlesWithLikes.push({
+          ...article,
+          likeCounts: likeCounts,
+          disLikeCounts: disLikeCounts,
+        } as unknown as ArticleWithImage);
+      }
+
+      articlesWithLikes.sort((a, b) => {
+        if (a.likeCounts > b.likeCounts) return -1;
+        else if (a.likeCounts < b.likeCounts) return 1;
+        else return 0;
+      });
+      articlesWithLikes = articlesWithLikes.slice(0, 6);
+
+      const articlesWithComments: ArticleWithImage[] = [];
+
+      for await (const article of articlesWithLikes) {
+        const commentCounts = await this.comment.count({
+          where: {
+            articleId: article.id,
+          },
+        });
+        const reCommentCounts = await this.reComment.count({
+          where: {
+            articleId: article.id,
+          },
+        });
+
+        articlesWithComments.push({
+          ...article,
+          commentCounts: commentCounts + reCommentCounts,
+        } as unknown as ArticleWithImage);
+      }
+
+      const articlesWithImage: ArticleWithImage[] = [];
+
+      for await (const article of articlesWithComments) {
+        const keyOfImages: string[] = [];
+        if (article.images.length == 0) {
+          articlesWithImage.push({
+            ...article,
+            keyOfImages: [],
+          });
+          continue;
+        }
+
+        for await (const imageId of article.images) {
+          const findImage = await this.image.findUnique({
+            where: {
+              id: imageId,
+            },
+          });
+          if (!findImage) continue;
+          keyOfImages.push(findImage.key);
+        }
+
+        articlesWithImage.push({
+          ...article,
+          keyOfImages: keyOfImages,
+        });
+      }
+
+      return articlesWithImage.map(article => {
+        if (article.isAnonymous) {
+          return {
+            ...article,
+            User: undefined,
+          };
+        } else {
+          return {
+            ...article,
+            User: {
+              name: article.User.name,
+              id: article.User.id,
+            },
+          };
+        }
+      });
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
+
   public async postArticle(boardId: string, user: User, data: IArticleQuery): Promise<Article> {
     try {
       const findBoard = await this.board.findUnique({
@@ -244,12 +367,20 @@ class BoardService {
             articleId: article.id,
           },
         });
+        const likeCounts = await this.like.count({
+          where: {
+            targetId: article.id.toString(),
+            targetType: LikeTargetType.article,
+            likeType: LikeType.like,
+          },
+        });
 
         if (article.images.length == 0) {
           articlesWithImage.push({
             ...article,
             keyOfImages: [],
             commentCounts: reCommentCounts + commentCounts,
+            likeCounts: likeCounts,
           });
           continue;
         }
@@ -270,6 +401,7 @@ class BoardService {
           ...article,
           commentCounts: commentCounts + reCommentCounts,
           keyOfImages: ketOfImages,
+          likeCounts: likeCounts,
         });
       }
 

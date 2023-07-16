@@ -103,6 +103,7 @@ model School {
   y           Float
   kndsc       String
   UserSchool  UserSchool[]
+  Article     Article[]
 }
 
 model BusStation {
@@ -215,6 +216,7 @@ model Article {
   createdAt   DateTime    @default(now())
   Board       Board       @relation(fields: [boardId], references: [id])
   boardId     Int
+  school      School      @relation(fields: [schoolId], references: [schoolId])
   Comment     Comment[]
   ReComment   ReComment[]
   User        User        @relation(fields: [userId], references: [id])
@@ -293,7 +295,7 @@ enum ReportProcess {
 model Like {
   id         String         @id @default(uuid())
   userId     String
-  targetId   String
+  targetId   Int
   targetType LikeTargetType
   likeType   LikeType
   user       User           @relation(fields: [userId], references: [id])
