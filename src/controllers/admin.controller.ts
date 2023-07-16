@@ -1,7 +1,7 @@
-import { AdminDto, PostBoardRequestDto, PostVerifyRequestDto } from '@/dtos/admin.dto';
+import { AdminDto, AdminRequestDto } from '@/dtos/admin.dto';
 import AdminService from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
-import { Admin } from '@prisma/client';
+import { Admin, ReportTargetType } from '@prisma/client';
 import { NextFunction, Response } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithAdmin } from '@/interfaces/admin.interface';
@@ -78,7 +78,7 @@ class AdminController {
 
   public postVerifyRequest = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = req.body as PostVerifyRequestDto;
+      const data = req.body as AdminRequestDto;
       const verifyRequest = await this.adminService.postVerifyRequest(data.requestId, data.message, data.process);
       ResponseWrapper(req, res, { data: verifyRequest });
     } catch (error) {
@@ -97,7 +97,7 @@ class AdminController {
 
   public postBoardRequest = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = req.body as PostBoardRequestDto;
+      const data = req.body as AdminRequestDto;
       const boardRequest = await this.adminService.postBoardRequest(data.requestId, data.message, data.process);
       ResponseWrapper(req, res, { data: boardRequest });
     } catch (error) {
@@ -105,10 +105,10 @@ class AdminController {
     }
   };
 
-  public reportRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+  public reports = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const reportRequests = await this.adminService.getReports(req.params.process);
-      ResponseWrapper(req, res, { data: reportRequests });
+      const reports = await this.adminService.getReports(req.params.process, req.params.targetType as ReportTargetType);
+      ResponseWrapper(req, res, { data: reports });
     } catch (error) {
       next(error);
     }
@@ -127,6 +127,15 @@ class AdminController {
     try {
       const completeReport = await this.adminService.completeReport(req.params.reportId);
       ResponseWrapper(req, res, { data: completeReport });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getUserInfo = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const getUserInfo = await this.adminService.getUserInfo(req.params.userId);
+      ResponseWrapper(req, res, { data: getUserInfo });
     } catch (error) {
       next(error);
     }

@@ -14,6 +14,7 @@ class BoardService {
   public user = new PrismaClient().user;
   public image = new PrismaClient().image;
   public like = new PrismaClient().like;
+  public school = new PrismaClient().school;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -305,6 +306,12 @@ class BoardService {
       },
     });
 
+    const schoolInfo = await this.school.findUnique({
+      where: {
+        schoolId: userData.UserSchool.schoolId,
+      },
+    });
+
     try {
       await this.boardRequest.create({
         data: {
@@ -313,6 +320,7 @@ class BoardService {
           detail: data.detail,
           userId: data.userId,
           schoolId: userData.UserSchool.schoolId,
+          schoolName: schoolInfo.name,
         },
       });
     } catch (error) {

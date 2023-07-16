@@ -14,7 +14,7 @@ export class GetVerifyRequestDto {
   public process: string;
 }
 
-export class PostVerifyRequestDto {
+export class AdminRequestDto {
   @IsString({ message: '인증 요청 아이디를 입력해주세요.' })
   public requestId: string;
 
@@ -31,35 +31,13 @@ export class GetBoardRequestDto {
   public process: string;
 }
 
-export class PostBoardRequestDto {
-  @IsString({ message: '인증 요청 아이디를 입력해주세요.' })
-  public requestId: string;
-
-  @IsString({ message: '메세지를 입력해주세요.' })
-  public message: string;
-
-  @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'success', 'deny'], { message: 'pending, success, deny 중 하나를 입력해주세요.' })
-  public process: Process;
-}
-
 export class GetReportRequestDto {
   @IsString({ message: '처리 상태를 입력해주세요.' })
   public process: string;
+
+  @IsString({ message: '신고 타입을 입력해주세요.' })
+  public targetType: string;
 }
-
-export class PostReportRequestDto {
-  @IsString({ message: '인증 요청 아이디를 입력해주세요.' })
-  public requestId: string;
-
-  @IsString({ message: '메세지를 입력해주세요.' })
-  public message: string;
-
-  @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'success', 'deny'], { message: 'pending, success, deny 중 하나를 입력해주세요.' })
-  public process: Process;
-}
-// #TODO: 이후에도 요청 DTO 변경 없으면 하나로 병합
 
 export class CompleteReportDto {
   @IsString({ message: '신고ID를 입력해주세요.' })
