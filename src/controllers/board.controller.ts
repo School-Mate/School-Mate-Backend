@@ -217,11 +217,11 @@ class BoardController {
     }
   };
 
-  public deleteArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public deleteArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const articleId = req.params.articleId;
-      const userId = req.params.userId;
-      const deleteArticle = await this.boardService.deleteArticle(articleId, userId);
+      const user = req.user;
+      const deleteArticle = await this.boardService.deleteArticle(articleId, user.id);
 
       ResponseWrapper(req, res, {
         data: deleteArticle,

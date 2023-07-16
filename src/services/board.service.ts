@@ -2,6 +2,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, PrismaClient, User, Like, LikeTargetType, LikeType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
+import { deleteObject } from '@/utils/multer';
 
 class BoardService {
   public board = new PrismaClient().board;
@@ -181,7 +182,6 @@ class BoardService {
         return {
           ...findArticle,
           keyOfImages: keyOfImages,
-          userId: null,
           User: undefined,
           likeCounts: likeCounts,
           disLikeCounts: disLikeCounts,
@@ -793,6 +793,44 @@ class BoardService {
       if (findArticle.userId !== userId) {
         throw new HttpException(403, '권한이 없습니다.');
       }
+
+      const images = findArticle.images;
+
+      if (images.length !== 0) {
+        for await (const imageId of images) {
+          const image = await this.image.findUnique({
+            where: {
+              id: imageId,
+            },
+          });
+          await deleteObject(image.key);
+
+          await this.image.delete({
+            where: {
+              id: imageId,
+            },
+          });
+        }
+      }
+
+      await this.comment.deleteMany({
+        where: {
+          articleId: Number(articleId),
+        },
+      });
+
+      await this.reComment.deleteMany({
+        where: {
+          articleId: Number(articleId),
+        },
+      });
+
+      await this.like.deleteMany({
+        where: {
+          targetId: articleId,
+          targetType: LikeTargetType.article,
+        },
+      });
 
       await this.article.delete({
         where: {
