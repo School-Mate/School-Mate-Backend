@@ -214,7 +214,7 @@ class AdminService {
   };
 
   public completeReport = async (reportId: string): Promise<Report> => {
-    const findReport = await this.report.findUnique({ where: { id: reportId } });
+    const findReport = await this.report.findFirst({ where: { id: reportId } });
     if (!findReport) throw new HttpException(409, '해당 신고를 찾을 수 없습니다.');
 
     const updateReport = await this.report.update({
