@@ -19,7 +19,7 @@ import { excludeUserPassword, isEmpty } from '@utils/util';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
-import { CreateUserDto, LoginUserDto } from '@/dtos/users.dto';
+import { CreateUserDto, LoginUserDto, UpdateProfileDto } from '@/dtos/users.dto';
 import bcrypt from 'bcrypt';
 import SchoolService from './school.service';
 import { deleteObject } from '@/utils/multer';
@@ -190,6 +190,102 @@ class AuthService {
       cookie,
       findUser: removePasswordData as User,
     };
+  }
+
+  public async updatePassword(userData: User, password: string, newPassword: string): Promise<boolean> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+    if (findUser.provider !== 'id') throw new HttpException(409, '소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다.');
+
+    const isPasswordMatching: boolean = await bcrypt.compare(password, findUser.password);
+    if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updateUser = await this.users.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    return true;
+  }
+
+  public async updateProfile(userData: User, profile: UpdateProfileDto): Promise<boolean> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    if (!profile.imageId) {
+      const beforeImage = await this.image.findFirst({
+        where: {
+          key: findUser.profile,
+        },
+      });
+      if (beforeImage) {
+        await deleteObject(beforeImage.key);
+
+        await this.image.delete({
+          where: {
+            id: beforeImage.id,
+          },
+        });
+      }
+
+      const updateUser = await this.users.update({
+        where: {
+          id: userData.id,
+        },
+        data: {
+          profile: null,
+        },
+      });
+
+      return true;
+    }
+
+    if (findUser.profile) {
+      const beforeImage = await this.image.findFirst({
+        where: {
+          key: findUser.profile,
+        },
+      });
+      await deleteObject(beforeImage.key);
+
+      await this.image.delete({
+        where: {
+          id: beforeImage.id,
+        },
+      });
+    }
+
+    const image = await this.image.findUnique({
+      where: {
+        id: profile.imageId,
+      },
+    });
+    if (!image) throw new HttpException(400, '이미지를 찾을 수 없습니다');
+
+    const updateUser = await this.users.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        profile: image.key,
+      },
+    });
+
+    return true;
   }
 
   public async verifyPhoneMessage(phone: string): Promise<string> {

@@ -5,7 +5,7 @@ import AuthService from '@services/auth.service';
 import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI, DOMAIN } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
-import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
+import { CreateUserDto, LoginUserDto, UpdatePasswordDto, UpdateProfileDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
 
 class AuthController {
   public authService = new AuthService();
@@ -55,6 +55,29 @@ class AuthController {
 
       res.setHeader('Set-Cookie', [cookie]);
       ResponseWrapper(req, res, { data: findUser });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public updatePassword = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const { password, newPassword } = req.body as UpdatePasswordDto;
+      const updatePasswordUserData: boolean = await this.authService.updatePassword(userData, password, newPassword);
+      ResponseWrapper(req, res, { data: updatePasswordUserData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public updateProfile = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const updateProfileData: UpdateProfileDto = req.body;
+      const updateProfileUserData: boolean = await this.authService.updateProfile(userData, updateProfileData);
+
+      ResponseWrapper(req, res, { data: updateProfileUserData });
     } catch (error) {
       next(error);
     }
