@@ -23,14 +23,14 @@ export class GetMealDto {
 }
 
 export class GetTimetableDto {
-  @IsNumber()
+  @IsString({ message: '학년을 입력해주세요.' })
   public grade: number;
 
-  @IsNumber()
+  @IsString({ message: '반을 입력해주세요.' })
   public class: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsString()
   public semes: number;
 
   @IsOptional()
@@ -40,6 +40,10 @@ export class GetTimetableDto {
   @IsOptional()
   @IsNumber()
   public year: number;
+
+  @ValidateIf(o => !o.startDate && !o.endDate)
+  @IsDateString({ strict: true }, { message: '날짜 형식이 아닙니다.' })
+  public date: string;
 
   @ValidateIf(o => o.endDate)
   @IsDateString({ strict: true }, { message: '날짜 형식이 아닙니다.' })

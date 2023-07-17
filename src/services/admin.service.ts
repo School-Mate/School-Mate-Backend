@@ -4,22 +4,30 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { deleteObject } from '@/utils/multer';
 import { excludeAdminPassword, isEmpty } from '@/utils/util';
-import { Admin, BoardRequest, BoardRequestProcess, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
+import { Admin, BoardRequest, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import SchoolService from './school.service';
 
 class AdminService {
+  public schoolService = new SchoolService();
+
   public admin = new PrismaClient().admin;
-  public image = new PrismaClient().image;
-  public userSchoolVerify = new PrismaClient().userSchoolVerify;
-  public userSchool = new PrismaClient().userSchool;
-  public users = new PrismaClient().user;
+  public article = new PrismaClient().article;
   public board = new PrismaClient().board;
   public boardRequest = new PrismaClient().boardRequest;
-  public schoolService = new SchoolService();
+  public deletedArticle = new PrismaClient().deletedArticle;
+  public image = new PrismaClient().image;
   public report = new PrismaClient().report;
-  public article = new PrismaClient().article;
+  public users = new PrismaClient().user;
+  public userSchool = new PrismaClient().userSchool;
+  public userSchoolVerify = new PrismaClient().userSchoolVerify;
+
+  public processMap = {
+    pending: Process.pending,
+    success: Process.success,
+    denied: Process.denied,
+  };
 
   public async signUp(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -86,16 +94,7 @@ class AdminService {
     return true;
   };
 
-  public getVerifyRequests = async (status: string): Promise<Array<UserSchoolVerify>> => {
-    let process;
-    if (status === 'pending') {
-      process = Process.pending;
-    } else if (status === 'success') {
-      process = Process.success;
-    } else if (status === 'denied') {
-      process = Process.denied;
-    }
-
+  public getVerifyRequests = async (process: Process): Promise<Array<UserSchoolVerify>> => {
     const requests = await this.userSchoolVerify.findMany({
       where: {
         process: process,
@@ -109,9 +108,11 @@ class AdminService {
     return requests;
   };
 
-  public postVerifyRequest = async (requestId: string, message: string, process: Process): Promise<void> => {
+  public postVerifyRequest = async (requestId: string, message: string, process: Process): Promise<boolean> => {
+    if (process === Process.pending) throw new HttpException(409, '올바른 상태를 입력해주세요.');
     const findRequest = await this.userSchoolVerify.findUnique({ where: { id: requestId } });
     if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
+    if (findRequest.process !== Process.pending) throw new HttpException(409, '이미 처리된 요청입니다.');
 
     const updateRequest = await this.userSchoolVerify.update({
       where: { id: findRequest.id },
@@ -141,28 +142,20 @@ class AdminService {
           userSchoolId: updateRequest.schoolId,
         },
       });
+      return true;
     }
   };
 
-  public getBoardRequests = async (status: string): Promise<Array<BoardRequest>> => {
-    let process;
-    if (status === 'pending') {
-      process = BoardRequestProcess.pending;
-    } else if (status === 'success') {
-      process = BoardRequestProcess.success;
-    } else if (status === 'denied') {
-      process = BoardRequestProcess.denied;
-    }
-
+  public getBoardRequests = async (process: string): Promise<Array<BoardRequest>> => {
     const requests = await this.boardRequest.findMany({
       where: {
-        process: process,
+        process: this.processMap[process],
       },
     });
     return requests;
   };
 
-  public postBoardRequest = async (requestId: string, message: string, process: BoardRequestProcess): Promise<void> => {
+  public postBoardRequest = async (requestId: string, message: string, process: Process): Promise<BoardRequest> => {
     const findRequest = await this.boardRequest.findUnique({ where: { id: requestId } });
     if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
 
@@ -174,40 +167,22 @@ class AdminService {
       },
     });
 
-    if (process === BoardRequestProcess.success) {
+    if (process === Process.success) {
       await this.board.create({
         data: {
+          schoolId: updateRequest.schoolId,
           name: updateRequest.name,
           description: updateRequest.description,
-          schoolId: updateRequest.schoolId,
         },
       });
     }
+    return updateRequest;
   };
 
-  public createToken(admin: Admin): TokenData {
-    const dataStoredInToken: DataStoredInToken = { id: admin.id };
-    const secretKey: string = SECRET_KEY;
-    const expiresIn: number = 60 * 60;
-
-    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
-  }
-
-  public createCookie(tokenData: TokenData): string {
-    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
-  }
-
-  public getReports = async (status: string, targetType: ReportTargetType): Promise<Array<Report>> => {
-    let process;
-    if (status === 'pending') {
-      process = Process.pending;
-    } else if (status === 'success') {
-      process = Process.success;
-    }
-
+  public getReports = async (process: string, targetType: ReportTargetType): Promise<Array<Report>> => {
     const requests = await this.report.findMany({
       where: {
-        process: process,
+        process: this.processMap[process],
         targetType: targetType,
       },
     });
@@ -236,10 +211,22 @@ class AdminService {
 
     try {
       await this.article.delete({ where: { id: Number(articleId) } });
+      await this.deletedArticle.create({
+        data: {
+          id: Number(findArticle.id),
+          schoolId: findArticle.schoolId,
+          title: findArticle.title,
+          content: findArticle.content,
+          images: findArticle.images,
+          isAnonymous: findArticle.isAnonymous,
+          userId: findArticle.userId,
+          createdAt: findArticle.createdAt,
+          boardId: findArticle.boardId,
+        },
+      });
     } catch (error) {
       throw error;
     }
-
     return true;
   };
 
@@ -249,6 +236,18 @@ class AdminService {
 
     return findUser;
   };
+
+  public createToken(admin: Admin): TokenData {
+    const dataStoredInToken: DataStoredInToken = { id: admin.id };
+    const secretKey: string = SECRET_KEY;
+    const expiresIn: number = 60 * 60;
+
+    return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
+  }
+
+  public createCookie(tokenData: TokenData): string {
+    return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
+  }
 }
 
 export default AdminService;

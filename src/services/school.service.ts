@@ -16,6 +16,7 @@ class SchoolService {
   public meal = new PrismaClient().meal;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
+    // TODO: cashing
     try {
       const { data: middleSchoolfetch } = await neisClient.get('/hub/schoolInfo', {
         params: {
@@ -159,6 +160,7 @@ class SchoolService {
   }
 
   public async getTimetable(schoolId: string, data: ITimetableQuery): Promise<any> {
+    // TODO: cashing
     try {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
@@ -190,29 +192,6 @@ class SchoolService {
       } else {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
-    }
-  }
-
-  private semesterHandler(): number {
-    const today = dayjs();
-    const year = today.year();
-
-    const semester1Start = dayjs(`${year}-02-01`);
-    const semester1End = dayjs(`${year}-07-15`);
-    let semester2End;
-
-    if (today.isAfter(semester1End) && today.isBefore(dayjs(`${year + 1}-04-01`))) {
-      semester2End = dayjs(`${year + 1}-03-31`);
-    } else {
-      semester2End = dayjs(`${year}-03-31`);
-    }
-
-    if (today.isBetween(semester1Start, semester1End, null, '[]')) {
-      return 1;
-    } else if (today.isBetween(semester1End, semester2End, null, '[]')) {
-      return 2;
-    } else {
-      return null;
     }
   }
 
@@ -264,7 +243,7 @@ class SchoolService {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
-      const { data: schoolDetailfetch } = await neisClient.get('/hub/classInfo', {
+      const { data: schoolDetailFetch } = await neisClient.get('/hub/classInfo', {
         params: {
           ATPT_OFCDC_SC_CODE: schoolInfo.code,
           SD_SCHUL_CODE: schoolId,
@@ -272,7 +251,7 @@ class SchoolService {
         },
       });
 
-      const schoolDetail: IClassInfoResponse = schoolDetailfetch.classInfo;
+      const schoolDetail: IClassInfoResponse = schoolDetailFetch.classInfo;
       if (!schoolDetail) throw new HttpException(404, '해당하는 반 정보가 없습니다.');
 
       return schoolDetail[1].row;
@@ -284,6 +263,20 @@ class SchoolService {
       } else {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
+    }
+  }
+
+  private semesterHandler(): number {
+    const today = dayjs();
+
+    const semester1Start = dayjs('03-01');
+    const semester2Start = dayjs('08-01');
+    const semester2End = dayjs('12-31');
+
+    if (today.isAfter(semester1Start) && today.isBefore(semester2Start)) {
+      return 1;
+    } else if (today.isAfter(semester2Start) && today.isBefore(semester2End)) {
+      return 2;
     }
   }
 }
