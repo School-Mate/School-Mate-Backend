@@ -74,7 +74,7 @@ class BoardController {
 
   public getArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const articleData = await this.boardService.getArticle(req.params.boardId, req.params.articleId, req.user);
+      const articleData = await this.boardService.getArticle(req.params.articleId, req.user);
 
       ResponseWrapper(req, res, {
         data: articleData,

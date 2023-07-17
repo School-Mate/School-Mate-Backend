@@ -203,6 +203,19 @@ model Article {
   ReComment   ReComment[]
 }
 
+model DeletedArticle {
+  id  Int @id
+  schoolId String
+  title String
+  content String
+  images String[]
+  isAnonymous Boolean
+  userId String
+  createdAt DateTime
+  DeletedAt DateTime @default(now())
+  boardId Int
+}
+
 model BoardRequest {
   id          String              @id @default(uuid())
   name        String

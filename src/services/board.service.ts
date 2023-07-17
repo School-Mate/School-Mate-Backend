@@ -6,16 +6,16 @@ import { deleteObject } from '@/utils/multer';
 import { logger } from '@/utils/logger';
 
 class BoardService {
-  public board = new PrismaClient().board;
-  public manager = new PrismaClient().boardManager;
   public article = new PrismaClient().article;
+  public board = new PrismaClient().board;
   public boardRequest = new PrismaClient().boardRequest;
   public comment = new PrismaClient().comment;
-  public reComment = new PrismaClient().reComment;
-  public user = new PrismaClient().user;
   public image = new PrismaClient().image;
   public like = new PrismaClient().like;
+  public manager = new PrismaClient().boardManager;
+  public reComment = new PrismaClient().reComment;
   public school = new PrismaClient().school;
+  public user = new PrismaClient().user;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -267,7 +267,7 @@ class BoardService {
     }
   }
 
-  public async getArticle(boardId: string, articleId: string, user: User): Promise<ArticleWithImage> {
+  public async getArticle(articleId: string, user: User): Promise<ArticleWithImage> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
