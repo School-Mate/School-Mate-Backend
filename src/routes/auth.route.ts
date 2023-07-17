@@ -8,6 +8,7 @@ import {
   CreateUserDto,
   LoginUserDto,
   UpdateAskedCustomIdDto,
+  UpdateNicknameDto,
   UpdatePasswordDto,
   UpdateProfileDto,
   VerifyPhoneCodeDto,
@@ -44,6 +45,12 @@ class AuthRoute implements Routes {
       validationMiddleware(UpdateAskedCustomIdDto, 'body'),
       authMiddleware,
       this.authController.meAskedCustomId,
+    );
+    this.router.patch(
+      `${this.path}/me/nickname`,
+      authMiddleware,
+      validationMiddleware(UpdateNicknameDto, 'body'),
+      this.authController.updateNickname,
     );
     this.router.delete(`/image/:imageId`, authMiddleware, this.authController.deleteImage);
   }
