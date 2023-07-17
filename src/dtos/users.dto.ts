@@ -72,3 +72,8 @@ export class UpdatePasswordDto {
   @IsString({ message: '새로운 비밀번호를 입력해주세요.' })
   public newPassword: string;
 }
+
+export class UpdateNicknameDto {
+  @IsString({ message: '닉네임을 입력해주세요.' })
+  public nickname: string;
+}

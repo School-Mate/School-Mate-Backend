@@ -289,6 +289,26 @@ class AuthService {
     return true;
   }
 
+  public async updateNickname(userData: User, nickname: string): Promise<boolean> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    await this.users.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        name: nickname,
+      },
+    });
+
+    return true;
+  }
+
   public async verifyPhoneMessage(phone: string): Promise<string> {
     const findUser = await this.users.findUnique({
       where: {

@@ -98,6 +98,18 @@ class AuthController {
     }
   };
 
+  public updateNickname = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const nickname: string = req.body.nickname;
+      const updateNicknameUserData: boolean = await this.authService.updateNickname(userData, nickname);
+
+      ResponseWrapper(req, res, { data: updateNicknameUserData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public verifyPhoneMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { phone } = req.body as VerifyPhoneMessageDto;
