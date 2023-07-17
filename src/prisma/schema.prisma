@@ -308,3 +308,12 @@ enum LikeTargetType {
   comment
   recomment
 }
+
+model Meal {
+  id         String @id @unique
+  MLSV_FGR   Int
+  DDISH_NM   String
+  ORPLC_INFO String
+  CAL_INFO   String
+  NTR_INFO   String
+}
