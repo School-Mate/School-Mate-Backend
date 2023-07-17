@@ -72,9 +72,10 @@ class BoardController {
     }
   };
 
-  public getArticles = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public getArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const articleData = await this.boardService.getArticles(req.params.boardId, req.query.page as string);
+      const user = req.user;
+      const articleData = await this.boardService.getArticles(req.params.boardId, req.query.page as string, user);
 
       ResponseWrapper(req, res, {
         data: articleData,
@@ -96,9 +97,10 @@ class BoardController {
     }
   };
 
-  public getComments = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public getComments = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const commentData = await this.boardService.getComments(req.params.articleId, req.query.page as string);
+      const user = req.user;
+      const commentData = await this.boardService.getComments(req.params.articleId, req.query.page as string, user);
 
       ResponseWrapper(req, res, {
         data: commentData,

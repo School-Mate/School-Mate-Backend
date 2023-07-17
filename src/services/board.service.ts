@@ -272,11 +272,14 @@ class BoardService {
         if (article.isAnonymous) {
           return {
             ...article,
+            userId: null,
+            isMe: article.userId === user.id,
             User: undefined,
           };
         } else {
           return {
             ...article,
+            isMe: article.userId === user.id,
             User: {
               name: article.User.name,
               id: article.User.id,
@@ -359,25 +362,23 @@ class BoardService {
         if (!findImage) continue;
         keyOfImages.push(findImage.key);
       }
-
-      if (findArticle.isAnonymous)
-        return {
-          ...findArticle,
-          keyOfImages: keyOfImages,
-          User: undefined,
-          likeCounts: likeCounts,
-          disLikeCounts: disLikeCounts,
-        } as unknown as ArticleWithImage;
-
       return {
         ...findArticle,
         keyOfImages: keyOfImages,
         likeCounts: likeCounts,
         disLikeCounts: disLikeCounts,
-        User: {
-          name: findArticle.User.name,
-          id: findArticle.User.id,
-        } as User,
+        isMe: findArticle.userId === user.id,
+        ...(findArticle.isAnonymous
+          ? {
+              User: null,
+              userId: null,
+            }
+          : {
+              User: {
+                name: findArticle.User.name,
+                id: findArticle.User.id,
+              } as User,
+            }),
       } as unknown as ArticleWithImage;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -388,7 +389,7 @@ class BoardService {
     }
   }
 
-  public async getArticles(boardId: string, page: string): Promise<{ articles: Article[]; totalPage: number }> {
+  public async getArticles(boardId: string, page: string, user: User): Promise<{ articles: Article[]; totalPage: number }> {
     try {
       const findArticles = await this.article.findMany({
         where: {
@@ -431,6 +432,7 @@ class BoardService {
             keyOfImages: [],
             commentCounts: reCommentCounts + commentCounts,
             likeCounts: likeCounts,
+            isMe: article.userId === user.id,
           });
           continue;
         }
@@ -452,6 +454,7 @@ class BoardService {
           commentCounts: commentCounts + reCommentCounts,
           keyOfImages: ketOfImages,
           likeCounts: likeCounts,
+          isMe: article.userId === user.id,
         });
       }
 
@@ -521,6 +524,7 @@ class BoardService {
   public async getComments(
     articleId: string,
     page: string,
+    user: User,
   ): Promise<{
     comments: Comment[];
     totalPage: number;
@@ -555,7 +559,8 @@ class BoardService {
               reCommentsExcludAnUser.push({
                 ...reComment,
                 content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                userId: reComment.userId,
+                userId: null,
+                isMe: reComment.userId === user.id,
                 User: reComment.isDeleted
                   ? {
                       name: '(삭제됨)',
@@ -568,6 +573,7 @@ class BoardService {
                 ...reComment,
                 content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
                 userId: reComment.isDeleted ? undefined : reComment.User.id,
+                isMe: comment.userId === user.id,
                 User: reComment.isDeleted
                   ? {
                       name: '(삭제됨)',
@@ -586,7 +592,8 @@ class BoardService {
           findCommentsExcludAnUser.push({
             ...comment,
             content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
-            userId: comment.userId,
+            userId: null,
+            isMe: comment.userId === user.id,
             User: comment.isDeleted
               ? {
                   name: '(삭제됨)',
@@ -603,6 +610,7 @@ class BoardService {
           findCommentsExcludAnUser.push({
             ...comment,
             content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
+            isMe: comment.userId === user.id,
             User: comment.isDeleted
               ? {
                   name: '(삭제됨)',
