@@ -22,7 +22,7 @@ export class PostVerifyRequestDto {
   public message: string;
 
   @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'success', 'deny'], { message: 'pending, success, deny 중 하나를 입력해주세요.' })
+  @IsIn(['pending', 'denied', 'success'], { message: 'pending, denied, success 중 하나를 입력해주세요.' })
   public process: Process;
 }
 
@@ -39,7 +39,7 @@ export class PostBoardRequestDto {
   public message: string;
 
   @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'success', 'deny'], { message: 'pending, success, deny 중 하나를 입력해주세요.' })
+  @IsIn(['pending', 'success', 'denied'], { message: 'pending, success, denied 중 하나를 입력해주세요.' })
   public process: Process;
 }
 
@@ -56,7 +56,7 @@ export class PostReportRequestDto {
   public message: string;
 
   @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'success', 'deny'], { message: 'pending, success, deny 중 하나를 입력해주세요.' })
+  @IsIn(['pending', 'success', 'denied'], { message: 'pending, success, denied 중 하나를 입력해주세요.' })
   public process: Process;
 }
 // #TODO: 이후에도 요청 DTO 변경 없으면 하나로 병합

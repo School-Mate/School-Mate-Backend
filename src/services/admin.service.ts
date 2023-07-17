@@ -92,8 +92,8 @@ class AdminService {
       process = Process.pending;
     } else if (status === 'success') {
       process = Process.success;
-    } else if (status === 'deny') {
-      process = Process.deny;
+    } else if (status === 'denied') {
+      process = Process.denied;
     }
 
     const requests = await this.userSchoolVerify.findMany({
@@ -105,6 +105,7 @@ class AdminService {
         image: true,
       },
     });
+
     return requests;
   };
 
@@ -149,8 +150,8 @@ class AdminService {
       process = BoardRequestProcess.pending;
     } else if (status === 'success') {
       process = BoardRequestProcess.success;
-    } else if (status === 'deny') {
-      process = BoardRequestProcess.deny;
+    } else if (status === 'denied') {
+      process = BoardRequestProcess.denied;
     }
 
     const requests = await this.boardRequest.findMany({
