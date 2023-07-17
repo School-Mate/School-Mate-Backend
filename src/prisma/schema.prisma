@@ -213,7 +213,6 @@ model BoardRequest {
   schoolName  String
   process     BoardRequestProcess @default(pending)
   message     String?
-  schoolId    String
 }
 
 model Comment {
