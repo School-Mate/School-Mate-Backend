@@ -56,3 +56,19 @@ export class VerifyPhoneCodeDto {
   @IsString({ message: '인증 토큰를 입력해주세요.' })
   public token: string;
 }
+
+export class UpdateProfileDto {
+  @IsOptional()
+  @IsString({
+    message: '이미지 아이디를 입력해주세요',
+  })
+  public imageId: string;
+}
+
+export class UpdatePasswordDto {
+  @IsString({ message: '기존 비밀번호를 입력해주세요.' })
+  public password: string;
+
+  @IsString({ message: '새로운 비밀번호를 입력해주세요.' })
+  public newPassword: string;
+}

@@ -20,10 +20,10 @@ export const ImageStorage = multerS3({
   contentType: multerS3.AUTO_CONTENT_TYPE,
   acl: 'public-read',
   key: function (req: RequestWithUser, file, cb) {
+    if (!req.headers.storage) cb(new HttpException(400, 'storage 헤더가 없습니다.'));
     cb(null, `${req.headers.storage}/${req.user.id}-${Date.now()}.png`);
   },
   metadata: function (req: RequestWithUser, file, cb) {
-    console.log(file);
     cb(null, {
       fieldName: file.fieldname,
       fileOriginalName: encodeURIComponent(file.originalname),

@@ -4,7 +4,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { deleteObject } from '@/utils/multer';
 import { excludeAdminPassword, isEmpty } from '@/utils/util';
-import { Admin, BoardRequest, BoardRequestProcess, PrismaClient, Process, Report, UserSchoolVerify } from '@prisma/client';
+import { Admin, BoardRequest, BoardRequestProcess, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import SchoolService from './school.service';
@@ -197,7 +197,7 @@ class AdminService {
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
   }
 
-  public getReports = async (status: string): Promise<Array<Report>> => {
+  public getReports = async (status: string, targetType: ReportTargetType): Promise<Array<Report>> => {
     let process;
     if (status === 'pending') {
       process = Process.pending;
@@ -208,9 +208,23 @@ class AdminService {
     const requests = await this.report.findMany({
       where: {
         process: process,
+        targetType: targetType,
       },
     });
     return requests;
+  };
+
+  public completeReport = async (reportId: string): Promise<Report> => {
+    const findReport = await this.report.findFirst({ where: { id: reportId } });
+    if (!findReport) throw new HttpException(409, '해당 신고를 찾을 수 없습니다.');
+
+    const updateReport = await this.report.update({
+      where: { id: findReport.id },
+      data: {
+        process: Process.success,
+      },
+    });
+    return updateReport;
   };
 
   public deleteBoardArticle = async (boardId: string, articleId: string): Promise<boolean> => {
@@ -227,6 +241,13 @@ class AdminService {
     }
 
     return true;
+  };
+
+  public getUserInfo = async (userId: string): Promise<User> => {
+    const findUser = await this.users.findUnique({ where: { id: userId } });
+    if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+
+    return findUser;
   };
 }
 

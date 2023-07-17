@@ -100,6 +100,7 @@ model School {
   name        String?
   kndsc       String
   UserSchool  UserSchool[]
+  Article     Article[]
 }
 
 model BusStation {
@@ -170,7 +171,8 @@ model Board {
   schoolId    String
   name        String
   description String
-  noticeId    Int?
+  default     Boolean        @default(false)
+  noticeId    Int[]
   Article     Article[]
   managers    BoardManager[]
 }
@@ -196,6 +198,7 @@ model Article {
   boardId     Int
   Board       Board       @relation(fields: [boardId], references: [id])
   User        User        @relation(fields: [userId], references: [id])
+  school      School      @relation(fields: [schoolId], references: [schoolId])
   Comment     Comment[]
   ReComment   ReComment[]
 }
@@ -206,6 +209,8 @@ model BoardRequest {
   description String
   detail      String
   userId      String
+  schoolId    String
+  schoolName  String
   process     BoardRequestProcess @default(pending)
   message     String?
   schoolId    String
@@ -215,6 +220,7 @@ model Comment {
   userId      String
   content     String
   isAnonymous Boolean
+  isDeleted   Boolean     @default(false)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   id          Int         @id @default(autoincrement())
@@ -230,6 +236,7 @@ model ReComment {
   userId      String
   content     String
   isAnonymous Boolean
+  isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   commentId   Int?
@@ -251,7 +258,7 @@ model Report {
 model Like {
   id         String         @id @default(uuid())
   userId     String
-  targetId   String
+  targetId   Int
   targetType LikeTargetType
   likeType   LikeType
   user       User           @relation(fields: [userId], references: [id])

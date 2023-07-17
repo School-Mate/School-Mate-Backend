@@ -33,6 +33,19 @@ class BoardController {
     }
   };
 
+  public getSuggestArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const suggestArticles = await this.boardService.getSuggestArticles(user);
+
+      ResponseWrapper(req, res, {
+        data: suggestArticles,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public postArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const boardId = req.params.boardId;
@@ -133,11 +146,11 @@ class BoardController {
     }
   };
 
-  public likeArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public likeArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const articleId = req.params.articleId;
-      const userId = req.params.userId;
-      const likeArticleData = await this.boardService.likeArticle(articleId, userId);
+      const user = req.user;
+      const likeArticleData = await this.boardService.likeArticle(articleId, user.id);
 
       ResponseWrapper(req, res, {
         data: likeArticleData,
@@ -147,11 +160,11 @@ class BoardController {
     }
   };
 
-  public disLikeArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public disLikeArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const articleId = req.params.articleId;
-      const userId = req.params.userId;
-      const disLikeArticleData = await this.boardService.disLikeArticle(articleId, userId);
+      const user = req.user;
+      const disLikeArticleData = await this.boardService.disLikeArticle(articleId, user.id);
 
       ResponseWrapper(req, res, {
         data: disLikeArticleData,
@@ -217,11 +230,11 @@ class BoardController {
     }
   };
 
-  public deleteArticle = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public deleteArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const articleId = req.params.articleId;
-      const userId = req.params.userId;
-      const deleteArticle = await this.boardService.deleteArticle(articleId, userId);
+      const user = req.user;
+      const deleteArticle = await this.boardService.deleteArticle(articleId, user.id);
 
       ResponseWrapper(req, res, {
         data: deleteArticle,
@@ -231,10 +244,10 @@ class BoardController {
     }
   };
 
-  public deleteComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public deleteComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const commentId = req.params.commentId;
-      const userId = req.params.userId;
+      const userId = req.user.id;
       const deleteComment = await this.boardService.deleteComment(commentId, userId);
 
       ResponseWrapper(req, res, {
@@ -245,11 +258,11 @@ class BoardController {
     }
   };
 
-  public deleteReComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public deleteReComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const recommentId = req.params.recommentId;
-      const userId = req.params.userId;
-      const deleteReComment = await this.boardService.deleteReComment(recommentId, userId);
+      const user = req.user;
+      const deleteReComment = await this.boardService.deleteReComment(recommentId, user.id);
 
       ResponseWrapper(req, res, {
         data: deleteReComment,

@@ -4,7 +4,7 @@ import { Routes } from '@interfaces/routes.interface';
 import authMiddleware from '@middlewares/auth.middleware';
 import validationMiddleware from '@middlewares/validation.middleware';
 import { imageUpload } from '@/utils/multer';
-import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
+import { CreateUserDto, LoginUserDto, UpdatePasswordDto, UpdateProfileDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
 
 class AuthRoute implements Routes {
   public path = '/auth';
@@ -25,9 +25,11 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/google/callback`, this.authController.googleLoginCallback);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginUserDto, 'body'), this.authController.login);
     this.router.post(`${this.path}/signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
+    this.router.post(`${this.path}/changepass`, validationMiddleware(UpdatePasswordDto, 'body'), this.authController.updatePassword);
     this.router.post(`${this.path}/verify/phone`, validationMiddleware(VerifyPhoneCodeDto, 'body'), this.authController.verifyPhoneCode);
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.verifyPhoneMessage);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
+    this.router.patch(`${this.path}/me/profile`, validationMiddleware(UpdateProfileDto, 'body'), authMiddleware, this.authController.updateProfile);
     this.router.delete(`/image/:imageId`, authMiddleware, this.authController.deleteImage);
   }
 }
