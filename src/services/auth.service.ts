@@ -25,12 +25,13 @@ import SchoolService from './school.service';
 import { deleteObject } from '@/utils/multer';
 
 class AuthService {
-  public schoolService = new SchoolService();
-  public users = new PrismaClient().user;
-  public socialLogin = new PrismaClient().socialLogin;
-  public image = new PrismaClient().image;
-  public verifyPhone = new PrismaClient().verifyPhone;
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
+  public schoolService = new SchoolService();
+
+  public image = new PrismaClient().image;
+  public socialLogin = new PrismaClient().socialLogin;
+  public users = new PrismaClient().user;
+  public verifyPhone = new PrismaClient().verifyPhone;
 
   public async meSchool(userData: User): Promise<
     UserSchool & {
