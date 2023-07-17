@@ -311,7 +311,7 @@ enum LikeTargetType {
 
 model Meal {
   id         String @id @unique
-  MLSV_FGR   String
+  MLSV_FGR   Int
   DDISH_NM   String
   ORPLC_INFO String
   CAL_INFO   String
