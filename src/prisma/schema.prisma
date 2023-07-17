@@ -1,53 +1,50 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
   id                 String                @id @default(uuid())
   email              String?
   password           String?
-  phone              String?               @unique
   name               String
-  provider           UserLoginProviderType // id, social
-  verified           Boolean               @default(false)
   profile            String?
+  verified           Boolean               @default(false)
+  phone              String?               @unique
   createdAt          DateTime              @default(now())
+  provider           UserLoginProviderType
   userSchoolId       String?
-  SocialLogin        SocialLogin?
   Agreement          Agreement?
-  Image              Image[]
-  UserSchoolVerify   UserSchoolVerify[]
-  UserSchool         UserSchool?
-  BoardOrganizations BoardManager[]
-  AskedUser          AskedUser?
-  Asked              Asked[]
-  Comment            Comment[]
-  ReComment          ReComment[]
   Article            Article[]
+  Asked              Asked[]
+  AskedUser          AskedUser?
+  BoardOrganizations BoardManager[]
+  Comment            Comment[]
+  Image              Image[]
   Like               Like[]
+  ReComment          ReComment[]
+  SocialLogin        SocialLogin?
+  UserSchool         UserSchool?
+  UserSchoolVerify   UserSchoolVerify[]
 }
 
 model SocialLogin {
   accessToken  String
   refreshToken String?
-  provider     SocialLoginProviderType // google, kakao
   userId       String                  @id @default(uuid())
   socialId     String                  @unique
+  provider     SocialLoginProviderType
   user         User                    @relation(fields: [userId], references: [id])
 }
 
 model Agreement {
-  receive   Boolean  @default(false)
   updatedAt DateTime @updatedAt
   userId    String   @id @default(uuid())
+  receive   Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id])
 }
 
@@ -55,8 +52,8 @@ model Image {
   id               String             @id @default(uuid())
   key              String
   userId           String
-  user             User               @relation(fields: [userId], references: [id])
   createdAt        DateTime           @default(now())
+  user             User               @relation(fields: [userId], references: [id])
   UserSchoolVerify UserSchoolVerify[]
 }
 
@@ -69,16 +66,16 @@ model VerifyPhone {
 model UserSchoolVerify {
   id         String   @id @default(uuid())
   userId     String
-  userName   String
   imageId    String
   schoolId   String
-  schoolName String
   grade      String
   class      String
-  dept       String
-  createdAt  DateTime @default(now())
   message    String?
   process    Process  @default(pending)
+  createdAt  DateTime @default(now())
+  schoolName String
+  userName   String
+  dept       String
   image      Image    @relation(fields: [imageId], references: [id])
   user       User     @relation(fields: [userId], references: [id])
 }
@@ -89,18 +86,18 @@ model UserSchool {
   dept     String
   grade    String
   class    String
-  user     User   @relation(fields: [userId], references: [id])
   school   School @relation(fields: [schoolId], references: [schoolId])
+  user     User   @relation(fields: [userId], references: [id])
 }
 
 model School {
   schoolId    String       @id @unique
-  name        String?
-  code        String
-  defaultName String
   address     String
   x           Float
   y           Float
+  code        String
+  defaultName String
+  name        String?
   kndsc       String
   UserSchool  UserSchool[]
   Article     Article[]
@@ -118,13 +115,13 @@ model BusRoute {
   busRouteId       String @id
   busRouteNum      String
   busRouteTp       String
-  endNodeName      String // 종점
-  startNodeName    String // 기점
-  endVehicleTime   String // 막차시간
-  startVehicleTime String // 첫차시간
-  intervalTime     String // 배차간격(평일)
-  intervalSatTime  String // 배차간격(토요일)
-  intervalSunTime  String // 배차간격(일요일)
+  endNodeName      String
+  startNodeName    String
+  endVehicleTime   String
+  startVehicleTime String
+  intervalTime     String
+  intervalSatTime  String
+  intervalSunTime  String
 }
 
 model BusArrival {
@@ -132,8 +129,8 @@ model BusArrival {
   busStationName    String
   busRouteNum       String
   busRouteTp        String
-  arrprevStationCnt String // 도착예정버스 남은 정류장 수
-  arrTime           String // 도착예정버스 도착예정시간
+  arrprevStationCnt String
+  arrTime           String
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -142,10 +139,10 @@ model AskedUser {
   userId             String  @id
   customId           String?
   statusMessage      String?
-  user               User    @relation(fields: [userId], references: [id])
   receiveAnonymous   Boolean @default(true)
   receiveOtherSchool Boolean @default(false)
   Asked              Asked[]
+  user               User    @relation(fields: [userId], references: [id])
 }
 
 model Asked {
@@ -155,27 +152,11 @@ model Asked {
   process      Process   @default(pending)
   question     String
   answer       String?
+  createdAt    DateTime  @default(now())
+  answerTimeAt DateTime?
   isAnonymous  Boolean
   AskedUser    AskedUser @relation(fields: [askedUserId], references: [userId])
   QuestionUser User      @relation(fields: [userId], references: [id])
-  createdAt    DateTime  @default(now())
-  answerTimeAt DateTime?
-}
-
-enum Process {
-  pending // 대기
-  deny // 거절
-  success // 수락
-}
-
-enum SocialLoginProviderType {
-  google // 구글
-  kakao // 카카오
-}
-
-enum UserLoginProviderType {
-  id // 아이디
-  social // 소셜
 }
 
 model Admin {
@@ -199,10 +180,10 @@ model Board {
 model BoardManager {
   id      String @id @default(uuid())
   boardId Int
-  board   Board  @relation(fields: [boardId], references: [id])
   name    String
-  user    User   @relation(fields: [userId], references: [id])
   userId  String
+  board   Board  @relation(fields: [boardId], references: [id])
+  user    User   @relation(fields: [userId], references: [id])
 }
 
 model Article {
@@ -214,12 +195,12 @@ model Article {
   isAnonymous Boolean
   userId      String
   createdAt   DateTime    @default(now())
-  Board       Board       @relation(fields: [boardId], references: [id])
   boardId     Int
+  Board       Board       @relation(fields: [boardId], references: [id])
+  User        User        @relation(fields: [userId], references: [id])
   school      School      @relation(fields: [schoolId], references: [schoolId])
   Comment     Comment[]
   ReComment   ReComment[]
-  User        User        @relation(fields: [userId], references: [id])
 }
 
 model BoardRequest {
@@ -234,21 +215,15 @@ model BoardRequest {
   message     String?
 }
 
-enum BoardRequestProcess {
-  pending // 심사대기
-  deny // 심사거절
-  success // 심사수락
-}
-
 model Comment {
-  id          Int         @id @default(autoincrement())
-  articleId   Int
   userId      String
   content     String
   isAnonymous Boolean
   isDeleted   Boolean     @default(false)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  id          Int         @id @default(autoincrement())
+  articleId   Int
   Article     Article     @relation(fields: [articleId], references: [id])
   User        User        @relation(fields: [userId], references: [id])
   recomments  ReComment[]
@@ -263,33 +238,20 @@ model ReComment {
   isDeleted   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  Article     Article  @relation(fields: [articleId], references: [id])
-  User        User     @relation(fields: [userId], references: [id])
-  Comment     Comment? @relation(fields: [commentId], references: [id])
   commentId   Int?
+  Article     Article  @relation(fields: [articleId], references: [id])
+  Comment     Comment? @relation(fields: [commentId], references: [id])
+  User        User     @relation(fields: [userId], references: [id])
 }
 
 model Report {
   id             String           @id @default(uuid())
   reportUserId   String
-  reportUserName String
-  targetId       String
   targetType     ReportTargetType
-  process        ReportProcess    @default(pending)
   message        String
-}
-
-enum ReportTargetType {
-  user // 유저
-  article // 게시글
-  asked // 에스크
-  comment // 댓글
-  recomment // 대댓글
-}
-
-enum ReportProcess {
-  pending // 처리대기
-  success // 처리완료
+  targetId       String
+  reportUserName String
+  process        ReportProcess    @default(pending)
 }
 
 model Like {
@@ -301,13 +263,57 @@ model Like {
   user       User           @relation(fields: [userId], references: [id])
 }
 
+enum Process {
+  pending
+  denied
+  success
+}
+
+enum SocialLoginProviderType {
+  google
+  kakao
+}
+
+enum UserLoginProviderType {
+  id
+  social
+}
+
+enum BoardRequestProcess {
+  pending
+  denied
+  success
+}
+
+enum ReportTargetType {
+  user
+  article
+  comment
+  asked
+  recomment
+}
+
+enum ReportProcess {
+  pending
+  success
+}
+
 enum LikeType {
-  like // 좋아요
-  dislike // 싫어요
+  like
+  dislike
 }
 
 enum LikeTargetType {
-  article // 게시글
-  comment // 댓글
-  recomment // 대댓글
+  article
+  comment
+  recomment
+}
+
+model Meal {
+  id         String @id @unique
+  MLSV_FGR   Int
+  DDISH_NM   String
+  ORPLC_INFO String
+  CAL_INFO   String
+  NTR_INFO   String
 }

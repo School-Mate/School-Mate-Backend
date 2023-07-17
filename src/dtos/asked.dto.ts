@@ -1,4 +1,4 @@
-import { IsBoolean, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class AskedDto {
   @IsString({ message: '질문을 입력해주세요.' })
@@ -16,4 +16,11 @@ export class AskedReceiveDto {
 export class AskedStatusMessageDto {
   @IsString({ message: '상태메세지를 입력해주세요.' })
   public message: string;
+}
+export class AskedRequestQuery {
+  @IsString({
+    message: '페이지를 입력해주세요.',
+  })
+  @IsOptional()
+  public page: number;
 }

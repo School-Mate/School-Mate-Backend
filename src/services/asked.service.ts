@@ -226,7 +226,7 @@ class AskedService {
           id: askedId,
         },
         data: {
-          process: Process.deny,
+          process: Process.denied,
         },
       });
 
@@ -274,7 +274,7 @@ class AskedService {
 
     if (findAsked.userId !== user.id) throw new HttpException(403, '답장할 권한이 없습니다.');
     if (findAsked.process === 'success') throw new HttpException(403, '이미 답장한 질문입니다.');
-    if (findAsked.process === 'deny') throw new HttpException(403, '이미 거절한 질문입니다.');
+    if (findAsked.process === 'denied') throw new HttpException(403, '이미 거절한 질문입니다.');
 
     const updatedAsked = await this.asked.update({
       where: {

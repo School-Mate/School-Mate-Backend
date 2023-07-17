@@ -1,9 +1,10 @@
 import BoardController from '@/controllers/board.controller';
-import { BoardDto, CommentDto } from '@/dtos/board.dto';
+import { BoardDto, CommentDto, SendBoardRequestDto } from '@/dtos/board.dto';
 import { ArticleRequestQuery } from '@/dtos/article.dto';
-import { Routes } from '@/interfaces/routes.interface';
+import { CommentRequestQuery } from '@/dtos/comment.dto';
 import authMiddleware from '@/middlewares/auth.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
+import { Routes } from '@/interfaces/routes.interface';
 import { Router } from 'express';
 
 class BoardRoute implements Routes {
@@ -26,8 +27,18 @@ class BoardRoute implements Routes {
       this.boardController.getArticles,
     );
     this.router.get(`${this.path}/:boardId/article/:articleId`, authMiddleware, this.boardController.getArticle);
-    this.router.get(`${this.path}/:boardId/article/:articleId/comments`, authMiddleware, this.boardController.getComments);
-    this.router.post(`${this.path}/request`, authMiddleware, this.boardController.sendBoardRequest);
+    this.router.get(
+      `${this.path}/:boardId/article/:articleId/comments`,
+      authMiddleware,
+      validationMiddleware(CommentRequestQuery, 'query'),
+      this.boardController.getComments,
+    );
+    this.router.post(
+      `${this.path}/request`,
+      authMiddleware,
+      validationMiddleware(SendBoardRequestDto, 'body'),
+      this.boardController.sendBoardRequest,
+    );
     this.router.post(`${this.path}/:boardId`, authMiddleware, validationMiddleware(BoardDto, 'body'), this.boardController.postArticle);
     this.router.post(
       `${this.path}/article/:articleId/comment`,

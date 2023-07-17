@@ -1,4 +1,4 @@
-import { AdminDto, AdminRequestDto } from '@/dtos/admin.dto';
+import { AdminDto, GetVerifyRequestDto, AdminRequestDto } from '@/dtos/admin.dto';
 import AdminService from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin, ReportTargetType } from '@prisma/client';
@@ -69,7 +69,7 @@ class AdminController {
 
   public verifyRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const verifyRequests = await this.adminService.getVerifyRequests(req.params.process);
+      const verifyRequests = await this.adminService.getVerifyRequests(req.query.process as GetVerifyRequestDto['process']);
       ResponseWrapper(req, res, { data: verifyRequests });
     } catch (error) {
       next(error);

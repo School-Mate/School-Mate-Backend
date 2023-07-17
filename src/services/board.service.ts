@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, PrismaClient, User, Like, LikeTargetType, LikeType } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 import { deleteObject } from '@/utils/multer';
@@ -713,7 +713,7 @@ class BoardService {
       }
 
       if (ArticleLike.likeType === LikeType.like) {
-        const updateArticleLike = await this.like.delete({
+        await this.like.delete({
           where: {
             id: ArticleLike.id,
           },
@@ -775,7 +775,7 @@ class BoardService {
       }
 
       if (ArticleLike.likeType === LikeType.dislike) {
-        const updateArticleLike = await this.like.delete({
+        await this.like.delete({
           where: {
             id: ArticleLike.id,
           },
