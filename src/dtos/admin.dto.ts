@@ -45,14 +45,11 @@ export class PostBoardRequestDto {
 
 export class GetReportRequestDto {
   @IsString({ message: '처리 상태를 입력해주세요.' })
-  public process: string;
+  @IsIn(['pending', 'success', 'denied'], { message: 'pending, success, denied 중 하나를 입력해주세요.' })
+  public process: Process;
 
   @IsString({ message: '신고 타입을 입력해주세요.' })
   public targetType: string;
-  
-  @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'success', 'denied'], { message: 'pending, success, denied 중 하나를 입력해주세요.' })
-  public process: Process;
 }
 
 export class CompleteReportDto {

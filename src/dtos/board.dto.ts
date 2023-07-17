@@ -21,3 +21,14 @@ export class CommentDto {
   @IsBoolean({ message: '익명여부를 선택해주세요.' })
   public isAnonymous: boolean;
 }
+
+export class SendBoardRequestDto {
+  @IsString({ message: '게시판 이름을 입력해주세요.' })
+  public name: string;
+
+  @IsString({ message: '게시판 설명을 입력해주세요.' })
+  public description: string;
+
+  @IsString({ message: '게시판 상세 설명을 입력해주세요.' })
+  public detail: string;
+}
