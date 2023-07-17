@@ -18,6 +18,7 @@ class AdminService {
   public board = new PrismaClient().board;
   public boardRequest = new PrismaClient().boardRequest;
   public schoolService = new SchoolService();
+  public deletedArticle = new PrismaClient().deletedArticle;
   public report = new PrismaClient().report;
   public article = new PrismaClient().article;
 
@@ -236,6 +237,19 @@ class AdminService {
 
     try {
       await this.article.delete({ where: { id: Number(articleId) } });
+      await this.deletedArticle.create({
+        data: {
+          id: Number(findArticle.id),
+          schoolId: findArticle.schoolId,
+          title: findArticle.title,
+          content: findArticle.content,
+          images: findArticle.images,
+          isAnonymous: findArticle.isAnonymous,
+          userId: findArticle.userId,
+          createdAt: findArticle.createdAt,
+          boardId: findArticle.boardId,
+        },
+      });
     } catch (error) {
       throw error;
     }
