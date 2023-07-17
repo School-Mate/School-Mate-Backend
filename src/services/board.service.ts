@@ -3,7 +3,6 @@ import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType }
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 import { deleteObject } from '@/utils/multer';
-import { logger } from '@/utils/logger';
 
 class BoardService {
   public article = new PrismaClient().article;
@@ -92,6 +91,57 @@ class BoardService {
       return findBoards;
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
+
+  public async searchCombine(keyword: string): Promise<{ board: Board[]; article: Article[] }> {
+    try {
+      const findBoards = await this.board.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: keyword,
+              },
+            },
+            {
+              description: {
+                contains: keyword,
+              },
+            },
+          ],
+        },
+        take: 3,
+      });
+
+      const findArticles = await this.article.findMany({
+        where: {
+          OR: [
+            {
+              title: {
+                contains: keyword,
+              },
+            },
+            {
+              content: {
+                contains: keyword,
+              },
+            },
+          ],
+        },
+        take: 3,
+      });
+
+      return {
+        board: findBoards,
+        article: findArticles,
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
     }
   }
 
@@ -235,7 +285,6 @@ class BoardService {
         }
       });
     } catch (error) {
-      logger.error(error);
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
   }
