@@ -1,13 +1,6 @@
 import { VerifySchoolImageDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import {
-  IClassInfoResponse,
-  IMealInfoResponse,
-  IMealInfoRow,
-  ISchoolInfoResponse,
-  ISchoolInfoRow,
-  ITimeTableResponse,
-} from '@/interfaces/neisapi.interface';
+import { IClassInfoResponse, IMealInfoResponse, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { kakaoClient, neisClient } from '@/utils/client';
 import { PrismaClient, School, User, Process, Meal } from '@prisma/client';
 import { AxiosError } from 'axios';
