@@ -1,4 +1,4 @@
-import { IsOptional, IsString, Matches } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class ArticleRequestQuery {
   @IsString({
@@ -9,6 +9,6 @@ export class ArticleRequestQuery {
 }
 
 export class SearchCombineDto {
-  @Matches(/^[가-힣a-zA-Z0-9]{1,}$/, { message: '검색어 형식이 아닙니다.' })
+  @IsString({ message: '검색어를 입력해주세요.' })
   public keyword: string;
 }
