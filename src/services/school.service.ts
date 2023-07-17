@@ -268,24 +268,15 @@ class SchoolService {
 
   private semesterHandler(): number {
     const today = dayjs();
-    const year = today.year();
 
-    const semester1Start = dayjs(`${year}-02-01`);
-    const semester1End = dayjs(`${year}-07-15`);
-    let semester2End;
+    const semester1Start = dayjs('03-01');
+    const semester2Start = dayjs('08-01');
+    const semester2End = dayjs('12-31');
 
-    if (today.isAfter(semester1End) && today.isBefore(dayjs(`${year + 1}-04-01`))) {
-      semester2End = dayjs(`${year + 1}-03-31`);
-    } else {
-      semester2End = dayjs(`${year}-03-31`);
-    }
-
-    if (today.isBetween(semester1Start, semester1End, null, '[]')) {
+    if (today.isAfter(semester1Start) && today.isBefore(semester2Start)) {
       return 1;
-    } else if (today.isBetween(semester1End, semester2End, null, '[]')) {
+    } else if (today.isAfter(semester2Start) && today.isBefore(semester2End)) {
       return 2;
-    } else {
-      return null;
     }
   }
 }
