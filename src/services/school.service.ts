@@ -9,7 +9,7 @@ import {
   ITimeTableResponse,
 } from '@/interfaces/neisapi.interface';
 import { kakaoClient, neisClient } from '@/utils/client';
-import { PrismaClient, School, User, Process } from '@prisma/client';
+import { PrismaClient, School, User, Process, Meal } from '@prisma/client';
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -20,6 +20,7 @@ class SchoolService {
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
   public school = new PrismaClient().school;
   public user = new PrismaClient().user;
+  public meal = new PrismaClient().meal;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {
@@ -114,10 +115,17 @@ class SchoolService {
     }
   }
 
-  public async getMeal(schoolId: string, data: IMealQuery): Promise<Array<IMealInfoRow>> {
+  public async getMeal(schoolId: string, data: IMealQuery): Promise<Array<Meal>> {
     try {
       const schoolInfo = await this.getSchoolById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
+
+      const findMeal = await this.meal.findUnique({
+        where: {
+          id: `${schoolId}-${dayjs(data.date).format('YYYYMMDD')}-${data.mealType}`,
+        },
+      });
+      if (findMeal) return [findMeal];
 
       const atpt = schoolInfo.code;
       const { data: resp } = await neisClient.get('/hub/mealServiceDietInfo', {
@@ -132,11 +140,21 @@ class SchoolService {
       });
 
       const mealInfo: IMealInfoResponse = resp.mealServiceDietInfo;
-      if (!mealInfo) {
-        throw new HttpException(404, '해당하는 급식이 없습니다.');
-      }
-      return mealInfo[1].row;
+      if (!mealInfo) throw new HttpException(404, '해당하는 급식이 없습니다.');
+
+      const cashMeal = await this.meal.create({
+        data: {
+          id: `${schoolId}-${dayjs(data.date).format('YYYYMMDD')}-${data.mealType}`,
+          MLSV_FGR: mealInfo[1].row[0].MLSV_FGR as any as number,
+          DDISH_NM: mealInfo[1].row[0].DDISH_NM,
+          ORPLC_INFO: mealInfo[1].row[0].ORPLC_INFO,
+          CAL_INFO: mealInfo[1].row[0].CAL_INFO,
+          NTR_INFO: mealInfo[1].row[0].NTR_INFO,
+        },
+      });
+      return [cashMeal];
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else if (error instanceof AxiosError) {
