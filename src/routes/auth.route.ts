@@ -4,7 +4,15 @@ import { Routes } from '@interfaces/routes.interface';
 import authMiddleware from '@middlewares/auth.middleware';
 import validationMiddleware from '@middlewares/validation.middleware';
 import { imageUpload } from '@/utils/multer';
-import { CreateUserDto, LoginUserDto, UpdatePasswordDto, UpdateProfileDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
+import {
+  CreateUserDto,
+  LoginUserDto,
+  UpdateAskedCustomIdDto,
+  UpdatePasswordDto,
+  UpdateProfileDto,
+  VerifyPhoneCodeDto,
+  VerifyPhoneMessageDto,
+} from '@/dtos/users.dto';
 
 class AuthRoute implements Routes {
   public path = '/auth';
@@ -31,6 +39,12 @@ class AuthRoute implements Routes {
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.verifyPhoneMessage);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
     this.router.patch(`${this.path}/me/profile`, validationMiddleware(UpdateProfileDto, 'body'), authMiddleware, this.authController.updateProfile);
+    this.router.patch(
+      `${this.path}/me/asked`,
+      validationMiddleware(UpdateAskedCustomIdDto, 'body'),
+      authMiddleware,
+      this.authController.meAskedCustomId,
+    );
     this.router.delete(`/image/:imageId`, authMiddleware, this.authController.deleteImage);
   }
 }

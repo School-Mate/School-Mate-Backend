@@ -65,6 +65,13 @@ export class UpdateProfileDto {
   public imageId: string;
 }
 
+export class UpdateAskedCustomIdDto {
+  @IsString({
+    message: '에스크 아이디를 입력해주세요',
+  })
+  public customId: string;
+}
+
 export class UpdatePasswordDto {
   @IsString({ message: '기존 비밀번호를 입력해주세요.' })
   public password: string;

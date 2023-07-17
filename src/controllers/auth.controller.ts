@@ -5,7 +5,15 @@ import AuthService from '@services/auth.service';
 import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI, DOMAIN } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
-import { CreateUserDto, LoginUserDto, UpdatePasswordDto, UpdateProfileDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
+import {
+  CreateUserDto,
+  LoginUserDto,
+  UpdateAskedCustomIdDto,
+  UpdatePasswordDto,
+  UpdateProfileDto,
+  VerifyPhoneCodeDto,
+  VerifyPhoneMessageDto,
+} from '@/dtos/users.dto';
 import AskedService from '@/services/asked.service';
 
 class AuthController {
@@ -41,6 +49,18 @@ class AuthController {
       const meAsked = await this.askedService.meAsked(userData, page);
 
       ResponseWrapper(req, res, { data: meAsked });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public meAskedCustomId = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const { customId } = req.body as UpdateAskedCustomIdDto;
+      const updateAskedCustomId = await this.askedService.updateAskedCustomId(userData, customId);
+
+      ResponseWrapper(req, res, { data: updateAskedCustomId });
     } catch (error) {
       next(error);
     }

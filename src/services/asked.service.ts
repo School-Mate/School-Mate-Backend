@@ -1,7 +1,7 @@
 import { AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { UserWithSchool } from '@/interfaces/auth.interface';
-import { PrismaClient, Process, User } from '@prisma/client';
+import { AskedUser, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 
 class AskedService {
@@ -49,6 +49,48 @@ class AskedService {
     }
   };
 
+  public updateAskedCustomId = async (user: User, customId: string): Promise<AskedUser> => {
+    try {
+      const findAskedInfo = await this.askedUser.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 질문입니다.');
+
+      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '권한이 없습니다.');
+
+      if (findAskedInfo.lastUpdateCustomId && findAskedInfo.lastUpdateCustomId.getTime() + 1000 * 60 * 60 * 24 * 30 > new Date().getTime())
+        throw new HttpException(403, '한달에 한번만 변경할 수 있습니다.');
+
+      const hadAskedCustomId = await this.askedUser.findFirst({
+        where: {
+          customId: customId,
+        },
+      });
+      if (hadAskedCustomId) throw new HttpException(403, '이미 사용중인 아이디입니다.');
+
+      const updatedAsked = await this.askedUser.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          customId,
+          lastUpdateCustomId: new Date(),
+        },
+      });
+
+      return updatedAsked;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
   public meAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     try {
       const askedList = await this.asked.findMany({
@@ -82,6 +124,33 @@ class AskedService {
         },
       }));
 
+      const askedCount = await this.asked.count({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      const deniedCount = await this.asked.count({
+        where: {
+          userId: user.id,
+          process: Process.denied,
+        },
+      });
+
+      const successCount = await this.asked.count({
+        where: {
+          userId: user.id,
+          process: Process.success,
+        },
+      });
+
+      const pendingCount = await this.asked.count({
+        where: {
+          userId: user.id,
+          process: Process.pending,
+        },
+      });
+
       return {
         askeds: returnAskedList,
         user: {
@@ -93,6 +162,10 @@ class AskedService {
           customId: askedUser.customId,
           statusMessage: askedUser.statusMessage,
         },
+        pages: Math.ceil(askedCount / 7),
+        deniedCount,
+        successCount,
+        pendingCount,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -167,6 +240,12 @@ class AskedService {
         askedUserId: null,
       })).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
+      const askedCount = await this.asked.count({
+        where: {
+          askedUserId: findAskedUser.userId,
+        },
+      });
+
       return {
         askeds: filteredAsked,
         user: {
@@ -178,6 +257,7 @@ class AskedService {
           userId: findAskedUser.user.id,
           customId: findAskedUser.customId,
         },
+        pages: Math.ceil(askedCount / 10),
       };
     } catch (error) {
       if (error instanceof HttpException) {
