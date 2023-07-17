@@ -1,5 +1,5 @@
 import AskedController from '@/controllers/asked.controller';
-import { AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
+import { AskedDto, AskedReceiveDto, AskedStatusMessageDto } from '@/dtos/asked.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import authMiddleware from '@/middlewares/auth.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -18,13 +18,19 @@ class AskedRoute implements Routes {
     this.router.get(`${this.path}`, authMiddleware, this.askedController.getAsked);
     this.router.get(`${this.path}/:userId`, authMiddleware, this.askedController.getAskedUser);
     this.router.get(`${this.path}/:userId/:askedId`, authMiddleware, this.askedController.getAskedById);
+    this.router.post(
+      `${this.path}/changestatusmessage`,
+      authMiddleware,
+      validationMiddleware(AskedStatusMessageDto, 'body'),
+      this.askedController.changeStatusmessage,
+    );
     this.router.post(`${this.path}/:userId`, authMiddleware, validationMiddleware(AskedDto, 'body'), this.askedController.createAsked);
     this.router.post(`${this.path}/:userId/:askedId/deny`, authMiddleware, this.askedController.denyAsked);
     this.router.post(
       `${this.path}/:userId/:askedId/reply`,
       authMiddleware,
       validationMiddleware(AskedReceiveDto, 'body'),
-      this.askedController.createAsked,
+      this.askedController.receiveAsked,
     );
     this.router.delete(`${this.path}/:userId/:askedId`, authMiddleware, this.askedController.deleteAsked);
   }

@@ -65,6 +65,17 @@ class AskedController {
     }
   };
 
+  public changeStatusmessage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const message = req.body.message as string;
+      const askedData = await this.askedService.changeStatusmessage(req.user, message);
+
+      ResponseWrapper(req, res, { data: askedData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public receiveAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const askedId = req.params.askedId;

@@ -6,9 +6,11 @@ import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIREC
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { CreateUserDto, LoginUserDto, UpdatePasswordDto, UpdateProfileDto, VerifyPhoneCodeDto, VerifyPhoneMessageDto } from '@/dtos/users.dto';
+import AskedService from '@/services/asked.service';
 
 class AuthController {
   public authService = new AuthService();
+  public askedService = new AskedService();
 
   public me = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -26,6 +28,19 @@ class AuthController {
       const meSchool = await this.authService.meSchool(userData);
 
       ResponseWrapper(req, res, { data: meSchool });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public meAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const page = req.query.page as string;
+
+      const meAsked = await this.askedService.meAsked(userData, page);
+
+      ResponseWrapper(req, res, { data: meAsked });
     } catch (error) {
       next(error);
     }

@@ -12,3 +12,8 @@ export class AskedReceiveDto {
   @IsString({ message: '답변을 입력해주세요.' })
   public answer: string;
 }
+
+export class AskedStatusMessageDto {
+  @IsString({ message: '상태메세지를 입력해주세요.' })
+  public message: string;
+}
