@@ -33,6 +33,18 @@ class BoardController {
     }
   };
 
+  public searchCombine = async (req: RequestHandler, res: Response, next: NextFunction) => {
+    try {
+      const searchData = await this.boardService.searchCombine(req.query.keyword as string);
+
+      ResponseWrapper(req, res, {
+        data: searchData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public getSuggestArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
