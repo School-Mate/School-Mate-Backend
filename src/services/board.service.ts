@@ -142,7 +142,7 @@ class BoardService {
       for await (const article of findArticle) {
         const likeCounts = await this.like.count({
           where: {
-            targetId: article.id.toString(),
+            targetId: article.id,
             targetType: LikeTargetType.article,
             likeType: LikeType.like,
           },
@@ -150,7 +150,7 @@ class BoardService {
 
         const disLikeCounts = await this.like.count({
           where: {
-            targetId: article.id.toString(),
+            targetId: article.id,
             targetType: LikeTargetType.article,
             likeType: LikeType.dislike,
           },
@@ -287,7 +287,7 @@ class BoardService {
 
       const likeCounts = await this.like.count({
         where: {
-          targetId: articleId,
+          targetId: findArticle.id,
           targetType: LikeTargetType.article,
           likeType: LikeType.like,
         },
@@ -295,7 +295,7 @@ class BoardService {
 
       const disLikeCounts = await this.like.count({
         where: {
-          targetId: articleId,
+          targetId: findArticle.id,
           targetType: LikeTargetType.article,
           likeType: LikeType.dislike,
         },
@@ -370,7 +370,7 @@ class BoardService {
         });
         const likeCounts = await this.like.count({
           where: {
-            targetId: article.id.toString(),
+            targetId: article.id,
             targetType: LikeTargetType.article,
             likeType: LikeType.like,
           },
@@ -694,7 +694,7 @@ class BoardService {
       const ArticleLike = await this.like.findFirst({
         where: {
           userId: userId,
-          targetId: articleId,
+          targetId: findArticle.id,
           targetType: LikeTargetType.article,
         },
       });
@@ -703,7 +703,7 @@ class BoardService {
         const createArticleLike = await this.like.create({
           data: {
             userId: userId,
-            targetId: articleId,
+            targetId: findArticle.id,
             targetType: LikeTargetType.article,
             likeType: LikeType.like,
           },
@@ -756,7 +756,7 @@ class BoardService {
       const ArticleLike = await this.like.findFirst({
         where: {
           userId: userId,
-          targetId: articleId,
+          targetId: findArticle.id,
           targetType: LikeTargetType.article,
         },
       });
@@ -765,7 +765,7 @@ class BoardService {
         const createArticleLike = await this.like.create({
           data: {
             userId: userId,
-            targetId: articleId,
+            targetId: findArticle.id,
             targetType: LikeTargetType.article,
             likeType: LikeType.dislike,
           },
@@ -818,7 +818,7 @@ class BoardService {
       const createCommentLike = await this.like.create({
         data: {
           userId: userId,
-          targetId: commentId,
+          targetId: findComment.id,
           targetType: LikeTargetType.comment,
           likeType: LikeType.like,
         },
@@ -849,7 +849,7 @@ class BoardService {
       const createCommentdisLike = await this.like.create({
         data: {
           userId: userId,
-          targetId: commentId,
+          targetId: findComment.id,
           targetType: LikeTargetType.comment,
           likeType: LikeType.dislike,
         },
@@ -880,7 +880,7 @@ class BoardService {
       const createReCommentLike = await this.like.create({
         data: {
           userId: userId,
-          targetId: reCommentId,
+          targetId: findReComment.id,
           targetType: LikeTargetType.recomment,
           likeType: LikeType.like,
         },
@@ -911,7 +911,7 @@ class BoardService {
       const createReCommentdisLike = await this.like.create({
         data: {
           userId: userId,
-          targetId: reCommentId,
+          targetId: findReComment.id,
           targetType: LikeTargetType.recomment,
           likeType: LikeType.dislike,
         },
@@ -976,7 +976,7 @@ class BoardService {
 
       await this.like.deleteMany({
         where: {
-          targetId: articleId,
+          targetId: findArticle.id,
           targetType: LikeTargetType.article,
         },
       });
