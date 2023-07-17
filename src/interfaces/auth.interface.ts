@@ -1,4 +1,4 @@
-import { School, SocialLogin, User, UserSchool, UserSchoolVerify } from '@prisma/client';
+import { School, User, UserSchool } from '@prisma/client';
 import { RequestHandler } from './routes.interface';
 
 export interface DataStoredInToken {

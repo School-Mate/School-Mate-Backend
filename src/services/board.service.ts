@@ -713,7 +713,7 @@ class BoardService {
       }
 
       if (ArticleLike.likeType === LikeType.like) {
-        const updateArticleLike = await this.like.delete({
+        await this.like.delete({
           where: {
             id: ArticleLike.id,
           },
@@ -775,7 +775,7 @@ class BoardService {
       }
 
       if (ArticleLike.likeType === LikeType.dislike) {
-        const updateArticleLike = await this.like.delete({
+        await this.like.delete({
           where: {
             id: ArticleLike.id,
           },

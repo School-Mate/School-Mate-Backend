@@ -206,7 +206,7 @@ class AuthService {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    const updateUser = await this.users.update({
+    await this.users.update({
       where: {
         id: userData.id,
       },
@@ -242,7 +242,7 @@ class AuthService {
         });
       }
 
-      const updateUser = await this.users.update({
+      await this.users.update({
         where: {
           id: userData.id,
         },
@@ -276,7 +276,7 @@ class AuthService {
     });
     if (!image) throw new HttpException(400, '이미지를 찾을 수 없습니다');
 
-    const updateUser = await this.users.update({
+    await this.users.update({
       where: {
         id: userData.id,
       },

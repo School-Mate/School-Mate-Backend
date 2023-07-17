@@ -1,6 +1,6 @@
 import { NextFunction, Response } from 'express';
 import { verify } from 'jsonwebtoken';
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { SECRET_KEY } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, RequestWithUser, UserWithSchool } from '@interfaces/auth.interface';
