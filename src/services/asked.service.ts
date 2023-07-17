@@ -56,9 +56,12 @@ class AskedService {
           userId: user.id,
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
-        take: 10,
+        take: 7,
         include: {
           QuestionUser: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
         },
       });
 
@@ -114,11 +117,27 @@ class AskedService {
           ],
         },
         include: {
+          user: true,
           Asked: {
+            include: {
+              QuestionUser: true,
+            },
             skip: page ? (Number(page) - 1) * 10 : 0,
             take: 10,
+            orderBy: {
+              createdAt: 'desc',
+            },
+            where: {
+              OR: [
+                {
+                  process: Process.success,
+                },
+                {
+                  process: Process.pending,
+                },
+              ],
+            },
           },
-          user: true,
         },
       });
 
@@ -139,11 +158,25 @@ class AskedService {
         return createdAskedUser;
       }
 
+      const filteredAsked = findAskedUser.Asked.map(asked => ({
+        ...asked,
+        QuestionUser: {
+          name: asked.isAnonymous ? '익명' : asked.QuestionUser.name,
+          profile: asked.isAnonymous ? null : asked.QuestionUser.profile,
+        },
+        askedUserId: null,
+      })).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
       return {
-        ...findAskedUser,
+        askeds: filteredAsked,
         user: {
-          name: findAskedUser.user.name,
-          profile: findAskedUser.user.profile,
+          user: {
+            profile: findAskedUser.user.profile,
+            name: findAskedUser.user.name,
+          },
+          statusMessage: findAskedUser.statusMessage,
+          userId: findAskedUser.user.id,
+          customId: findAskedUser.customId,
         },
       };
     } catch (error) {

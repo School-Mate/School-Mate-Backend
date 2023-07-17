@@ -25,14 +25,9 @@ class AskedRoute implements Routes {
       this.askedController.changeStatusmessage,
     );
     this.router.post(`${this.path}/:userId`, authMiddleware, validationMiddleware(AskedDto, 'body'), this.askedController.createAsked);
-    this.router.post(`${this.path}/:userId/:askedId/deny`, authMiddleware, this.askedController.denyAsked);
-    this.router.post(
-      `${this.path}/:userId/:askedId/reply`,
-      authMiddleware,
-      validationMiddleware(AskedReceiveDto, 'body'),
-      this.askedController.receiveAsked,
-    );
-    this.router.delete(`${this.path}/:userId/:askedId`, authMiddleware, this.askedController.deleteAsked);
+    this.router.post(`${this.path}/:askedId/deny`, authMiddleware, this.askedController.denyAsked);
+    this.router.post(`${this.path}/:askedId/reply`, authMiddleware, validationMiddleware(AskedReceiveDto, 'body'), this.askedController.receiveAsked);
+    this.router.delete(`${this.path}/:askedId`, authMiddleware, this.askedController.deleteAsked);
   }
 }
 
