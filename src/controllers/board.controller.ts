@@ -3,7 +3,8 @@ import ResponseWrapper from '@/utils/responseWarpper';
 import { Response, NextFunction } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithUser } from '@/interfaces/auth.interface';
-import { IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
+import { IArticleQuery } from '@/interfaces/board.interface';
+import { SendBoardRequestDto } from '@/dtos/board.dto';
 
 class BoardController {
   public boardService = new BoardService();
@@ -110,15 +111,13 @@ class BoardController {
     }
   };
 
-  public sendBoardRequest = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public sendBoardRequest = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const boardRequestData = req.body as IBoardRequestQuery;
-      await this.boardService.sendBoardRequest(boardRequestData);
+      const user = req.user;
+      const boardRequestData = req.body as SendBoardRequestDto;
+      const requestBoard = await this.boardService.sendBoardRequest(boardRequestData, user);
 
-      ResponseWrapper(req, res, {
-        status: 201,
-        message: '게시판 신청이 완료되었습니다.',
-      });
+      ResponseWrapper(req, res, { data: requestBoard });
     } catch (error) {
       next(error);
     }

@@ -28,7 +28,4 @@ export class SendBoardRequestDto {
 
   @IsString({ message: '게시판 설명을 입력해주세요.' })
   public description: string;
-
-  @IsString({ message: '게시판 상세 설명을 입력해주세요.' })
-  public detail: string;
 }

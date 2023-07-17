@@ -1,10 +1,13 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType, BoardRequest } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
 import { deleteObject } from '@/utils/multer';
+import SchoolService from './school.service';
+import { SendBoardRequestDto } from '@/dtos/board.dto';
 
 class BoardService {
+  public schoolService = new SchoolService();
   public article = new PrismaClient().article;
   public board = new PrismaClient().board;
   public boardRequest = new PrismaClient().boardRequest;
@@ -489,33 +492,24 @@ class BoardService {
     }
   }
 
-  public async sendBoardRequest(data: IBoardRequestQuery): Promise<void> {
-    const userData = await this.user.findUnique({
-      where: {
-        id: data.userId,
-      },
-      include: {
-        UserSchool: true,
-      },
-    });
+  public async sendBoardRequest(data: SendBoardRequestDto, user: User): Promise<BoardRequest> {
+    if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
 
-    const schoolInfo = await this.school.findUnique({
-      where: {
-        schoolId: userData.UserSchool.schoolId,
-      },
-    });
+    const school = await this.schoolService.getSchoolById(user.userSchoolId);
+    if (!school) throw new HttpException(404, '학교 정보가 없습니다.');
 
     try {
-      await this.boardRequest.create({
+      const boardRequestData = await this.boardRequest.create({
         data: {
           name: data.name,
           description: data.description,
-          detail: data.detail,
-          userId: data.userId,
-          schoolId: userData.UserSchool.schoolId,
-          schoolName: schoolInfo.name,
+          userId: user.id,
+          schoolId: school.schoolId,
+          schoolName: school.defaultName,
         },
       });
+
+      return boardRequestData;
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }

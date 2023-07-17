@@ -221,7 +221,6 @@ model BoardRequest {
   id          String              @id @default(uuid())
   name        String
   description String
-  detail      String
   userId      String
   schoolId    String
   schoolName  String
