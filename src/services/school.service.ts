@@ -212,7 +212,28 @@ class SchoolService {
       });
       const findSchool = await this.getSchoolById(verifyData.schoolId);
 
-      const createVerifyImage = await this.userSchoolVerify.create({
+      if (!findSchool) {
+        const createVerifyImage = await this.userSchoolVerify.create({
+          data: {
+            userId: user.id,
+            userName: findUser.name,
+            imageId: findImage.id,
+            process: Process.pending,
+            schoolId: verifyData.schoolId,
+            schoolName: findSchool.name ? findSchool.name : findSchool.defaultName,
+            grade: verifyData.grade,
+            class: verifyData.class,
+            dept: verifyData.dept,
+          },
+        });
+
+        return createVerifyImage;
+      }
+
+      const updateVerifyImage = await this.userSchoolVerify.update({
+        where: {
+          id: findUser.id,
+        },
         data: {
           userId: user.id,
           userName: findUser.name,
@@ -226,7 +247,7 @@ class SchoolService {
         },
       });
 
-      return createVerifyImage;
+      return updateVerifyImage;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
