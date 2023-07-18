@@ -97,10 +97,11 @@ class BoardService {
     }
   }
 
-  public async searchCombine(keyword: string): Promise<{ board: Board[]; article: Article[] }> {
+  public async searchCombine(keyword: string, user: UserWithSchool): Promise<{ board: Board[]; article: Article[] }> {
     try {
       const findBoards = await this.board.findMany({
         where: {
+          schoolId: user.userSchoolId,
           OR: [
             {
               name: {
@@ -119,6 +120,7 @@ class BoardService {
 
       const findArticles = await this.article.findMany({
         where: {
+          schoolId: user.userSchoolId,
           OR: [
             {
               title: {
