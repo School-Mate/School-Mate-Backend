@@ -212,28 +212,9 @@ class SchoolService {
       });
       const findSchool = await this.getSchoolById(verifyData.schoolId);
 
-      if (!findSchool) {
-        const createVerifyImage = await this.userSchoolVerify.create({
-          data: {
-            userId: user.id,
-            userName: findUser.name,
-            imageId: findImage.id,
-            process: Process.pending,
-            schoolId: verifyData.schoolId,
-            schoolName: findSchool.name ? findSchool.name : findSchool.defaultName,
-            grade: verifyData.grade,
-            class: verifyData.class,
-            dept: verifyData.dept,
-          },
-        });
+      if (!findSchool) throw new HttpException(404, '해당하는 학교를 찾을 수 없습니다.');
 
-        return createVerifyImage;
-      }
-
-      const updateVerifyImage = await this.userSchoolVerify.update({
-        where: {
-          id: findUser.id,
-        },
+      const createVerifyImage = await this.userSchoolVerify.create({
         data: {
           userId: user.id,
           userName: findUser.name,
@@ -247,7 +228,7 @@ class SchoolService {
         },
       });
 
-      return updateVerifyImage;
+      return createVerifyImage;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
