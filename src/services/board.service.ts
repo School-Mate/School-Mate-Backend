@@ -1,7 +1,7 @@
 import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType, BoardRequest } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
-import { ArticleWithImage, CommentWithUser, IArticleQuery, IBoardRequestQuery } from '@/interfaces/board.interface';
+import { ArticleWithImage, CommentWithUser, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteObject } from '@/utils/multer';
 import SchoolService from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
@@ -543,14 +543,14 @@ class BoardService {
         },
       });
 
-      const findCommentsExcludAnUser: CommentWithUser[] = [];
+      const findCommentsExcludeUser: CommentWithUser[] = [];
 
       for await (const comment of findComments) {
-        const reCommentsExcludAnUser: CommentWithUser[] = [];
+        const reCommentsExcludeUser: CommentWithUser[] = [];
         if (comment.recomments.length != 0) {
           for await (const reComment of comment.recomments) {
             if (reComment.isAnonymous) {
-              reCommentsExcludAnUser.push({
+              reCommentsExcludeUser.push({
                 ...reComment,
                 content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
                 userId: null,
@@ -563,7 +563,7 @@ class BoardService {
                   : undefined,
               });
             } else {
-              reCommentsExcludAnUser.push({
+              reCommentsExcludeUser.push({
                 ...reComment,
                 content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
                 userId: reComment.isDeleted ? undefined : reComment.User.id,
@@ -583,7 +583,7 @@ class BoardService {
         }
 
         if (comment.isAnonymous) {
-          findCommentsExcludAnUser.push({
+          findCommentsExcludeUser.push({
             ...comment,
             content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
             userId: null,
@@ -594,14 +594,14 @@ class BoardService {
                   id: null,
                 }
               : undefined,
-            recomments: reCommentsExcludAnUser.sort((a, b) => {
+            recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
               else return 0;
             }),
           });
         } else {
-          findCommentsExcludAnUser.push({
+          findCommentsExcludeUser.push({
             ...comment,
             content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
             isMe: comment.userId === user.id,
@@ -614,7 +614,7 @@ class BoardService {
                   name: comment.User.name,
                   id: comment.User.id,
                 },
-            recomments: reCommentsExcludAnUser.sort((a, b) => {
+            recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
               else return 0;
@@ -630,7 +630,7 @@ class BoardService {
       });
 
       return {
-        comments: findCommentsExcludAnUser.sort((a, b) => {
+        comments: findCommentsExcludeUser.sort((a, b) => {
           if (a.createdAt > b.createdAt) return 1;
           else if (a.createdAt < b.createdAt) return -1;
           else return 0;
@@ -897,7 +897,7 @@ class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      const createCommentdisLike = await this.like.create({
+      const createCommentDislike = await this.like.create({
         data: {
           userId: userId,
           targetId: findComment.id,
@@ -906,7 +906,7 @@ class BoardService {
         },
       });
 
-      return createCommentdisLike;
+      return createCommentDislike;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -959,7 +959,7 @@ class BoardService {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
       }
 
-      const createReCommentdisLike = await this.like.create({
+      const createRecommentDislike = await this.like.create({
         data: {
           userId: userId,
           targetId: findReComment.id,
@@ -968,7 +968,7 @@ class BoardService {
         },
       });
 
-      return createReCommentdisLike;
+      return createRecommentDislike;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
