@@ -348,7 +348,7 @@ class AskedService {
       });
 
       if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 질문입니다.');
-      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '거절할 권한이 없습니다.');
+      if (findAskedInfo.askedUserId !== user.id) throw new HttpException(403, '거절할 권한이 없습니다.');
 
       const updatedAsked = await this.asked.update({
         where: {
@@ -447,7 +447,7 @@ class AskedService {
       });
 
       if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 질문입니다.');
-      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '삭제할 권한이 없습니다.');
+      if (findAskedInfo.askedUserId !== user.id) throw new HttpException(403, '삭제할 권한이 없습니다.');
 
       const deletedAsked = await this.asked.delete({
         where: {
