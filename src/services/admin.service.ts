@@ -114,7 +114,7 @@ class AdminService {
     if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
     if (findRequest.process !== Process.pending) throw new HttpException(409, '이미 처리된 요청입니다.');
 
-    const updateRequest = await this.userSchoolVerify.update({
+    await this.userSchoolVerify.update({
       where: { id: findRequest.id },
       data: {
         message: message,
@@ -122,28 +122,26 @@ class AdminService {
       },
     });
 
-    if (updateRequest.process === Process.success) {
-      const schoolInfo = await this.schoolService.getSchoolById(updateRequest.schoolId);
-      if (!schoolInfo) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
+    const schoolInfo = await this.schoolService.getSchoolById(findRequest.schoolId);
+    if (!schoolInfo) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
 
-      await this.userSchool.create({
-        data: {
-          userId: updateRequest.userId,
-          schoolId: schoolInfo.schoolId,
-          dept: updateRequest.dept,
-          class: updateRequest.class,
-          grade: updateRequest.grade,
-        },
-      });
+    await this.userSchool.create({
+      data: {
+        userId: findRequest.userId,
+        schoolId: schoolInfo.schoolId,
+        dept: findRequest.dept,
+        class: findRequest.class,
+        grade: findRequest.grade,
+      },
+    });
 
-      await this.users.update({
-        where: { id: updateRequest.userId },
-        data: {
-          userSchoolId: updateRequest.schoolId,
-        },
-      });
-      return true;
-    }
+    await this.users.update({
+      where: { id: findRequest.userId },
+      data: {
+        userSchoolId: findRequest.schoolId,
+      },
+    });
+    return true;
   };
 
   public getBoardRequests = async (process: string): Promise<Array<BoardRequest>> => {

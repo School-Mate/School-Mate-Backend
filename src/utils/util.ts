@@ -18,6 +18,14 @@ export const isEmpty = (value: string | number | object): boolean => {
   }
 };
 
+export enum AdminRole {
+  USER_SCHOOL_REVIEWER = 2 << 0, // 학교 인증 확인 권한
+  USER_REPORT_REVIEWER = 2 << 1, // 유저 신고 확인 권한
+  USER_MANAGE = 2 << 2, // 유저 전체 관리 권한
+  BOARD_MANAGE = 2 << 3, // 게시판 전체 관리 권한
+  SUPER_ADMIN = 2 << 10, // 아래 권한 모두 지급 가능 및 계정생성
+}
+
 export const excludeUserPassword = <User, Key extends keyof User>(
   user: User,
   keys: Key[],
@@ -40,34 +48,10 @@ export const excludeAdminPassword = <Admin, Key extends keyof Admin>(
   };
 };
 
-export const getDummyData = (type: 'asked' | 'board') => {
-  switch (type) {
-    case 'asked':
-      const asked = [];
-      for (let i = 0; i < 10; i++) {
-        asked.push({
-          statusMessage: '학교 인증후 이용가능합니다.',
-          user: {
-            name: '학교 인증후 확인가능',
-            profile: null,
-          },
-        });
-      }
-      return asked;
-    case 'board':
-      const board = [];
-      for (let i = 0; i < 10; i++) {
-        board.push({
-          title: '학교 인증후 이용가능합니다.',
-          content: '학교 인증후 이용가능합니다.',
-          user: {
-            name: '학교 인증후 이용가능합니다.',
-            profile: null,
-          },
-        });
-      }
-      return board;
-    default:
-      return [];
-  }
-};
+export function checkAdminFlag(base: number, required: number | keyof typeof AdminRole): boolean {
+  return checkFlag(base, typeof required === 'number' ? required : AdminRole[required]);
+}
+
+function checkFlag(base: number, required: number) {
+  return (base & required) === required;
+}
