@@ -420,7 +420,7 @@ class AskedService {
 
     if (!findAsked) throw new HttpException(404, '찾을 수 없는 질문입니다.');
 
-    if (findAsked.userId !== user.id) throw new HttpException(403, '답장할 권한이 없습니다.');
+    if (findAsked.askedUserId !== user.id) throw new HttpException(403, '답장할 권한이 없습니다.');
     if (findAsked.process === 'success') throw new HttpException(403, '이미 답장한 질문입니다.');
     if (findAsked.process === 'denied') throw new HttpException(403, '이미 거절한 질문입니다.');
 
