@@ -9,9 +9,10 @@ class AskedController {
 
   public getAskedUser = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.params.userId;
+      const targetUserId = req.params.userId;
+      const user = req.user;
       const page = req.query.page as string;
-      const askedUserData = await this.askedService.getAskedUser(userId, page);
+      const askedUserData = await this.askedService.getAskedUser(targetUserId, page, user);
 
       ResponseWrapper(req, res, { data: askedUserData });
     } catch (error) {

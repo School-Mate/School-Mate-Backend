@@ -107,7 +107,7 @@ class AskedService {
         },
       });
 
-      const askedUser = await this.askedUser.findFirst({
+      let askedUser = await this.askedUser.findUnique({
         where: {
           userId: user.id,
         },
@@ -116,8 +116,20 @@ class AskedService {
         },
       });
 
+      if (!askedUser) {
+        askedUser = await this.askedUser.create({
+          data: {
+            userId: user.id,
+          },
+          include: {
+            user: true,
+          },
+        });
+      }
+
       const returnAskedList = askedList.map(asked => ({
         ...asked,
+        userId: asked.isAnonymous ? null : asked.userId,
         QuestionUser: {
           name: asked.isAnonymous ? '익명' : asked.QuestionUser.name,
           profile: asked.isAnonymous ? null : asked.QuestionUser.profile,
@@ -176,7 +188,7 @@ class AskedService {
     }
   };
 
-  public getAskedUser = async (userId: string, page: string): Promise<any> => {
+  public getAskedUser = async (userId: string, page: string, user: User): Promise<any> => {
     try {
       const findAskedUser = await this.askedUser.findFirst({
         where: {
@@ -213,6 +225,10 @@ class AskedService {
           },
         },
       });
+
+      if (!findAskedUser.receiveOtherSchool) {
+        if (findAskedUser.user.userSchoolId !== user.userSchoolId) throw new HttpException(403, '권한이 없습니다.');
+      }
 
       if (!findAskedUser) {
         const findUser = await this.user.findUnique({
@@ -355,6 +371,25 @@ class AskedService {
 
   public createAsked = async (user: User, targetUserId: string, askedQuestion: AskedDto): Promise<any> => {
     try {
+      const findAskedInfo = await this.askedUser.findUnique({
+        where: {
+          userId: targetUserId,
+        },
+        include: {
+          user: true,
+        },
+      });
+
+      if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 유저입니다.');
+
+      if (findAskedInfo.receiveOtherSchool) {
+        if (findAskedInfo.user.userSchoolId !== user.userSchoolId) throw new HttpException(403, '다른학교 학생의 질문을 받지 않습니다.');
+      }
+
+      if (!findAskedInfo.receiveAnonymous) {
+        if (askedQuestion.isAnonymous) throw new HttpException(403, '익명으로 질문을 받지 않습니다.');
+      }
+
       const createdAsked = await this.asked.create({
         data: {
           question: askedQuestion.question,
