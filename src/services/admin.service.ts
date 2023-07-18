@@ -154,8 +154,13 @@ class AdminService {
   };
 
   public postBoardRequest = async (requestId: string, message: string, process: Process): Promise<BoardRequest> => {
+    if (process === Process.pending) throw new HttpException(409, '올바른 상태를 입력해주세요.');
     const findRequest = await this.boardRequest.findUnique({ where: { id: requestId } });
     if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
+
+    const findBoardName = await this.board.findFirst({ where: { name: findRequest.name } });
+
+    if (findBoardName) throw new HttpException(409, '이미 존재하는 게시판입니다.');
 
     const updateRequest = await this.boardRequest.update({
       where: { id: findRequest.id },
