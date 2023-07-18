@@ -134,12 +134,23 @@ class BoardService {
             },
           ],
         },
+        include: {
+          Board: true,
+          User: true,
+        },
         take: 3,
       });
 
+      const filteredArticles: ArticleWithImage[] = [];
+
+      for await (const article of findArticles) {
+        const filteredArticle = await this.getArticle(article.id.toString(), user);
+        filteredArticles.push(filteredArticle);
+      }
+
       return {
         board: findBoards,
-        article: findArticles,
+        article: filteredArticles,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -358,6 +369,17 @@ class BoardService {
         },
       });
 
+      const commentCounts = await this.comment.count({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
+      const reCommentCounts = await this.reComment.count({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
+
       for await (const imageId of findArticle.images) {
         const findImage = await this.image.findUnique({
           where: {
@@ -372,6 +394,7 @@ class BoardService {
         keyOfImages: keyOfImages,
         likeCounts: likeCounts,
         disLikeCounts: disLikeCounts,
+        commentCounts: commentCounts + reCommentCounts,
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
