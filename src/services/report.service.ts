@@ -1,7 +1,8 @@
+import { AxiosError } from 'axios';
+
 import { ReportDto } from '@/dtos/report.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { PrismaClient, ReportTargetType, User } from '@prisma/client';
-import { AxiosError } from 'axios';
 
 class ReportService {
   public user = new PrismaClient().user;
@@ -11,52 +12,41 @@ class ReportService {
   public asked = new PrismaClient().asked;
   public reComment = new PrismaClient().reComment;
 
+  private targetTypes = {
+    user: {
+      model: this.user,
+      notFoundMessage: '유저를 찾을 수 없습니다.',
+    },
+    article: {
+      model: this.article,
+      notFoundMessage: '게시글을 찾을 수 없습니다.',
+    },
+    asked: {
+      model: this.asked,
+      notFoundMessage: '질문을 찾을 수 없습니다.',
+    },
+    comment: {
+      model: this.comment,
+      notFoundMessage: '댓글을 찾을 수 없습니다.',
+    },
+    recomment: {
+      model: this.reComment,
+      notFoundMessage: '대댓글을 찾을 수 없습니다.',
+    },
+  };
+
   public async postReport(user: User, data: ReportDto): Promise<any> {
     try {
-      switch (data.targetType) {
-        case ReportTargetType.user:
-          const findUser = await this.user.findUnique({
-            where: {
-              id: data.targetId,
-            },
-          });
-          if (!findUser) throw new HttpException(404, '찾을 수 없는 유저입니다.');
-          break;
-        case ReportTargetType.article:
-          const findArticle = await this.article.findUnique({
-            where: {
-              id: Number(data.targetId),
-            },
-          });
-          if (!findArticle) throw new HttpException(404, '찾을 수 없는 게시글입니다.');
-          break;
-        case ReportTargetType.asked:
-          const findAsked = await this.asked.findUnique({
-            where: {
-              id: data.targetId,
-            },
-          });
-          if (!findAsked) throw new HttpException(404, '찾을 수 없는 질문입니다.');
-          break;
-        case ReportTargetType.comment:
-          const findComment = await this.comment.findUnique({
-            where: {
-              id: Number(data.targetId),
-            },
-          });
-          if (!findComment) throw new HttpException(404, '찾을 수 없는 댓글입니다.');
-          break;
-        case ReportTargetType.recomment:
-          const findReComment = await this.reComment.findUnique({
-            where: {
-              id: Number(data.targetId),
-            },
-          });
-          if (!findReComment) throw new HttpException(404, '찾을 수 없는 대댓글입니다.');
-          break;
-        default:
-          throw new HttpException(400, '잘못된 타겟 타입입니다.');
-      }
+      const { model, notFoundMessage } = this.targetTypes[data.targetType];
+      const targetId = /^\d+$/.test(data.targetId) ? Number(data.targetId) : data.targetId;
+
+      const findTarget = await model.findUnique({
+        // # TODO: asdfasdfasdf
+        where: {
+          id: targetId,
+        },
+      });
+      if (!findTarget) throw new HttpException(404, notFoundMessage);
 
       const findUser = await this.user.findUnique({
         where: {

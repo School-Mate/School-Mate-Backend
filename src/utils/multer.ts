@@ -1,10 +1,12 @@
-import type { RequestWithUser } from '@/interfaces/auth.interface';
-
 import { S3 } from '@aws-sdk/client-s3';
 import multer from 'multer';
 import multerS3 from 'multer-s3';
-import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET } from '@/config';
 import { HttpException } from '@/exceptions/HttpException';
+
+import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET } from '@/config';
+import type { RequestWithUser } from '@/interfaces/auth.interface';
+import dayjs from 'dayjs';
+import { storages } from './util';
 
 export const s3 = new S3({
   credentials: {
@@ -14,14 +16,21 @@ export const s3 = new S3({
   region: AWS_REGION,
 });
 
-export const ImageStorage = multerS3({
+export const uploadImage = multerS3({
   s3: s3,
+  acl: 'public-read',
   bucket: AWS_S3_BUCKET,
   contentType: multerS3.AUTO_CONTENT_TYPE,
-  acl: 'public-read',
   key: function (req: RequestWithUser, file, cb) {
-    if (!req.headers.storage) cb(new HttpException(400, 'storage 헤더가 없습니다.'));
-    cb(null, `${req.headers.storage}/${req.user.id}-${Date.now()}.png`);
+    if (!req.body.storage) cb(new HttpException(400, 'storage 정보가 없습니다.'));
+    if (!storages.includes(req.body.storage)) cb(new HttpException(400, 'storage 정보가 올바르지 않습니다.'));
+    cb(
+      null,
+      // images/['profile', 'article']/2023/01/01/test.png
+      `images/${req.body.storage}/${dayjs().format('YYYY')}/${dayjs().format('MM')}/${dayjs().format('dd')}/${req.user.id}_${Date.now()}_${
+        file.originalname
+      }.png`,
+    );
   },
   metadata: function (req: RequestWithUser, file, cb) {
     cb(null, {
@@ -31,7 +40,7 @@ export const ImageStorage = multerS3({
   },
 });
 
-export const deleteObject = async (key: string) => {
+export const deleteImage = async (key: string) => {
   try {
     const params = {
       Bucket: AWS_S3_BUCKET,
@@ -39,11 +48,11 @@ export const deleteObject = async (key: string) => {
     };
     await s3.deleteObject(params);
   } catch (error) {
-    throw new HttpException(500, '이미지 삭제를 실패했습니다.');
+    throw new HttpException(500, '이미지 삭제에 실패했습니다.');
   }
 };
 
 export const imageUpload = multer({
-  storage: ImageStorage,
+  storage: uploadImage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
 });

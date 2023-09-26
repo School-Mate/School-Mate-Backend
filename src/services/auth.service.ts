@@ -1,4 +1,9 @@
 import { sign } from 'jsonwebtoken';
+import qs from 'qs';
+import axios, { AxiosError } from 'axios';
+import { SolapiMessageService } from 'solapi';
+import bcrypt from 'bcrypt';
+
 import { Image, PrismaClient, School, User, UserSchool } from '@prisma/client';
 import {
   DOMAIN,
@@ -15,14 +20,10 @@ import {
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, RequestWithUser, TokenData } from '@interfaces/auth.interface';
-import { excludeUserPassword, isEmpty } from '@utils/util';
-import qs from 'qs';
-import axios, { AxiosError } from 'axios';
-import { SolapiMessageService } from 'solapi';
+import { excludeUserPassword } from '@utils/util';
 import { CreateUserDto, LoginUserDto, UpdateProfileDto } from '@/dtos/users.dto';
-import bcrypt from 'bcrypt';
 import SchoolService from './school.service';
-import { deleteObject } from '@/utils/multer';
+import { deleteImage } from '@/utils/multer';
 
 class AuthService {
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
@@ -31,7 +32,7 @@ class AuthService {
   public image = new PrismaClient().image;
   public socialLogin = new PrismaClient().socialLogin;
   public users = new PrismaClient().user;
-  public verifyPhone = new PrismaClient().verifyPhone;
+  public phoneVerifyRequest = new PrismaClient().phoneVerifyRequest;
 
   public async meSchool(userData: User): Promise<
     UserSchool & {
@@ -46,313 +47,14 @@ class AuthService {
         UserSchool: true,
       },
     });
+    if (!findUser.userSchoolId) throw new HttpException(400, '학교 인증을 마치지 않았습니다.');
 
-    if (!findUser.userSchoolId) throw new HttpException(400, '인증된 학교가 없습니다');
-
-    const findSchool = await this.schoolService.getSchoolById(findUser.UserSchool.schoolId);
+    const findSchool = await this.schoolService.getSchoolInfoById(findUser.UserSchool.schoolId);
 
     return {
       ...findUser.UserSchool,
       school: findSchool,
     };
-  }
-
-  public async deleteImage(imageId: string, userData: User): Promise<Image> {
-    const findImage = await this.image.findUnique({
-      where: {
-        id: imageId,
-      },
-    });
-
-    if (!findImage) throw new HttpException(400, '이미지를 찾을 수 없습니다');
-
-    if (findImage.userId !== userData.id) throw new HttpException(400, '이미지를 삭제할 권한이 없습니다');
-
-    await deleteObject(findImage.key);
-
-    const deleteImage = await this.image.delete({
-      where: {
-        id: imageId,
-      },
-    });
-
-    return deleteImage;
-  }
-
-  public async uploadImage(req: RequestWithUser): Promise<string> {
-    if (!req.file) throw new HttpException(500, '사진 업로드를 실패했습니다');
-
-    const file = req.file as Express.MulterS3.File;
-    const schoolImage = await this.image.create({
-      data: {
-        key: file.key,
-        userId: req.user.id,
-      },
-    });
-
-    return schoolImage.id;
-  }
-
-  public async signUp(userData: CreateUserDto): Promise<User> {
-    const findPhone = await this.verifyPhone.findUnique({
-      where: {
-        id: userData.token,
-      },
-    });
-    if (findPhone.code !== userData.code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
-
-    const findUser = await this.users.findUnique({
-      where: {
-        phone: userData.phone,
-      },
-    });
-    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
-
-    if (userData.provider === 'id') {
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-
-      const createUserData = await this.users.create({
-        data: {
-          phone: userData.phone,
-          name: userData.name,
-          email: userData.email,
-          provider: 'id',
-          password: hashedPassword,
-          verified: true,
-          Agreement: {
-            create: {
-              receive: userData.marketingAgree,
-            },
-          },
-        },
-      });
-
-      const removePasswordData = excludeUserPassword(createUserData, ['password']);
-
-      return removePasswordData as User;
-    }
-
-    const findSocialUser = await this.socialLogin.findUnique({
-      where: {
-        socialId: userData.socialId,
-      },
-      select: {
-        user: true,
-      },
-    });
-
-    if (findSocialUser.user.verified) throw new HttpException(409, '이미 가입된 소셜 아이디가 있습니다.');
-
-    const updateUser = await this.users.update({
-      where: {
-        id: findSocialUser.user.id,
-      },
-      data: {
-        email: userData.email,
-        name: userData.name,
-        phone: userData.phone,
-        verified: true,
-        Agreement: {
-          upsert: {
-            create: {
-              receive: userData.marketingAgree,
-            },
-            update: {
-              receive: userData.marketingAgree,
-            },
-          },
-        },
-      },
-    });
-
-    const removePasswordData = excludeUserPassword(updateUser, ['password']);
-
-    return removePasswordData as User;
-  }
-
-  public async login(userData: LoginUserDto): Promise<{ cookie: string; findUser: User }> {
-    const findUser = await this.users.findUnique({
-      where: {
-        phone: userData.phone,
-      },
-    });
-
-    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
-
-    const isPasswordMatching: boolean = await bcrypt.compare(userData.password, findUser.password);
-    if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
-
-    const removePasswordData = excludeUserPassword(findUser, ['password']);
-
-    const tokenData = this.createToken(findUser);
-    const cookie = this.createCookie(tokenData);
-
-    return {
-      cookie,
-      findUser: removePasswordData as User,
-    };
-  }
-
-  public async updatePassword(userData: User, password: string, newPassword: string): Promise<boolean> {
-    const findUser = await this.users.findUnique({
-      where: {
-        id: userData.id,
-      },
-    });
-    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
-    if (findUser.provider !== 'id') throw new HttpException(409, '소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다.');
-
-    const isPasswordMatching: boolean = await bcrypt.compare(password, findUser.password);
-    if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    await this.users.update({
-      where: {
-        id: userData.id,
-      },
-      data: {
-        password: hashedPassword,
-      },
-    });
-
-    return true;
-  }
-
-  public async updateProfile(userData: User, profile: UpdateProfileDto): Promise<boolean> {
-    const findUser = await this.users.findUnique({
-      where: {
-        id: userData.id,
-      },
-    });
-    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
-
-    if (!profile.imageId) {
-      const beforeImage = await this.image.findFirst({
-        where: {
-          key: findUser.profile,
-        },
-      });
-      if (beforeImage) {
-        await deleteObject(beforeImage.key);
-
-        await this.image.delete({
-          where: {
-            id: beforeImage.id,
-          },
-        });
-      }
-
-      await this.users.update({
-        where: {
-          id: userData.id,
-        },
-        data: {
-          profile: null,
-        },
-      });
-
-      return true;
-    }
-
-    if (findUser.profile) {
-      const beforeImage = await this.image.findFirst({
-        where: {
-          key: findUser.profile,
-        },
-      });
-      await deleteObject(beforeImage.key);
-
-      await this.image.delete({
-        where: {
-          id: beforeImage.id,
-        },
-      });
-    }
-
-    const image = await this.image.findUnique({
-      where: {
-        id: profile.imageId,
-      },
-    });
-    if (!image) throw new HttpException(400, '이미지를 찾을 수 없습니다');
-
-    await this.users.update({
-      where: {
-        id: userData.id,
-      },
-      data: {
-        profile: image.key,
-      },
-    });
-
-    return true;
-  }
-
-  public async updateNickname(userData: User, nickname: string): Promise<boolean> {
-    const findUser = await this.users.findUnique({
-      where: {
-        id: userData.id,
-      },
-    });
-    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
-
-    await this.users.update({
-      where: {
-        id: userData.id,
-      },
-      data: {
-        name: nickname,
-      },
-    });
-
-    return true;
-  }
-
-  public async verifyPhoneMessage(phone: string): Promise<string> {
-    const findUser = await this.users.findUnique({
-      where: {
-        phone: phone,
-      },
-    });
-    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
-
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-
-    const verifyPhone = await this.verifyPhone.create({
-      data: {
-        phone,
-        code,
-      },
-    });
-
-    try {
-      await this.messageService.sendOne({
-        to: phone,
-        from: MESSAGE_FROM,
-        text: `[SchoolMate] 인증번호는 ${code}입니다.`,
-      });
-    } catch (error) {
-      throw new HttpException(400, '메시지 전송에 실패했습니다.');
-    }
-
-    return verifyPhone.id;
-  }
-
-  public async verifyPhoneCode(phone: string, code: string, token: string): Promise<boolean> {
-    const verifyPhone = await this.verifyPhone.findUnique({
-      where: {
-        id: token,
-      },
-    });
-
-    if (!verifyPhone) throw new HttpException(400, '인증번호가 만료되었습니다.');
-
-    if (verifyPhone.phone !== phone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
-
-    if (verifyPhone.code !== code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
-
-    return true;
   }
 
   public async kakaoLogin(code: string): Promise<{ cookie: string; findUser: User; redirect?: string }> {
@@ -388,7 +90,6 @@ class AuthService {
           socialId: userData.id.toString(),
         },
       });
-
       if (!socialLogin) {
         const createUserData: User = await this.users.create({
           data: {
@@ -406,6 +107,7 @@ class AuthService {
         });
         const tokenData = this.createToken(createUserData);
         const cookie = this.createCookie(tokenData);
+
         return { cookie, findUser: createUserData, redirect: '/signup/social' };
       } else {
         const findUser = await this.users.update({
@@ -419,6 +121,7 @@ class AuthService {
         });
         const tokenData = this.createToken(findUser);
         const cookie = this.createCookie(tokenData);
+
         return { cookie, findUser };
       }
     } catch (error) {
@@ -474,6 +177,7 @@ class AuthService {
         });
         const tokenData = this.createToken(createUserData);
         const cookie = this.createCookie(tokenData);
+
         return { cookie, findUser: createUserData, redirect: '/signup/social' };
       } else {
         const findUser = await this.users.findUnique({
@@ -483,6 +187,7 @@ class AuthService {
         });
         const tokenData = this.createToken(findUser);
         const cookie = this.createCookie(tokenData);
+
         return { cookie, findUser };
       }
     } catch (error) {
@@ -493,28 +198,297 @@ class AuthService {
     }
   }
 
-  // public async login(userData: CreateUserDto): Promise<{ cookie: string; findUser: User }> {
-  //   if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
+  public async uploadImage(req: RequestWithUser): Promise<string> {
+    if (!req.file) throw new HttpException(500, '사진 업로드를 실패했습니다.');
 
-  //   const findUser: User = await this.users.findUnique({ where: { email: userData.email } });
-  //   if (!findUser) throw new HttpException(409, `This email ${userData.email} was not found`);
+    const file = req.file as Express.MulterS3.File;
+    const createImage = await this.image.create({
+      data: {
+        key: file.key,
+        userId: req.user.id,
+      },
+    });
 
-  //   const isPasswordMatching: boolean = await compare(userData.password, findUser.password);
-  //   if (!isPasswordMatching) throw new HttpException(409, 'Password is not matching');
+    return createImage.id;
+  }
 
-  //   const tokenData = this.createToken(findUser);
-  //   const cookie = this.createCookie(tokenData);
+  public async login(userData: LoginUserDto): Promise<{ cookie: string; findUser: User }> {
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: userData.phone,
+      },
+    });
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
 
-  //   return { cookie, findUser };
-  // }
+    const isPasswordMatching: boolean = await bcrypt.compare(userData.password, findUser.password);
+    if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
 
-  public async logout(userData: User): Promise<User> {
-    if (isEmpty(userData)) throw new HttpException(400, 'userData is empty');
+    const passwordRemovedData = excludeUserPassword(findUser, ['password']);
 
-    const findUser: User = await this.users.findFirst({ where: { email: userData.email, password: userData.password } });
-    if (!findUser) throw new HttpException(409, "User doesn't exist");
+    const tokenData = this.createToken(findUser);
+    const cookie = this.createCookie(tokenData);
 
-    return findUser;
+    return {
+      cookie,
+      findUser: passwordRemovedData as User,
+    };
+  }
+
+  public async signUp(userData: CreateUserDto): Promise<User> {
+    const findPhone = await this.phoneVerifyRequest.findUnique({
+      where: {
+        id: userData.token,
+      },
+    });
+    if (findPhone.code !== userData.code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: userData.phone,
+      },
+    });
+    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+
+    if (userData.provider === 'id') {
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+
+      const createUserData = await this.users.create({
+        data: {
+          phone: userData.phone,
+          name: userData.name,
+          email: userData.email,
+          provider: 'id',
+          password: hashedPassword,
+          isVerified: true,
+          Agreement: {
+            create: {
+              receive: userData.marketingAgree,
+            },
+          },
+        },
+      });
+
+      const passwordRemovedData = excludeUserPassword(createUserData, ['password']);
+
+      return passwordRemovedData as User;
+    }
+
+    const findSocialUser = await this.socialLogin.findUnique({
+      where: {
+        socialId: userData.socialId,
+      },
+      select: {
+        user: true,
+      },
+    });
+    if (findSocialUser.user.isVerified) throw new HttpException(409, '이미 가입된 소셜 아이디가 있습니다.');
+
+    const updateUser = await this.users.update({
+      where: {
+        id: findSocialUser.user.id,
+      },
+      data: {
+        email: userData.email,
+        name: userData.name,
+        phone: userData.phone,
+        isVerified: true,
+        Agreement: {
+          upsert: {
+            create: {
+              receive: userData.marketingAgree,
+            },
+            update: {
+              receive: userData.marketingAgree,
+            },
+          },
+        },
+      },
+    });
+
+    const passwordRemovedData = excludeUserPassword(updateUser, ['password']);
+
+    return passwordRemovedData as User;
+  }
+
+  public async updatePassword(userData: User, password: string, newPassword: string): Promise<boolean> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+    if (findUser.provider !== 'id') throw new HttpException(409, '소셜 로그인 사용자는 비밀번호를 변경할 수 없습니다.');
+
+    const isPasswordMatching: boolean = await bcrypt.compare(password, findUser.password);
+    if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.users.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    return true;
+  }
+
+  public async updateProfile(userData: User, newProfile: UpdateProfileDto): Promise<boolean> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    if (!newProfile.imageId) {
+      const beforeImage = await this.image.findFirst({
+        where: {
+          key: findUser.profileImage,
+        },
+      });
+      if (beforeImage) {
+        await deleteImage(beforeImage.key);
+
+        await this.image.delete({
+          where: {
+            id: beforeImage.id,
+          },
+        });
+      }
+
+      await this.users.update({
+        where: {
+          id: userData.id,
+        },
+        data: {
+          profileImage: null,
+        },
+      });
+
+      return true;
+    }
+
+    if (findUser.profileImage) {
+      const beforeImage = await this.image.findFirst({
+        where: {
+          key: findUser.profileImage,
+        },
+      });
+      await deleteImage(beforeImage.key);
+
+      await this.image.delete({
+        where: {
+          id: beforeImage.id,
+        },
+      });
+    }
+
+    const image = await this.image.findUnique({
+      where: {
+        id: newProfile.imageId,
+      },
+    });
+    if (!image) throw new HttpException(400, '이미지를 찾을 수 없습니다');
+
+    await this.users.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        profileImage: image.key,
+      },
+    });
+
+    return true;
+  }
+
+  public async updateNickname(userData: User, newNickname: string): Promise<boolean> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    await this.users.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        name: newNickname,
+      },
+    });
+
+    return true;
+  }
+
+  public async sendVerifyMessage(phone: string): Promise<string> {
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: phone,
+      },
+    });
+    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+
+    const verifyCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const verifyPhone = await this.phoneVerifyRequest.create({
+      data: {
+        phone,
+        code: verifyCode,
+      },
+    });
+
+    try {
+      await this.messageService.sendOne({
+        to: phone,
+        from: MESSAGE_FROM,
+        text: `[SchoolMate] 인증번호는 ${verifyCode}입니다.`,
+      });
+    } catch (error) {
+      throw new HttpException(400, '메시지 전송에 실패했습니다.');
+    }
+
+    return verifyPhone.id;
+  }
+
+  public async verifyPhoneCode(phone: string, code: string, token: string): Promise<boolean> {
+    const verifyPhone = await this.phoneVerifyRequest.findUnique({
+      where: {
+        id: token,
+      },
+    });
+
+    if (!verifyPhone) throw new HttpException(400, '인증번호가 만료되었습니다.');
+
+    if (verifyPhone.phone !== phone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+    if (verifyPhone.code !== code) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+    return true;
+  }
+
+  public async deleteImage(imageId: string, userData: User): Promise<Image> {
+    const findImage = await this.image.findUnique({
+      where: {
+        id: imageId,
+      },
+    });
+    if (!findImage) throw new HttpException(400, '이미지를 찾을 수 없습니다');
+    if (findImage.userId !== userData.id) throw new HttpException(400, '이미지를 삭제할 권한이 없습니다');
+
+    await deleteImage(findImage.key);
+    const imageData = await this.image.delete({
+      where: {
+        id: imageId,
+      },
+    });
+
+    return imageData;
   }
 
   public createToken(user: User): TokenData {

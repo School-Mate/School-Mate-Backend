@@ -1,5 +1,6 @@
-import { RequestHandler } from '@/interfaces/routes.interface';
 import { Response } from 'express';
+
+import { RequestHandler } from '@/interfaces/routes.interface';
 
 const ResponseWrapper = (req: RequestHandler, res: Response, { data = null, message = null, status = 200 }) => {
   return res.status(status).json({

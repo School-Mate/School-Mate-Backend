@@ -6,6 +6,7 @@ import SchoolService from './school.service';
 
 class BusService {
   schoolService = new SchoolService();
+
   public async searchBusStation(long: string, lati: string): Promise<BusStationInfo[]> {
     try {
       const { data: busStationfetch } = await busClient.get('/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList', {
@@ -35,10 +36,10 @@ class BusService {
 
   public async searchStationBySchoolId(schoolId: string): Promise<Array<BusStationInfo>> {
     try {
-      const schoolInfo = await this.schoolService.getSchoolById(schoolId);
+      const schoolInfo = await this.schoolService.getSchoolInfoById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
-      const org = schoolInfo.address;
+      const org = schoolInfo.org;
       const { data: addressfetch } = await kakaoClient.get('/v2/local/search/address.json', {
         params: {
           query: org,

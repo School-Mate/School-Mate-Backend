@@ -1,13 +1,6 @@
 import axios from 'axios';
-import { NEIS_API_KEY, BUS_API_KEY } from '@config';
 
-export const neisClient = axios.create({
-  baseURL: 'https://open.neis.go.kr/',
-  params: {
-    KEY: NEIS_API_KEY,
-    Type: 'json',
-  },
-});
+import { BUS_API_KEY, NEIS_API_KEY, KAKAO_CLIENT_KEY } from '@config';
 
 export const busClient = axios.create({
   baseURL: 'http://apis.data.go.kr/',
@@ -20,6 +13,14 @@ export const busClient = axios.create({
 export const kakaoClient = axios.create({
   baseURL: 'https://dapi.kakao.com/',
   headers: {
-    Authorization: `KakaoAK ${process.env.KAKAO_CLIENT_KEY}`,
+    Authorization: `KakaoAK ${KAKAO_CLIENT_KEY}`,
+  },
+});
+
+export const neisClient = axios.create({
+  baseURL: 'https://open.neis.go.kr/',
+  params: {
+    KEY: NEIS_API_KEY,
+    Type: 'json',
   },
 });

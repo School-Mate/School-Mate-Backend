@@ -54,13 +54,76 @@ class AuthController {
     }
   };
 
-  public meAskedCustomId = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+  public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userData: User = req.user;
-      const { customId } = req.body as UpdateAskedCustomIdDto;
-      const updateAskedCustomId = await this.askedService.updateAskedCustomId(userData, customId);
+      res.setHeader('Set-Cookie', [`Authorization=; Max-age=0; Path=/; HttpOnly; Domain=${DOMAIN};`]);
+      ResponseWrapper(req, res, {});
+    } catch (error) {
+      next(error);
+    }
+  };
 
-      ResponseWrapper(req, res, { data: updateAskedCustomId });
+  public kakaoLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.redirect(`https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_KEY}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public kakaoLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { code } = req.query;
+      if (!code) return res.redirect('auth/kakao');
+      const { cookie, findUser } = await this.authService.kakaoLogin(code as string);
+
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, { data: findUser });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public googleLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.redirect(
+        `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_KEY}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`,
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public googleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { code } = req.query;
+      if (!code) return res.redirect('/auth/google');
+      const { cookie, findUser } = await this.authService.googleLogin(code as string);
+
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, { data: findUser });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const uploadImageData = await this.authService.uploadImage(req);
+
+      ResponseWrapper(req, res, { data: uploadImageData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public login = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData = req.body as LoginUserDto;
+      const { cookie, findUser } = await this.authService.login(userData);
+
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, { data: findUser });
     } catch (error) {
       next(error);
     }
@@ -78,18 +141,6 @@ class AuthController {
       ResponseWrapper(req, res, {
         data: signUpUserData,
       });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  public login = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userData = req.body as LoginUserDto;
-      const { cookie, findUser } = await this.authService.login(userData);
-
-      res.setHeader('Set-Cookie', [cookie]);
-      ResponseWrapper(req, res, { data: findUser });
     } catch (error) {
       next(error);
     }
@@ -118,29 +169,6 @@ class AuthController {
     }
   };
 
-  public updateNickname = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const userData: User = req.user;
-      const nickname: string = req.body.nickname;
-      const updateNicknameUserData: boolean = await this.authService.updateNickname(userData, nickname);
-
-      ResponseWrapper(req, res, { data: updateNicknameUserData });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  public verifyPhoneMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { phone } = req.body as VerifyPhoneMessageDto;
-      const verifyId = await this.authService.verifyPhoneMessage(phone);
-
-      ResponseWrapper(req, res, { data: verifyId });
-    } catch (error) {
-      next(error);
-    }
-  };
-
   public verifyPhoneCode = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { phone, code, token } = req.body as VerifyPhoneCodeDto;
@@ -152,67 +180,36 @@ class AuthController {
     }
   };
 
-  public kakaoLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+  public sendVerifyMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
-      res.redirect(`https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_KEY}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code`);
+      const { phone } = req.body as VerifyPhoneMessageDto;
+      const verifyId = await this.authService.sendVerifyMessage(phone);
+
+      ResponseWrapper(req, res, { data: verifyId });
     } catch (error) {
       next(error);
     }
   };
 
-  public googleLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      res.redirect(
-        `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_KEY}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`,
-      );
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  public kakaoLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { code } = req.query;
-      if (!code) return res.redirect('auth/kakao');
-      const { cookie, findUser } = await this.authService.kakaoLogin(code as string);
-
-      res.setHeader('Set-Cookie', [cookie]);
-      ResponseWrapper(req, res, { data: findUser });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  public googleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const { code } = req.query;
-      if (!code) return res.redirect('/auth/google');
-      const { cookie, findUser } = await this.authService.googleLogin(code as string);
-
-      res.setHeader('Set-Cookie', [cookie]);
-      ResponseWrapper(req, res, { data: findUser });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+  public meAskedCustomId = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;
-      const logOutUserData: User = await this.authService.logout(userData);
+      const { customId } = req.body as UpdateAskedCustomIdDto;
+      const updateAskedCustomId = await this.askedService.updateAskedCustomId(userData, customId);
 
-      res.setHeader('Set-Cookie', [`Authorization=; Max-age=0; Path=/; HttpOnly; Domain=${DOMAIN};`]);
-      ResponseWrapper(req, res, { data: logOutUserData });
+      ResponseWrapper(req, res, { data: updateAskedCustomId });
     } catch (error) {
       next(error);
     }
   };
 
-  public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  public updateNickname = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const uploadImageData = await this.authService.uploadImage(req);
+      const userData: User = req.user;
+      const nickname: string = req.body.nickname;
+      const updateNicknameUserData: boolean = await this.authService.updateNickname(userData, nickname);
 
-      ResponseWrapper(req, res, { data: uploadImageData });
+      ResponseWrapper(req, res, { data: updateNicknameUserData });
     } catch (error) {
       next(error);
     }

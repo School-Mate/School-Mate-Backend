@@ -1,3 +1,13 @@
+import { Process } from '@prisma/client';
+
+export const storages = ['profile', 'article'];
+
+export const processMap = {
+  pending: Process.pending,
+  success: Process.success,
+  denied: Process.denied,
+};
+
 /**
  * @method isEmpty
  * @param {String | Number | Object} value

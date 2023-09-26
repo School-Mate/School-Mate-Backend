@@ -1,6 +1,6 @@
 {
   "name": "school-mate-backend",
-  "version": "0.0.0",
+  "version": "2.0.0",
   "description": "TypeScript + Prisma + MySQL + Express API Server",
   "author": "",
   "license": "ISC",

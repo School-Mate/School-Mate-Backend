@@ -1,9 +1,10 @@
-import { VerifySchoolImageDto } from '@/dtos/school.dto';
+import { NextFunction, Response } from 'express';
+
+import { SchoolVerifyDto } from '@/dtos/school.dto';
 import { RequestWithUser } from '@/interfaces/auth.interface';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import SchoolService from '@/services/school.service';
 import ResponseWrapper from '@/utils/responseWarpper';
-import { NextFunction, Response } from 'express';
 
 class SchoolController {
   public schoolService = new SchoolService();
@@ -22,8 +23,7 @@ class SchoolController {
 
   public getSchoolById = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
-      const schoolId = req.params.schoolId;
-      const schoolData = await this.schoolService.getSchoolById(schoolId);
+      const schoolData = await this.schoolService.getSchoolInfoById(req.params.schoolId);
 
       ResponseWrapper(req, res, {
         data: schoolData,
@@ -48,8 +48,7 @@ class SchoolController {
 
   public getTimetable = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
-      const schoolId = req.params.schoolId;
-      const timetableData = await this.schoolService.getTimetable(schoolId, req.query as object as ITimetableQuery);
+      const timetableData = await this.schoolService.getTimetable(req.params.schoolId, req.query as object as ITimetableQuery);
 
       ResponseWrapper(req, res, {
         data: timetableData,
@@ -59,25 +58,24 @@ class SchoolController {
     }
   };
 
-  public verifySchoolImage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+  public getClassInfo = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {
-      const schoolImageId = await this.schoolService.verifySchoolImage(req.user, req.body as VerifySchoolImageDto);
+      const classInfoData = await this.schoolService.getClassInfo(req.params.schoolId);
 
       ResponseWrapper(req, res, {
-        data: schoolImageId,
+        data: classInfoData,
       });
     } catch (error) {
       next(error);
     }
   };
 
-  public getSchoolDetail = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public requestSchoolVerify = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const schoolId = req.params.schoolId;
-      const schoolDetailData = await this.schoolService.getSchoolDetail(schoolId);
+      const schoolImageId = await this.schoolService.requestSchoolVerify(req.user, req.body as SchoolVerifyDto);
 
       ResponseWrapper(req, res, {
-        data: schoolDetailData,
+        data: schoolImageId,
       });
     } catch (error) {
       next(error);

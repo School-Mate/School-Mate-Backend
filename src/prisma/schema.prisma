@@ -12,8 +12,9 @@ model User {
   email              String?
   password           String?
   name               String
-  profile            String?
-  verified           Boolean               @default(false)
+  profileImage       String?
+  profileImageKey    String?
+  isVerified         Boolean               @default(false)
   phone              String?               @unique
   createdAt          DateTime              @default(now())
   provider           UserLoginProviderType
@@ -32,6 +33,33 @@ model User {
   UserSchoolVerify   UserSchoolVerify[]
 }
 
+model School {
+  schoolId    String       @id @unique
+  org         String
+  x           Float
+  y           Float
+  atpt_code   String
+  defaultName String
+  name        String?
+  UserSchool  UserSchool[]
+  Article     Article[]
+}
+
+model Image {
+  id               String             @id @default(uuid())
+  key              String
+  userId           String
+  createdAt        DateTime           @default(now())
+  user             User               @relation(fields: [userId], references: [id])
+  UserSchoolVerify UserSchoolVerify[]
+}
+
+model PhoneVerifyRequest {
+  id    String @id @default(uuid())
+  phone String
+  code  String
+}
+
 model SocialLogin {
   accessToken  String
   refreshToken String?
@@ -46,21 +74,6 @@ model Agreement {
   userId    String   @id @default(uuid())
   receive   Boolean  @default(false)
   user      User     @relation(fields: [userId], references: [id])
-}
-
-model Image {
-  id               String             @id @default(uuid())
-  key              String
-  userId           String
-  createdAt        DateTime           @default(now())
-  user             User               @relation(fields: [userId], references: [id])
-  UserSchoolVerify UserSchoolVerify[]
-}
-
-model VerifyPhone {
-  id    String @id @default(uuid())
-  phone String
-  code  String
 }
 
 model UserSchoolVerify {
@@ -88,19 +101,6 @@ model UserSchool {
   class    String
   school   School @relation(fields: [schoolId], references: [schoolId])
   user     User   @relation(fields: [userId], references: [id])
-}
-
-model School {
-  schoolId    String       @id @unique
-  address     String
-  x           Float
-  y           Float
-  code        String
-  defaultName String
-  name        String?
-  kndsc       String
-  UserSchool  UserSchool[]
-  Article     Article[]
 }
 
 model BusStation {
@@ -136,14 +136,14 @@ model BusArrival {
 }
 
 model AskedUser {
-  userId             String   @id
+  userId             String    @id
   customId           String?
   statusMessage      String?
-  receiveAnonymous   Boolean  @default(true)
-  receiveOtherSchool Boolean  @default(false)
+  receiveAnonymous   Boolean   @default(true)
+  receiveOtherSchool Boolean   @default(false)
   lastUpdateCustomId DateTime?
   Asked              Asked[]
-  user               User     @relation(fields: [userId], references: [id])
+  user               User      @relation(fields: [userId], references: [id])
 }
 
 model Asked {

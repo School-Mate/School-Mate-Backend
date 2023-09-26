@@ -2,7 +2,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType, BoardRequest } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery } from '@/interfaces/board.interface';
-import { deleteObject } from '@/utils/multer';
+import { deleteImage } from '@/utils/multer';
 import SchoolService from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
 
@@ -520,7 +520,7 @@ class BoardService {
   public async sendBoardRequest(data: SendBoardRequestDto, user: User): Promise<BoardRequest> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
 
-    const school = await this.schoolService.getSchoolById(user.userSchoolId);
+    const school = await this.schoolService.getSchoolInfoById(user.userSchoolId);
     if (!school) throw new HttpException(404, '학교 정보가 없습니다.');
 
     try {
@@ -1028,7 +1028,7 @@ class BoardService {
               id: imageId,
             },
           });
-          await deleteObject(image.key);
+          await deleteImage(image.key);
 
           await this.image.delete({
             where: {

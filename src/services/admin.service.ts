@@ -1,13 +1,15 @@
+import bcrypt from 'bcrypt';
+import { sign } from 'jsonwebtoken';
+
 import { DOMAIN, SECRET_KEY } from '@/config';
 import { AdminDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
-import { deleteObject } from '@/utils/multer';
-import { excludeAdminPassword, isEmpty } from '@/utils/util';
+import { deleteImage } from '@/utils/multer';
+import { excludeAdminPassword } from '@/utils/util';
 import { Admin, BoardRequest, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
-import bcrypt from 'bcrypt';
-import { sign } from 'jsonwebtoken';
 import SchoolService from './school.service';
+import { processMap } from '@/utils/util';
 
 class AdminService {
   public schoolService = new SchoolService();
@@ -23,13 +25,7 @@ class AdminService {
   public userSchool = new PrismaClient().userSchool;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
 
-  public processMap = {
-    pending: Process.pending,
-    success: Process.success,
-    denied: Process.denied,
-  };
-
-  public async signUp(adminData: AdminDto): Promise<Admin> {
+  public async signUpService(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
     if (findAdmin) throw new HttpException(409, `이미 존재하는 아이디입니다.`);
 
@@ -42,51 +38,44 @@ class AdminService {
       },
     });
 
-    const removePasswordData = excludeAdminPassword(createAdminData, ['password']);
-
-    return removePasswordData as Admin;
+    const passwordRemovedData = excludeAdminPassword(createAdminData, ['password']);
+    return passwordRemovedData as Admin;
   }
 
-  public async login(adminData: AdminDto): Promise<{ cookie: string; findAdmin: Admin }> {
+  public async loginService(adminData: AdminDto): Promise<{ cookie: string; findAdmin: Admin }> {
     const findAdmin = await this.admin.findUnique({
       where: {
         loginId: adminData.id,
       },
     });
+    if (!findAdmin) throw new HttpException(409, '어드민을 찾을 수 없습니다.');
 
-    if (!findAdmin) throw new HttpException(409, '가입되지 않은 어드민입니다.');
+    const isPasswordMatch: boolean = await bcrypt.compare(adminData.password, findAdmin.password);
+    if (!isPasswordMatch) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
 
-    const isPasswordMatching: boolean = await bcrypt.compare(adminData.password, findAdmin.password);
-    if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
-
-    const removePasswordData = excludeAdminPassword(findAdmin, ['password']);
-
+    const passwordRemovedData = excludeAdminPassword(findAdmin, ['password']);
     const tokenData = this.createToken(findAdmin);
     const cookie = this.createCookie(tokenData);
-
     return {
       cookie,
-      findAdmin: removePasswordData as Admin,
+      findAdmin: passwordRemovedData as Admin,
     };
   }
 
-  public async logout(adminData: Admin): Promise<Admin> {
-    if (isEmpty(adminData)) throw new HttpException(400, 'adminData is empty');
-
+  public async logoutService(adminData: Admin): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findFirst({ where: { id: adminData.id } });
-    if (!findAdmin) throw new HttpException(409, "User doesn't exist");
+    if (!findAdmin) throw new HttpException(409, '어드민을 찾을 수 없습니다.');
 
     return findAdmin;
   }
 
-  public deleteImage = async (imageId: string): Promise<boolean> => {
+  public deleteImageService = async (imageId: string): Promise<boolean> => {
     const findImage = await this.image.findUnique({ where: { id: imageId } });
     if (!findImage) throw new HttpException(409, '이미지를 찾을 수 없습니다.');
 
-    const deleteImage = await this.image.delete({ where: { id: imageId } });
-
+    const deleteImageInfo = await this.image.delete({ where: { id: imageId } });
     try {
-      await deleteObject(deleteImage.key);
+      await deleteImage(deleteImageInfo.key);
     } catch (error) {
       throw error;
     }
@@ -122,7 +111,7 @@ class AdminService {
       },
     });
 
-    const schoolInfo = await this.schoolService.getSchoolById(findRequest.schoolId);
+    const schoolInfo = await this.schoolService.getSchoolInfoById(findRequest.schoolId);
     if (!schoolInfo) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
 
     await this.userSchool.create({
@@ -147,7 +136,7 @@ class AdminService {
   public getBoardRequests = async (process: string): Promise<Array<BoardRequest>> => {
     const requests = await this.boardRequest.findMany({
       where: {
-        process: this.processMap[process],
+        process: processMap[process],
       },
     });
     return requests;
@@ -185,7 +174,7 @@ class AdminService {
   public getReports = async (process: string, targetType: ReportTargetType): Promise<Array<Report>> => {
     const requests = await this.report.findMany({
       where: {
-        process: this.processMap[process],
+        process: processMap[process],
         targetType: targetType,
       },
     });

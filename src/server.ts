@@ -12,14 +12,14 @@ import ReportRoute from './routes/report.route';
 validateEnv();
 
 const app = new App([
-  new IndexRoute(),
-  new AuthRoute(),
-  new SchoolRoute(),
-  new BusRoute(),
   new AdminRoute(),
   new AskedRoute(),
+  new AuthRoute(),
   new BoardRoute(),
+  new BusRoute(),
+  new IndexRoute(),
   new ReportRoute(),
+  new SchoolRoute(),
 ]);
 
 app.listen();
