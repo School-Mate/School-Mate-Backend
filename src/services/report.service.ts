@@ -40,8 +40,9 @@ class ReportService {
       const { model, notFoundMessage } = this.targetTypes[data.targetType];
       const targetId = /^\d+$/.test(data.targetId) ? Number(data.targetId) : data.targetId;
 
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-ignore
       const findTarget = await model.findUnique({
-        // # TODO: asdfasdfasdf
         where: {
           id: targetId,
         },
