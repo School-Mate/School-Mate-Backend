@@ -65,7 +65,7 @@ class SchoolService {
       });
       const schoolInfo: ISchoolInfoResponse = response.schoolInfo;
 
-      const org = schoolInfo[1].row[0].ORG_RDNDA;
+      const org = schoolInfo[1].row[0].ORG_RDNMA;
       const { data: addressFetch } = await kakaoClient.get('/v2/local/search/address.json', {
         params: {
           query: org,
@@ -78,7 +78,8 @@ class SchoolService {
         data: {
           schoolId: schoolId,
           defaultName: schoolInfo[1].row[0].SCHUL_NM,
-          atpt_code: schoolInfo[1].row[0].ATPT_OFCDC_SC_CODE,
+          type: schoolInfo[1].row[0].SCHUL_KND_SC_NM,
+          atptCode: schoolInfo[1].row[0].ATPT_OFCDC_SC_CODE,
           org: org,
           x: Number(addressList[0].x) as any,
           y: Number(addressList[0].y) as any,
@@ -91,6 +92,7 @@ class SchoolService {
       } else if (error instanceof AxiosError) {
         throw new HttpException(500, '나이스 서버에 오류가 발생했습니다.');
       } else {
+        console.log(error);
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
     }
@@ -111,7 +113,7 @@ class SchoolService {
 
       const { data: response } = await neisClient.get('/hub/mealServiceDietInfo', {
         params: {
-          ATPT_OFCDC_SC_CODE: schoolInfo.atpt_code,
+          ATPT_OFCDC_SC_CODE: schoolInfo.atptCode,
           MMEAL_SC_CODE: data.mealType,
           SD_SCHUL_CODE: schoolId,
           MLSV_YMD: date,
@@ -148,10 +150,10 @@ class SchoolService {
       const schoolInfo = await this.getSchoolInfoById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '학교를 찾을 수 없습니다.');
 
-      const endpoint = schoolInfo.name.endsWith('고등학교') ? '/hub/hisTimetable' : '/hub/misTimetable';
+      const endpoint = schoolInfo.type === "고등학교" ? '/hub/hisTimetable' : '/hub/misTimetable';
       const { data: response } = await neisClient.get(endpoint, {
         params: {
-          ATPT_OFCDC_SC_CODE: schoolInfo.atpt_code,
+          ATPT_OFCDC_SC_CODE: schoolInfo.atptCode,
           SD_SCHUL_CODE: schoolId,
           GRADE: data.grade,
           CLASS_NM: data.class,
@@ -162,7 +164,7 @@ class SchoolService {
         },
       });
 
-      const timetableInfo: ITimeTableResponse = schoolInfo.name.endsWith('고등학교') ? response.hisTimetable : response.misTimetable;
+      const timetableInfo: ITimeTableResponse = schoolInfo.type === "고등학교" ? response.hisTimetable : response.misTimetable;
       if (!timetableInfo) throw new HttpException(404, '해당하는 시간표를 찾을 수 없습니다.');
 
       return timetableInfo[1].row;
@@ -184,7 +186,7 @@ class SchoolService {
 
       const { data: schoolDetailFetch } = await neisClient.get('/hub/classInfo', {
         params: {
-          ATPT_OFCDC_SC_CODE: schoolInfo.atpt_code,
+          ATPT_OFCDC_SC_CODE: schoolInfo.atptCode,
           SD_SCHUL_CODE: schoolId,
           AY: dayjs().format('YYYY'),
         },

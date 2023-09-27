@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 
 import { ReportDto } from '@/dtos/report.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { PrismaClient, ReportTargetType, User } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 
 class ReportService {
   public user = new PrismaClient().user;
@@ -40,8 +40,9 @@ class ReportService {
       const { model, notFoundMessage } = this.targetTypes[data.targetType];
       const targetId = /^\d+$/.test(data.targetId) ? Number(data.targetId) : data.targetId;
 
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
       const findTarget = await model.findUnique({
-        // # TODO: asdfasdfasdf
         where: {
           id: targetId,
         },

@@ -35,7 +35,7 @@ class AskedService {
         ...asked,
         user: {
           name: asked.user.name,
-          profile: asked.user.profileImage,
+          profile: asked.user.profile,
         },
       }));
 
@@ -132,7 +132,7 @@ class AskedService {
         userId: asked.isAnonymous ? null : asked.userId,
         QuestionUser: {
           name: asked.isAnonymous ? '익명' : asked.QuestionUser.name,
-          profile: asked.isAnonymous ? null : asked.QuestionUser.profileImage,
+          profile: asked.isAnonymous ? null : asked.QuestionUser.profile,
         },
       }));
 
@@ -168,7 +168,7 @@ class AskedService {
         user: {
           user: {
             name: askedUser.user.name,
-            profile: askedUser.user.profileImage,
+            profile: askedUser.user.profile,
           },
           userId: askedUser.userId,
           customId: askedUser.customId,
@@ -251,7 +251,7 @@ class AskedService {
         ...asked,
         QuestionUser: {
           name: asked.isAnonymous ? '익명' : asked.QuestionUser.name,
-          profile: asked.isAnonymous ? null : asked.QuestionUser.profileImage,
+          profile: asked.isAnonymous ? null : asked.QuestionUser.profile,
         },
         askedUserId: null,
       })).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
@@ -266,7 +266,7 @@ class AskedService {
         askeds: filteredAsked,
         user: {
           user: {
-            profile: findAskedUser.user.profileImage,
+            profile: findAskedUser.user.profile,
             name: findAskedUser.user.name,
           },
           statusMessage: findAskedUser.statusMessage,

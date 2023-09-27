@@ -23,7 +23,7 @@ class AdminController {
   public signUp = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const adminData = req.body as AdminDto;
-      const signUpAdminData: Admin = await this.adminService.signUp(adminData);
+      const signUpAdminData: Admin = await this.adminService.signUpService(adminData);
 
       ResponseWrapper(req, res, {
         data: signUpAdminData,
@@ -36,7 +36,7 @@ class AdminController {
   public login = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const adminData = req.body as AdminDto;
-      const { cookie, findAdmin } = await this.adminService.login(adminData);
+      const { cookie, findAdmin } = await this.adminService.loginService(adminData);
 
       res.setHeader('Set-Cookie', [cookie]);
       ResponseWrapper(req, res, { data: findAdmin });
@@ -48,7 +48,7 @@ class AdminController {
   public logOut = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
       const adminData: Admin = req.admin;
-      const logOutAdminData: Admin = await this.adminService.logout(adminData);
+      const logOutAdminData: Admin = await this.adminService.logoutService(adminData);
 
       res.setHeader('Set-Cookie', [`Authorization=; Max-age=0; Path=/; HttpOnly; Domain=${DOMAIN};`]);
       ResponseWrapper(req, res, { data: logOutAdminData });
@@ -60,7 +60,7 @@ class AdminController {
   public deleteImage = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
-      const deleteImage = await this.adminService.deleteImage(id);
+      const deleteImage = await this.adminService.deleteImageService(id);
       ResponseWrapper(req, res, { data: deleteImage });
     } catch (error) {
       next(error);

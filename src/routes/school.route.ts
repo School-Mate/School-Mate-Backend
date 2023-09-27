@@ -16,11 +16,16 @@ class SchoolRoute implements Routes {
   }
 
   private initializeRoutes() {
-    this.router.get(`${this.path}/search`, validationMiddleware(SearchSchoolDto, 'query'), this.schoolController.searchSchool);
-    this.router.get(`${this.path}/:schoolId`, this.schoolController.getSchoolById);
-    this.router.get(`${this.path}/:schoolId/meals`, validationMiddleware(GetMealDto, 'query'), this.schoolController.getMeal);
-    this.router.get(`${this.path}/:schoolId/timetable`, validationMiddleware(GetTimetableDto, 'query'), this.schoolController.getTimetable);
-    this.router.get(`${this.path}/:schoolId/class`, this.schoolController.getClassInfo);
+    this.router.get(`${this.path}/search`, authMiddleware, validationMiddleware(SearchSchoolDto, 'query'), this.schoolController.searchSchool);
+    this.router.get(`${this.path}/:schoolId`, authMiddleware, this.schoolController.getSchoolById);
+    this.router.get(`${this.path}/:schoolId/meals`, authMiddleware, validationMiddleware(GetMealDto, 'query'), this.schoolController.getMeal);
+    this.router.get(
+      `${this.path}/:schoolId/timetable`,
+      authMiddleware,
+      validationMiddleware(GetTimetableDto, 'query'),
+      this.schoolController.getTimetable,
+    );
+    this.router.get(`${this.path}/:schoolId/class`, authMiddleware, this.schoolController.getClassInfo);
     this.router.post(`${this.path}/verify`, authMiddleware, validationMiddleware(SchoolVerifyDto, 'body'), this.schoolController.requestSchoolVerify);
   }
 }

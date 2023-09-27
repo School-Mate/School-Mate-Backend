@@ -75,10 +75,16 @@ class AuthController {
     try {
       const { code } = req.query;
       if (!code) return res.redirect('auth/kakao');
-      const { cookie, findUser } = await this.authService.kakaoLogin(code as string);
+      const { cookie, findUser, registered, token } = await this.authService.kakaoLogin(code as string);
 
       res.setHeader('Set-Cookie', [cookie]);
-      ResponseWrapper(req, res, { data: findUser });
+      ResponseWrapper(req, res, {
+        data: {
+          user: findUser,
+          token: token,
+          registered: registered,
+        },
+      });
     } catch (error) {
       next(error);
     }
@@ -98,10 +104,16 @@ class AuthController {
     try {
       const { code } = req.query;
       if (!code) return res.redirect('/auth/google');
-      const { cookie, findUser } = await this.authService.googleLogin(code as string);
+      const { cookie, findUser, registered, token } = await this.authService.googleLogin(code as string);
 
       res.setHeader('Set-Cookie', [cookie]);
-      ResponseWrapper(req, res, { data: findUser });
+      ResponseWrapper(req, res, {
+        data: {
+          user: findUser,
+          token: token,
+          registered: registered,
+        },
+      });
     } catch (error) {
       next(error);
     }
@@ -109,7 +121,7 @@ class AuthController {
 
   public uploadImage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const uploadImageData = await this.authService.uploadImage(req);
+      const uploadImageData = await this.authService.uploadImage(req.user, req.file as Express.MulterS3.File);
 
       ResponseWrapper(req, res, { data: uploadImageData });
     } catch (error) {
@@ -120,10 +132,16 @@ class AuthController {
   public login = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData = req.body as LoginUserDto;
-      const { cookie, findUser } = await this.authService.login(userData);
+      const { cookie, findUser, token, registered } = await this.authService.login(userData);
 
       res.setHeader('Set-Cookie', [cookie]);
-      ResponseWrapper(req, res, { data: findUser });
+      ResponseWrapper(req, res, {
+        data: {
+          user: findUser,
+          token: token,
+          registered: registered,
+        },
+      });
     } catch (error) {
       next(error);
     }
@@ -160,8 +178,7 @@ class AuthController {
   public updateProfile = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;
-      const updateProfileData: UpdateProfileDto = req.body;
-      const updateProfileUserData: boolean = await this.authService.updateProfile(userData, updateProfileData);
+      const updateProfileUserData: string = await this.authService.updateProfile(userData, req.file as Express.MulterS3.File);
 
       ResponseWrapper(req, res, { data: updateProfileUserData });
     } catch (error) {

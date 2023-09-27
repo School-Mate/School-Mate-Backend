@@ -28,8 +28,7 @@ CREATE TABLE "User" (
     "email" TEXT,
     "password" TEXT,
     "name" TEXT NOT NULL,
-    "profileImage" TEXT,
-    "profileImageKey" TEXT,
+    "profile" TEXT,
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
     "phone" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -45,9 +44,10 @@ CREATE TABLE "School" (
     "org" TEXT NOT NULL,
     "x" DOUBLE PRECISION NOT NULL,
     "y" DOUBLE PRECISION NOT NULL,
-    "atpt_code" TEXT NOT NULL,
+    "atptCode" TEXT NOT NULL,
     "defaultName" TEXT NOT NULL,
     "name" TEXT,
+    "type" TEXT NOT NULL,
 
     CONSTRAINT "School_pkey" PRIMARY KEY ("schoolId")
 );
