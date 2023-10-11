@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType, BoardRequest } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, LikeType, BoardRequest } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
@@ -13,7 +13,9 @@ class BoardService {
   public boardRequest = new PrismaClient().boardRequest;
   public comment = new PrismaClient().comment;
   public image = new PrismaClient().image;
-  public like = new PrismaClient().like;
+  public articleLike = new PrismaClient().articleLike;
+  public commentLike = new PrismaClient().commentLike;
+  public reCommentLike = new PrismaClient().reCommentLike;
   public manager = new PrismaClient().boardManager;
   public reComment = new PrismaClient().reComment;
   public school = new PrismaClient().school;
@@ -182,18 +184,16 @@ class BoardService {
       let articlesWithLikes: ArticleWithImage[] = [];
 
       for await (const article of findArticle) {
-        const likeCounts = await this.like.count({
+        const likeCounts = await this.articleLike.count({
           where: {
-            targetId: article.id,
-            targetType: LikeTargetType.article,
+            articleId: article.id,
             likeType: LikeType.like,
           },
         });
 
-        const disLikeCounts = await this.like.count({
+        const disLikeCounts = await this.articleLike.count({
           where: {
-            targetId: article.id,
-            targetType: LikeTargetType.article,
+            articleId: article.id,
             likeType: LikeType.dislike,
           },
         });
@@ -329,18 +329,16 @@ class BoardService {
 
       const keyOfImages: string[] = [];
 
-      const likeCounts = await this.like.count({
+      const likeCounts = await this.articleLike.count({
         where: {
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
+          articleId: findArticle.id,
           likeType: LikeType.like,
         },
       });
 
-      const disLikeCounts = await this.like.count({
+      const disLikeCounts = await this.articleLike.count({
         where: {
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
+          articleId: findArticle.id,
           likeType: LikeType.dislike,
         },
       });
@@ -422,10 +420,9 @@ class BoardService {
             articleId: article.id,
           },
         });
-        const likeCounts = await this.like.count({
+        const likeCounts = await this.articleLike.count({
           where: {
-            targetId: article.id,
-            targetType: LikeTargetType.article,
+            articleId: article.id,
             likeType: LikeType.like,
           },
         });
@@ -743,20 +740,18 @@ class BoardService {
       if (!findArticle) {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
-      const ArticleLike = await this.like.findFirst({
+      const ArticleLike = await this.articleLike.findFirst({
         where: {
           userId: userId,
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
+          articleId: findArticle.id,
         },
       });
 
       if (!ArticleLike) {
-        const createArticleLike = await this.like.create({
+        const createArticleLike = await this.articleLike.create({
           data: {
             userId: userId,
-            targetId: findArticle.id,
-            targetType: LikeTargetType.article,
+            articleId: findArticle.id,
             likeType: LikeType.like,
           },
         });
@@ -765,7 +760,7 @@ class BoardService {
       }
 
       if (ArticleLike.likeType === LikeType.like) {
-        await this.like.delete({
+        await this.articleLike.delete({
           where: {
             id: ArticleLike.id,
           },
@@ -773,7 +768,7 @@ class BoardService {
 
         return null;
       } else {
-        const updateArticleLike = await this.like.update({
+        const updateArticleLike = await this.articleLike.update({
           where: {
             id: ArticleLike.id,
           },
@@ -805,20 +800,18 @@ class BoardService {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
 
-      const ArticleLike = await this.like.findFirst({
+      const ArticleLike = await this.articleLike.findFirst({
         where: {
           userId: userId,
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
+          articleId: findArticle.id,
         },
       });
 
       if (!ArticleLike) {
-        const createArticleLike = await this.like.create({
+        const createArticleLike = await this.articleLike.create({
           data: {
             userId: userId,
-            targetId: findArticle.id,
-            targetType: LikeTargetType.article,
+            articleId: findArticle.id,
             likeType: LikeType.dislike,
           },
         });
@@ -827,7 +820,7 @@ class BoardService {
       }
 
       if (ArticleLike.likeType === LikeType.dislike) {
-        await this.like.delete({
+        await this.articleLike.delete({
           where: {
             id: ArticleLike.id,
           },
@@ -835,7 +828,7 @@ class BoardService {
 
         return null;
       } else {
-        const updateArticleLike = await this.like.update({
+        const updateArticleLike = await this.articleLike.update({
           where: {
             id: ArticleLike.id,
           },
@@ -867,11 +860,10 @@ class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      const createCommentLike = await this.like.create({
+      const createCommentLike = await this.commentLike.create({
         data: {
           userId: userId,
-          targetId: findComment.id,
-          targetType: LikeTargetType.comment,
+          commentId: findComment.id,
           likeType: LikeType.like,
         },
       });
@@ -898,11 +890,10 @@ class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      const createCommentDislike = await this.like.create({
+      const createCommentDislike = await this.commentLike.create({
         data: {
           userId: userId,
-          targetId: findComment.id,
-          targetType: LikeTargetType.comment,
+          commentId: findComment.id,
           likeType: LikeType.dislike,
         },
       });
@@ -929,11 +920,10 @@ class BoardService {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
       }
 
-      const createReCommentLike = await this.like.create({
+      const createReCommentLike = await this.reCommentLike.create({
         data: {
           userId: userId,
-          targetId: findReComment.id,
-          targetType: LikeTargetType.recomment,
+          recommentId: findReComment.id,
           likeType: LikeType.like,
         },
       });
@@ -960,11 +950,10 @@ class BoardService {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
       }
 
-      const createRecommentDislike = await this.like.create({
+      const createRecommentDislike = await this.reCommentLike.create({
         data: {
           userId: userId,
-          targetId: findReComment.id,
-          targetType: LikeTargetType.recomment,
+          recommentId: findReComment.id,
           likeType: LikeType.dislike,
         },
       });
@@ -1026,10 +1015,9 @@ class BoardService {
         },
       });
 
-      await this.like.deleteMany({
+      await this.articleLike.deleteMany({
         where: {
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
+          articleId: findArticle.id,
         },
       });
 
