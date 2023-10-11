@@ -97,27 +97,8 @@ class BoardService {
     }
   }
 
-  public async searchCombine(keyword: string, user: UserWithSchool): Promise<{ board: Board[]; article: Article[] }> {
+  public async searchCombine(keyword: string, user: UserWithSchool): Promise<Article[]> {
     try {
-      const findBoards = await this.board.findMany({
-        where: {
-          schoolId: user.userSchoolId,
-          OR: [
-            {
-              name: {
-                contains: keyword,
-              },
-            },
-            {
-              description: {
-                contains: keyword,
-              },
-            },
-          ],
-        },
-        take: 3,
-      });
-
       const findArticles = await this.article.findMany({
         where: {
           schoolId: user.userSchoolId,
@@ -134,11 +115,9 @@ class BoardService {
             },
           ],
         },
-        include: {
-          Board: true,
-          User: true,
+        select: {
+          id: true,
         },
-        take: 3,
       });
 
       const filteredArticles: ArticleWithImage[] = [];
@@ -148,10 +127,7 @@ class BoardService {
         filteredArticles.push(filteredArticle);
       }
 
-      return {
-        board: findBoards,
-        article: filteredArticles,
-      };
+      return filteredArticles;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
