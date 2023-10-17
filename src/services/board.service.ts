@@ -172,8 +172,9 @@ class BoardService {
           createdAt: 'desc',
         },
         include: {
-          User: true,
-          Board: true,
+          ArticleLike: true,
+          Comment: true,
+          ReComment: true,
         },
       });
 
@@ -181,69 +182,27 @@ class BoardService {
         return [];
       }
 
-      let articlesWithLikes: ArticleWithImage[] = [];
-
-      for await (const article of findArticle) {
-        const likeCounts = await this.articleLike.count({
-          where: {
-            articleId: article.id,
-            likeType: LikeType.like,
-          },
-        });
-
-        const disLikeCounts = await this.articleLike.count({
-          where: {
-            articleId: article.id,
-            likeType: LikeType.dislike,
-          },
-        });
-
-        articlesWithLikes.push({
-          ...article,
-          likeCounts: likeCounts,
-          disLikeCounts: disLikeCounts,
-        } as unknown as ArticleWithImage);
-      }
-
-      articlesWithLikes.sort((a, b) => {
-        if (a.likeCounts > b.likeCounts) return -1;
-        else if (a.likeCounts < b.likeCounts) return 1;
-        else return 0;
-      });
-      articlesWithLikes = articlesWithLikes.slice(0, 6);
-
-      const articlesWithComments: ArticleWithImage[] = [];
-
-      for await (const article of articlesWithLikes) {
-        const commentCounts = await this.comment.count({
-          where: {
-            articleId: article.id,
-          },
-        });
-        const reCommentCounts = await this.reComment.count({
-          where: {
-            articleId: article.id,
-          },
-        });
-
-        articlesWithComments.push({
-          ...article,
-          commentCounts: commentCounts + reCommentCounts,
-        } as unknown as ArticleWithImage);
-      }
-
       const articlesWithImage: ArticleWithImage[] = [];
 
-      for await (const article of articlesWithComments) {
-        const keyOfImages: string[] = [];
+      findArticle.sort((a, b) => {
+        if (a.ArticleLike.length > b.ArticleLike.length) return -1;
+        else if (a.ArticleLike.length < b.ArticleLike.length) return 1;
+        else return 0;
+      });
+
+      for await (const article of findArticle) {
         if (article.images.length == 0) {
           articlesWithImage.push({
             ...article,
             keyOfImages: [],
-          });
+            commentCounts: article.Comment.length + article.ReComment.length,
+            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like),
+            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike),
+          } as unknown as ArticleWithImage);
           continue;
         }
 
+        const keyOfImages: string[] = [];
         for await (const imageId of article.images) {
           const findImage = await this.image.findUnique({
             where: {
@@ -252,12 +211,15 @@ class BoardService {
           });
           if (!findImage) continue;
           keyOfImages.push(findImage.key);
-        }
 
-        articlesWithImage.push({
-          ...article,
-          keyOfImages: keyOfImages,
-        });
+          articlesWithImage.push({
+            ...article,
+            keyOfImages: keyOfImages,
+            commentCounts: article.Comment.length + article.ReComment.length,
+            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like),
+            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike),
+          } as unknown as ArticleWithImage);
+        }
       }
 
       return articlesWithImage.map(article => {
