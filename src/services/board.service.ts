@@ -280,41 +280,19 @@ class BoardService {
           id: Number(articleId),
         },
         include: {
-          Board: true,
           User: true,
+          Board: true,
+          ArticleLike: true,
+          Comment: true,
+          ReComment: true,
         },
       });
-
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
-
       if (findArticle.Board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
       const keyOfImages: string[] = [];
 
-      const likeCounts = await this.articleLike.count({
-        where: {
-          articleId: findArticle.id,
-          likeType: LikeType.like,
-        },
-      });
-
-      const disLikeCounts = await this.articleLike.count({
-        where: {
-          articleId: findArticle.id,
-          likeType: LikeType.dislike,
-        },
-      });
-
-      const commentCounts = await this.comment.count({
-        where: {
-          articleId: findArticle.id,
-        },
-      });
-      const reCommentCounts = await this.reComment.count({
-        where: {
-          articleId: findArticle.id,
-        },
-      });
+      const likeCounts = findArticle.ArticleLike.filter(like => like.likeType === LikeType.like).length;
 
       for await (const imageId of findArticle.images) {
         const findImage = await this.image.findUnique({
@@ -325,12 +303,13 @@ class BoardService {
         if (!findImage) continue;
         keyOfImages.push(findImage.key);
       }
+
       return {
         ...findArticle,
         keyOfImages: keyOfImages,
         likeCounts: likeCounts,
-        disLikeCounts: disLikeCounts,
-        commentCounts: commentCounts + reCommentCounts,
+        disLikeCounts: findArticle.ArticleLike.length - likeCounts,
+        commentCounts: findArticle.Comment.length + findArticle.ReComment.length,
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
