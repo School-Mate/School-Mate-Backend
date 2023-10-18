@@ -196,8 +196,8 @@ class BoardService {
             ...article,
             keyOfImages: [],
             commentCounts: article.Comment.length + article.ReComment.length,
-            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like),
-            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike),
+            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike).length,
           } as unknown as ArticleWithImage);
           continue;
         }
@@ -216,8 +216,8 @@ class BoardService {
             ...article,
             keyOfImages: keyOfImages,
             commentCounts: article.Comment.length + article.ReComment.length,
-            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like),
-            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike),
+            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike).length,
           } as unknown as ArticleWithImage);
         }
       }
