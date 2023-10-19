@@ -23,8 +23,9 @@ class AuthController {
   public me = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;
+      const me = await this.authService.getMe(userData);
 
-      ResponseWrapper(req, res, { data: userData });
+      ResponseWrapper(req, res, { data: me });
     } catch (error) {
       next(error);
     }

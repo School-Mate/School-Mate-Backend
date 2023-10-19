@@ -19,7 +19,7 @@ import {
   SOL_API_SECRET,
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken, RequestWithUser, TokenData } from '@interfaces/auth.interface';
+import { DataStoredInToken, RequestWithUser, TokenData, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@utils/util';
 import { CreateUserDto, LoginUserDto, UpdateProfileDto } from '@/dtos/users.dto';
 import SchoolService from './school.service';
@@ -299,6 +299,26 @@ class AuthService {
         expiresIn: tokenData.expiresIn,
       },
       registered,
+    };
+  }
+
+  public async getMe(userData: UserWithSchool): Promise<any> {
+    const passwordRemovedData = excludeUserPassword(userData, ['password']);
+    if (userData.userSchoolId) {
+      const findSchool = await this.schoolService.getSchoolInfoById(userData.userSchoolId);
+
+      return {
+        ...passwordRemovedData,
+        UserSchool: {
+          ...userData.UserSchool,
+          school: findSchool,
+        },
+      };
+    }
+
+    return {
+      ...passwordRemovedData,
+      UserSchool: null,
     };
   }
 
