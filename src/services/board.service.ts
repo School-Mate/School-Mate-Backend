@@ -431,6 +431,91 @@ class BoardService {
     }
   }
 
+  public async getBoardPage(boardId: string, page: string, user: User): Promise<{ articles: Article[]; totalPage: number }> {
+    try {
+      const findArticles = await this.article.findMany({
+        where: {
+          boardId: Number(boardId),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          User: true,
+          Comment: true,
+          ReComment: true,
+          ArticleLike: true,
+        },
+      });
+
+      const articlesWithImage: ArticleWithImage[] = [];
+
+      for await (const article of findArticles) {
+        if (article.images.length == 0) {
+          articlesWithImage.push({
+            ...article,
+            keyOfImages: [],
+            commentCounts: article.Comment.length + article.ReComment.length,
+            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
+            isMe: article.userId === user.id,
+          });
+          continue;
+        }
+
+        const keyOfImages: string[] = [];
+
+        for await (const imageId of article.images) {
+          const findImage = await this.image.findUnique({
+            where: {
+              id: imageId,
+            },
+          });
+          if (!findImage) continue;
+          keyOfImages.push(findImage.key);
+        }
+
+        articlesWithImage.push({
+          ...article,
+          keyOfImages: keyOfImages,
+          commentCounts: article.Comment.length + article.ReComment.length,
+          likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
+          isMe: article.userId === user.id,
+        });
+      }
+
+      const findArticlesCount = await this.article.count({
+        where: {
+          boardId: Number(boardId),
+        },
+      });
+
+      return {
+        articles: articlesWithImage.map(article => {
+          if (article.isAnonymous)
+            return {
+              ...article,
+              userId: null,
+              User: undefined,
+            } as Article;
+          else
+            return {
+              ...article,
+              User: {
+                ...article.User,
+                password: undefined,
+                phone: undefined,
+              },
+            };
+        }),
+        totalPage: Math.ceil(findArticlesCount / 10),
+      };
+    } catch (error) {
+      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
+
   public async sendBoardRequest(data: SendBoardRequestDto, user: User): Promise<BoardRequest> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
 
