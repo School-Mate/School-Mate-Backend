@@ -18,21 +18,21 @@ model User {
   phone              String?               @unique
   createdAt          DateTime              @default(now())
   provider           UserLoginProviderType
-  userSchoolId       String?
-  Agreement          Agreement?
-  Article            Article[]
-  Asked              Asked[]
-  AskedUser          AskedUser?
-  BoardOrganizations BoardManager[]
-  Comment            Comment[]
-  Image              Image[]
-  ArticleLike        ArticleLike[]
-  CommentLike        CommentLike[]
-  ReCommentLike      ReCommentLike[]
-  ReComment          ReComment[]
-  SocialLogin        SocialLogin?
-  UserSchool         UserSchool?
-  UserSchoolVerify   UserSchoolVerify[]
+  serSchoolId       String?
+  agreement          Agreement?
+  article            Article[]
+  asked              Asked[]
+  askedUser          AskedUser?
+  boardOrganizations BoardManager[]
+  comment            Comment[]
+  image              Image[]
+  articleLike        ArticleLike[]
+  commentLike        CommentLike[]
+  reCommentLike      ReCommentLike[]
+  reComment          ReComment[]
+  socialLogin        SocialLogin?
+  userSchool         UserSchool?
+  userSchoolVerify   UserSchoolVerify[]
 }
 
 model School {
@@ -43,8 +43,8 @@ model School {
   atpt_code   String
   defaultName String
   name        String?
-  UserSchool  UserSchool[]
-  Article     Article[]
+  userSchool  UserSchool[]
+  article     Article[]
 }
 
 model Image {
@@ -53,7 +53,7 @@ model Image {
   userId           String
   createdAt        DateTime           @default(now())
   user             User               @relation(fields: [userId], references: [id])
-  UserSchoolVerify UserSchoolVerify[]
+  userSchoolVerify UserSchoolVerify[]
 }
 
 model PhoneVerifyRequest {
@@ -144,7 +144,7 @@ model AskedUser {
   receiveAnonymous   Boolean   @default(true)
   receiveOtherSchool Boolean   @default(false)
   lastUpdateCustomId DateTime?
-  Asked              Asked[]
+  asked              Asked[]
   user               User      @relation(fields: [userId], references: [id])
 }
 
@@ -158,8 +158,8 @@ model Asked {
   createdAt    DateTime  @default(now())
   answerTimeAt DateTime?
   isAnonymous  Boolean
-  AskedUser    AskedUser @relation(fields: [askedUserId], references: [userId])
-  QuestionUser User      @relation(fields: [userId], references: [id])
+  askedUser    AskedUser @relation(fields: [askedUserId], references: [userId])
+  questionUser User      @relation(fields: [userId], references: [id])
 }
 
 model Admin {
@@ -202,9 +202,9 @@ model Article {
   Board       Board         @relation(fields: [boardId], references: [id])
   User        User          @relation(fields: [userId], references: [id])
   school      School        @relation(fields: [schoolId], references: [schoolId])
-  Comment     Comment[]
-  ReComment   ReComment[]
-  ArticleLike ArticleLike[]
+  comment     Comment[]
+  reComment   ReComment[]
+  articleLike ArticleLike[]
 }
 
 model DeletedArticle {
@@ -216,7 +216,7 @@ model DeletedArticle {
   isAnonymous Boolean
   userId      String
   createdAt   DateTime
-  DeletedAt   DateTime @default(now())
+  deletedAt   DateTime @default(now())
   boardId     Int
 }
 
@@ -240,9 +240,9 @@ model Comment {
   updatedAt   DateTime      @updatedAt
   id          Int           @id @default(autoincrement())
   articleId   Int
-  Article     Article       @relation(fields: [articleId], references: [id])
-  User        User          @relation(fields: [userId], references: [id])
-  CommentLike CommentLike[]
+  article     Article       @relation(fields: [articleId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+  commentLike CommentLike[]
   recomments  ReComment[]
 }
 
@@ -256,10 +256,10 @@ model ReComment {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   commentId     Int?
-  Article       Article         @relation(fields: [articleId], references: [id])
-  Comment       Comment?        @relation(fields: [commentId], references: [id])
+  article       Article         @relation(fields: [articleId], references: [id])
+  comment       Comment?        @relation(fields: [commentId], references: [id])
   User          User            @relation(fields: [userId], references: [id])
-  ReCommentLike ReCommentLike[]
+  reCommentLike ReCommentLike[]
 }
 
 model Report {
