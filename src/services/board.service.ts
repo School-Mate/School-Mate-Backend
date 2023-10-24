@@ -172,9 +172,9 @@ class BoardService {
           createdAt: 'desc',
         },
         include: {
-          ArticleLike: true,
-          Comment: true,
-          ReComment: true,
+          articleLike: true,
+          comment: true,
+          reComment: true,
         },
       });
 
@@ -183,8 +183,8 @@ class BoardService {
       }
 
       findArticle.sort((a, b) => {
-        if (a.ArticleLike.length > b.ArticleLike.length) return -1;
-        else if (a.ArticleLike.length < b.ArticleLike.length) return 1;
+        if (a.articleLike.length > b.articleLike.length) return -1;
+        else if (a.articleLike.length < b.articleLike.length) return 1;
         else return 0;
       });
 
@@ -194,9 +194,9 @@ class BoardService {
             return {
               ...article,
               keyOfImages: [],
-              commentCounts: article.Comment.length + article.ReComment.length,
-              likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
-              disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike).length,
+              commentCounts: article.comment.length + article.reComment.length,
+              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
             } as unknown as ArticleWithImage;
           }
 
@@ -215,9 +215,9 @@ class BoardService {
           return {
             ...article,
             keyOfImages: keyOfImages,
-            commentCounts: article.Comment.length + article.ReComment.length,
-            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
-            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike).length,
+            commentCounts: article.comment.length + article.reComment.length,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
           } as unknown as ArticleWithImage;
         }),
       );
@@ -282,9 +282,9 @@ class BoardService {
         include: {
           User: true,
           Board: true,
-          ArticleLike: true,
-          Comment: true,
-          ReComment: true,
+          articleLike: true,
+          comment: true,
+          reComment: true,
         },
       });
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
@@ -292,7 +292,7 @@ class BoardService {
 
       const keyOfImages: string[] = [];
 
-      const likeCounts = findArticle.ArticleLike.filter(like => like.likeType === LikeType.like).length;
+      const likeCounts = findArticle.articleLike.filter(like => like.likeType === LikeType.like).length;
 
       for await (const imageId of findArticle.images) {
         const findImage = await this.image.findUnique({
@@ -308,8 +308,8 @@ class BoardService {
         ...findArticle,
         keyOfImages: keyOfImages,
         likeCounts: likeCounts,
-        disLikeCounts: findArticle.ArticleLike.length - likeCounts,
-        commentCounts: findArticle.Comment.length + findArticle.ReComment.length,
+        disLikeCounts: findArticle.articleLike.length - likeCounts,
+        commentCounts: findArticle.comment.length + findArticle.reComment.length,
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
@@ -345,9 +345,9 @@ class BoardService {
         },
         include: {
           User: true,
-          Comment: true,
-          ReComment: true,
-          ArticleLike: true,
+          comment: true,
+          reComment: true,
+          articleLike: true,
         },
       });
 
@@ -358,8 +358,8 @@ class BoardService {
           articlesWithImage.push({
             ...article,
             keyOfImages: [],
-            commentCounts: article.Comment.length + article.ReComment.length,
-            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
+            commentCounts: article.comment.length + article.reComment.length,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
             isMe: article.userId === user.id,
           });
           continue;
@@ -380,8 +380,8 @@ class BoardService {
         articlesWithImage.push({
           ...article,
           keyOfImages: keyOfImages,
-          commentCounts: article.Comment.length + article.ReComment.length,
-          likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
+          commentCounts: article.comment.length + article.reComment.length,
+          likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
           isMe: article.userId === user.id,
         });
       }
@@ -464,7 +464,7 @@ class BoardService {
               User: true,
             },
           },
-          User: true,
+          user: true,
         },
       });
 
@@ -536,8 +536,8 @@ class BoardService {
                   id: null,
                 }
               : {
-                  name: comment.User.name,
-                  id: comment.User.id,
+                  name: comment.user.name,
+                  id: comment.user.id,
                 },
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
