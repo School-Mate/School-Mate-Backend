@@ -182,45 +182,45 @@ class BoardService {
         return [];
       }
 
-      const articlesWithImage: ArticleWithImage[] = [];
-
       findArticle.sort((a, b) => {
         if (a.ArticleLike.length > b.ArticleLike.length) return -1;
         else if (a.ArticleLike.length < b.ArticleLike.length) return 1;
         else return 0;
       });
 
-      for await (const article of findArticle) {
-        if (article.images.length == 0) {
-          articlesWithImage.push({
-            ...article,
-            keyOfImages: [],
-            commentCounts: article.Comment.length + article.ReComment.length,
-            likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
-            disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike).length,
-          } as unknown as ArticleWithImage);
-          continue;
-        }
+      const articlesWithImage = await Promise.all(
+        findArticle.map(async article => {
+          if (article.images.length === 0) {
+            return {
+              ...article,
+              keyOfImages: [],
+              commentCounts: article.Comment.length + article.ReComment.length,
+              likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
+              disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike).length,
+            } as unknown as ArticleWithImage;
+          }
 
-        const keyOfImages: string[] = [];
-        for await (const imageId of article.images) {
-          const findImage = await this.image.findUnique({
-            where: {
-              id: imageId,
-            },
-          });
-          if (!findImage) continue;
-          keyOfImages.push(findImage.key);
+          const keyOfImages = await Promise.all(
+            article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
 
-          articlesWithImage.push({
+          return {
             ...article,
             keyOfImages: keyOfImages,
             commentCounts: article.Comment.length + article.ReComment.length,
             likeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.like).length,
             disLikeCounts: article.ArticleLike.filter(like => like.likeType === LikeType.dislike).length,
-          } as unknown as ArticleWithImage);
-        }
-      }
+          } as unknown as ArticleWithImage;
+        }),
+      );
 
       return articlesWithImage.map(article => {
         if (article.isAnonymous) {
