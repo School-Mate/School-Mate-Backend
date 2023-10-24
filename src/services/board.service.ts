@@ -656,7 +656,7 @@ class BoardService {
     }
   }
 
-  public async likeArticle(articleId: string, userId: string): Promise<any> {
+  public async likeArticle(articleId: string, userId: string, likeType: LikeType): Promise<any> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
@@ -679,14 +679,14 @@ class BoardService {
           data: {
             userId: userId,
             articleId: findArticle.id,
-            likeType: LikeType.like,
+            likeType: likeType,
           },
         });
 
         return createArticleLike;
       }
 
-      if (ArticleLike.likeType === LikeType.like) {
+      if (ArticleLike.likeType === likeType) {
         await this.articleLike.delete({
           where: {
             id: ArticleLike.id,
@@ -700,7 +700,7 @@ class BoardService {
             id: ArticleLike.id,
           },
           data: {
-            likeType: LikeType.like,
+            likeType: likeType === LikeType.like ? LikeType.dislike : LikeType.like,
           },
         });
 
@@ -714,66 +714,6 @@ class BoardService {
       }
     }
   }
-
-  public disLikeArticle = async (articleId: string, userId: string): Promise<any> => {
-    try {
-      const findArticle = await this.article.findUnique({
-        where: {
-          id: Number(articleId),
-        },
-      });
-
-      if (!findArticle) {
-        throw new HttpException(404, '해당하는 게시글이 없습니다.');
-      }
-
-      const ArticleLike = await this.articleLike.findFirst({
-        where: {
-          userId: userId,
-          articleId: findArticle.id,
-        },
-      });
-
-      if (!ArticleLike) {
-        const createArticleLike = await this.articleLike.create({
-          data: {
-            userId: userId,
-            articleId: findArticle.id,
-            likeType: LikeType.dislike,
-          },
-        });
-
-        return createArticleLike;
-      }
-
-      if (ArticleLike.likeType === LikeType.dislike) {
-        await this.articleLike.delete({
-          where: {
-            id: ArticleLike.id,
-          },
-        });
-
-        return null;
-      } else {
-        const updateArticleLike = await this.articleLike.update({
-          where: {
-            id: ArticleLike.id,
-          },
-          data: {
-            likeType: LikeType.dislike,
-          },
-        });
-
-        return updateArticleLike;
-      }
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
-        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-      }
-    }
-  };
 
   public likeComment = async (commentId: string, userId: string): Promise<any> => {
     try {

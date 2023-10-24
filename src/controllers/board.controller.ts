@@ -5,6 +5,7 @@ import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithUser } from '@/interfaces/auth.interface';
 import { IArticleQuery } from '@/interfaces/board.interface';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
+import { LikeType } from '@prisma/client';
 
 class BoardController {
   public boardService = new BoardService();
@@ -163,7 +164,7 @@ class BoardController {
     try {
       const articleId = req.params.articleId;
       const user = req.user;
-      const likeArticleData = await this.boardService.likeArticle(articleId, user.id);
+      const likeArticleData = await this.boardService.likeArticle(articleId, user.id, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeArticleData,
@@ -177,7 +178,7 @@ class BoardController {
     try {
       const articleId = req.params.articleId;
       const user = req.user;
-      const disLikeArticleData = await this.boardService.disLikeArticle(articleId, user.id);
+      const disLikeArticleData = await this.boardService.likeArticle(articleId, user.id, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeArticleData,
