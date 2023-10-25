@@ -41,7 +41,7 @@ jobs:
           cp -r ${{ env.FILE_PATH }}/node_modules/.prisma/client/* ${{ env.FILE_PATH }}/types/src/.prisma/
       - name: Fix files
         run: |
-          sed -i "6s|@prisma|../@prisma|" ${{ env.FILE_PATH }}/types/src/.prisma/client/index.d.ts
+          sed -i "6s|@prisma|../@prisma|" ${{ env.FILE_PATH }}/types/src/.prisma/index.d.ts
           sed -i "1s|.prisma/client|../.prisma|" ${{ env.FILE_PATH }}/types/src/@prisma/index.d.ts
       - name: Commit
         run: |
