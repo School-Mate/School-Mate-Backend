@@ -28,10 +28,10 @@ jobs:
           token: ${{secrets.OMBE_TOKEN}}
       - name: Upload types
         run: |
-          pwd && cd ../ && ll && cd ../ && ll
-          rm -rf ~/types/src/prisma/*
-          cp -r ~/School-Mate-Backend/School-Mate-Backend/node_modules/@prisma/client/* ~/types/src/prisma
-          cd ~/types
+          pwd && cd ../ && ls && cd ../ && ls
+          rm -rf ~/work/types/src/prisma/*
+          cp -r ~/work/School-Mate-Backend/School-Mate-Backend/node_modules/@prisma/client/* ~/work/types/src/prisma
+          cd ~/work/types
           git add . 
           git commit -m "feat: update types"
           git push https://${{secrets.OMBE_TOKEN}}@github.com/School-Mate/School-Mate-Types.git
