@@ -18,7 +18,7 @@ jobs:
         run: yarn install
       - name: Prisma
         run: |
-          yarn generate
+          yarn prisma generate
       - name: Git config
         run: |
           git config --global user.name "Github Actions"
