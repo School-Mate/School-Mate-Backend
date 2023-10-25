@@ -26,8 +26,8 @@ jobs:
       - name: Upload types
         run: |
           git clone https://github.com/School-Mate/School-Mate-Types.git
-          rm -rf School-Mate-Types/src/*
-          cp -r node_modules/.prisma/client School-Mate-Types/src
+          rm -rf School-Mate-Types/src/prisma/*
+          cp -r node_modules/.prisma/client School-Mate-Types/src/prisma
           git add . 
           git commit -m "feat: update types"
           git push https://${{secrets.OMBE_TOKEN}}@github.com/School-Mate/School-Mate-Types.git
