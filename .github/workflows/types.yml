@@ -32,7 +32,6 @@ jobs:
           git config --global user.email "schoolmate@schoolmate.kr"
       - name: Upload types
         run: |
-          pwd && cd ../ && ls && cd ../ && ls
           rm -rf ~/work/School-Mate-Backend/School-Mate-Backend/types/src/prisma/*
           cp -r ~/work/School-Mate-Backend/School-Mate-Backend/node_modules/@prisma/client/* ~/work/School-Mate-Backend/School-Mate-Backend/types/src/prisma/
           cd ~/work/School-Mate-Backend/School-Mate-Backend/types
