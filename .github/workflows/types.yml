@@ -22,7 +22,7 @@ jobs:
         run: |
           yarn prisma generate
       - name: Checkout types repo
-        uses: actions/checkout@4
+        uses: actions/checkout@v4
         with:
           repository: School-Mate/School-Mate-Types
           path: types
