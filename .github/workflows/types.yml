@@ -27,9 +27,9 @@ jobs:
           path: types
           token: ${{secrets.OMBE_TOKEN}}
       - name: Setup git
-          run: |
-            git config --global user.name "Github Actions"
-            git config --global user.email "schoolmate@schoolmate.kr"
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "schoolmate@schoolmate.kr"
       - name: Upload types
         run: |
           pwd && cd ../ && ls && cd ../ && ls
