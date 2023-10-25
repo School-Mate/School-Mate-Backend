@@ -1,0 +1,33 @@
+name: UPLOAD TYPES
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup
+        uses: actions/setup-node@v2
+        with:
+          node-version: 19.x
+        run: yarn install
+      - name: Prisma
+        run: |
+          yarn generate
+      - name: Git config
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "schoolmate@schoolmate.kr"
+      - name: Upload types
+        run: |
+          git clone https://github.com/School-Mate/School-Mate-Types.git
+          rm -rf School-Mate-Types/src/*
+          cp -r node_modules/.prisma/client School-Mate-Types/src
+          git add . 
+          git commit -m "feat: update types"
+          git push https://${{secrets.OMBE_TOKEN}}@github.com/School-Mate/School-Mate-Types.git
+      
