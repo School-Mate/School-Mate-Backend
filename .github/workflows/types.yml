@@ -5,6 +5,9 @@ on:
     branches:
       - main
 
+env:
+  FILE_PATH: ~/work/School-Mate-Backend/School-Mate-Backend
+
 jobs:
   main:
     runs-on: ubuntu-latest
@@ -30,13 +33,19 @@ jobs:
         run: |
           git config --global user.name "Github Actions"
           git config --global user.email "schoolmate@schoolmate.kr"
-      - name: Upload types
+      - name: Copy types
         run: |
-          rm -rf ~/work/School-Mate-Backend/School-Mate-Backend/types/src/@prisma/*
-          rm -rf ~/work/School-Mate-Backend/School-Mate-Backend/types/src/.prisma/*
-          cp -r ~/work/School-Mate-Backend/School-Mate-Backend/node_modules/@prisma/client/* ~/work/School-Mate-Backend/School-Mate-Backend/types/src/@prisma/
-          cp -r ~/work/School-Mate-Backend/School-Mate-Backend/node_modules/.prisma/client/* ~/work/School-Mate-Backend/School-Mate-Backend/types/src/.prisma/
-          cd ~/work/School-Mate-Backend/School-Mate-Backend/types
+          rm -rf ${{ env.PATH }}/types/src/@prisma/*
+          rm -rf ${{ env.FILE_PATH }}/types/src/.prisma/*
+          cp -r ${{ env.FILE_PATH }}/node_modules/@prisma/client/* ${{ env.FILE_PATH }}/types/src/@prisma/
+          cp -r ${{ env.FILE_PATH }}/node_modules/.prisma/client/* ${{ env.FILE_PATH }}/types/src/.prisma/
+      - name: Fix files
+        run: |
+          sed -i "6s|@prisma|../@prisma|" ${{ env.FILE_PATH }}/types/src/.prisma/client/index.d.ts
+          sed -i "1s|.prisma/client|../.prisma|" ${{ env.FILE_PATH }}/types/src/@prisma/index.d.ts
+      - name: Commit
+        run: |
+          cd ${{ env.FILE_PATH }}/types
           git add . 
           git commit -m "feat: update types"
           git push https://${{secrets.OMBE_TOKEN}}@github.com/School-Mate/School-Mate-Types.git
