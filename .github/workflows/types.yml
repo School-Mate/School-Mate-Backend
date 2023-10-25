@@ -28,7 +28,7 @@ jobs:
           token: ${{secrets.OMBE_TOKEN}}
       - name: Upload types
         run: |
-          pwd && cd ../ && ls && cd../ ls
+          pwd && cd ../ && ll && cd ../ && ll
           rm -rf ~/types/src/prisma/*
           cp -r ~/School-Mate-Backend/School-Mate-Backend/node_modules/@prisma/client/* ~/types/src/prisma
           cd ~/types
