@@ -192,7 +192,7 @@ class BoardController {
     try {
       const commentId = req.params.commentId;
       const userId = req.params.userId;
-      const likeCommentData = await this.boardService.likeComment(commentId, userId);
+      const likeCommentData = await this.boardService.likeComment(commentId, userId, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeCommentData,
@@ -206,7 +206,7 @@ class BoardController {
     try {
       const commentId = req.params.commentId;
       const userId = req.params.userId;
-      const disLikeCommentData = await this.boardService.disLikeComment(commentId, userId);
+      const disLikeCommentData = await this.boardService.likeComment(commentId, userId, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeCommentData,
@@ -220,7 +220,7 @@ class BoardController {
     try {
       const recommentId = req.params.recommentId;
       const userId = req.params.userId;
-      const likeReCommentData = await this.boardService.likeReComment(recommentId, userId);
+      const likeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeReCommentData,
@@ -234,7 +234,7 @@ class BoardController {
     try {
       const recommentId = req.params.recommentId;
       const userId = req.params.userId;
-      const disLikeReCommentData = await this.boardService.disLikeReComment(recommentId, userId);
+      const disLikeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeReCommentData,

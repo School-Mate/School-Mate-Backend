@@ -616,7 +616,6 @@ class BoardService {
 
       return createComment;
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else {
@@ -715,7 +714,7 @@ class BoardService {
     }
   }
 
-  public likeComment = async (commentId: string, userId: string): Promise<any> => {
+  public likeComment = async (commentId: string, userId: string, likeType: LikeType): Promise<any> => {
     try {
       const findComment = await this.comment.findUnique({
         where: {
@@ -731,7 +730,7 @@ class BoardService {
         data: {
           userId: userId,
           commentId: findComment.id,
-          likeType: LikeType.like,
+          likeType: likeType,
         },
       });
 
@@ -745,37 +744,7 @@ class BoardService {
     }
   };
 
-  public disLikeComment = async (commentId: string, userId: string): Promise<any> => {
-    try {
-      const findComment = await this.comment.findUnique({
-        where: {
-          id: Number(commentId),
-        },
-      });
-
-      if (!findComment) {
-        throw new HttpException(404, '해당하는 댓글이 없습니다.');
-      }
-
-      const createCommentDislike = await this.commentLike.create({
-        data: {
-          userId: userId,
-          commentId: findComment.id,
-          likeType: LikeType.dislike,
-        },
-      });
-
-      return createCommentDislike;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
-        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-      }
-    }
-  };
-
-  public likeReComment = async (reCommentId: string, userId: string): Promise<any> => {
+  public likeReComment = async (reCommentId: string, userId: string, likeType: LikeType): Promise<any> => {
     try {
       const findReComment = await this.reComment.findUnique({
         where: {
@@ -791,41 +760,11 @@ class BoardService {
         data: {
           userId: userId,
           recommentId: findReComment.id,
-          likeType: LikeType.like,
+          likeType: likeType,
         },
       });
 
       return createReCommentLike;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
-        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-      }
-    }
-  };
-
-  public disLikeReComment = async (reCommentId: string, userId: string): Promise<any> => {
-    try {
-      const findReComment = await this.reComment.findUnique({
-        where: {
-          id: Number(reCommentId),
-        },
-      });
-
-      if (!findReComment) {
-        throw new HttpException(404, '해당하는 대댓글이 없습니다.');
-      }
-
-      const createRecommentDislike = await this.reCommentLike.create({
-        data: {
-          userId: userId,
-          recommentId: findReComment.id,
-          likeType: LikeType.dislike,
-        },
-      });
-
-      return createRecommentDislike;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
