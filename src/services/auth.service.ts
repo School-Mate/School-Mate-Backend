@@ -60,7 +60,7 @@ class AuthService {
   public async kakaoLogin(code: string): Promise<{
     cookie: string;
     findUser: User & {
-      UserSchool: UserSchool & {
+      userSchool: UserSchool & {
         school: School;
       };
     };
@@ -150,7 +150,7 @@ class AuthService {
   public async googleLogin(code: string): Promise<{
     cookie: string;
     findUser: User & {
-      UserSchool: UserSchool & {
+      userSchool: UserSchool & {
         school: School;
       };
     };
@@ -245,7 +245,7 @@ class AuthService {
 
   private async iniitalizeLoginData(
     user: User & {
-      UserSchool?: UserSchool & {
+      userSchool?: UserSchool & {
         school?: School;
       };
     },
@@ -253,7 +253,7 @@ class AuthService {
   ): Promise<{
     cookie: string;
     findUser: User & {
-      UserSchool: UserSchool & {
+      userSchool: UserSchool & {
         school: School;
       };
     };
@@ -268,15 +268,15 @@ class AuthService {
     const tokenData = this.createToken(user);
     const cookie = this.createCookie(tokenData);
 
-    if (user.UserSchool) {
-      const findSchool = await this.schoolService.getSchoolInfoById(user.UserSchool.schoolId);
+    if (user.userSchool) {
+      const findSchool = await this.schoolService.getSchoolInfoById(user.userSchool.schoolId);
 
       return {
         cookie,
         findUser: {
           ...passwordRemovedData,
-          UserSchool: {
-            ...user.UserSchool,
+          userSchool: {
+            ...user.userSchool,
             school: findSchool,
           },
         } as any,
@@ -292,7 +292,7 @@ class AuthService {
       cookie,
       findUser: {
         ...passwordRemovedData,
-        UserSchool: null,
+        userSchool: null,
       } as any,
       token: {
         accessToken: tokenData.token,
