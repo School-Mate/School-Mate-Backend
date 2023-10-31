@@ -117,8 +117,8 @@ class AuthService {
             },
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
         const loginData = await this.iniitalizeLoginData(createUserData, false);
@@ -132,8 +132,8 @@ class AuthService {
             email: userData.kakao_account.email as string,
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
         const loginData = await this.iniitalizeLoginData(findUser, true);
@@ -202,8 +202,8 @@ class AuthService {
             },
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
 
@@ -215,8 +215,8 @@ class AuthService {
             id: socialLogin.userId,
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
         const loginData = await this.iniitalizeLoginData(findUser, true);
@@ -310,7 +310,7 @@ class AuthService {
       return {
         ...passwordRemovedData,
         UserSchool: {
-          ...userData.UserSchool,
+          ...userData.userSchool,
           school: findSchool,
         },
       };
@@ -328,7 +328,7 @@ class AuthService {
         phone: userData.phone,
       },
       include: {
-        UserSchool: true,
+        userSchool: true,
       },
     });
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');

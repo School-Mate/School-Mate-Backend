@@ -132,7 +132,7 @@ class AskedService {
         userId: asked.isAnonymous ? null : asked.userId,
         QuestionUser: {
           name: asked.isAnonymous ? '익명' : asked.questionUser.name,
-          profile: asked.isAnonymous ? null : asked.questionUser.profileImage,
+          profile: asked.isAnonymous ? null : asked.questionUser.profile,
         },
       }));
 
@@ -250,11 +250,11 @@ class AskedService {
       const filteredAsked = findAskedUser.asked
         .map(asked => ({
           ...asked,
-          QuestionUser: {
+          questionUser: {
             name: asked.isAnonymous ? '익명' : asked.questionUser.name,
-            profile: asked.isAnonymous ? null : asked.questionUser.profileImage,
+            profile: asked.isAnonymous ? null : asked.questionUser.profile,
           },
-          askedUserId: null,
+          askedUserId: asked.isAnonymous ? null : asked.askedUserId,
         }))
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
