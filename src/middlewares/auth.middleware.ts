@@ -19,8 +19,8 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
       const findUser = await users.findUnique({
         where: { id: userId },
         include: {
-          SocialLogin: true,
-          UserSchool: true,
+          socialLogin: true,
+          userSchool: true,
         },
       });
 
