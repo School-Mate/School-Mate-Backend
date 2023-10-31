@@ -28,7 +28,7 @@ export interface ArticleWithImage extends Article {
   likeCounts?: number;
   dislikeCounts?: number;
   isMe: boolean;
-  User: {
+  user: {
     id: string;
     name: string;
   };
@@ -39,7 +39,7 @@ export interface Image {
 }
 
 export interface CommentWithUser extends Comment {
-  User: {
+  user: {
     id: string;
     name?: string;
   };
