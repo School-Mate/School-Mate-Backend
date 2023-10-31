@@ -41,7 +41,7 @@ class ReportService {
       const targetId = /^\d+$/.test(data.targetId) ? Number(data.targetId) : data.targetId;
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
+      //@ts-ignore
       const findTarget = await model.findUnique({
         where: {
           id: targetId,

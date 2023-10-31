@@ -100,7 +100,7 @@ class AskedService {
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 7,
         include: {
-          QuestionUser: true,
+          questionUser: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -131,8 +131,8 @@ class AskedService {
         ...asked,
         userId: asked.isAnonymous ? null : asked.userId,
         QuestionUser: {
-          name: asked.isAnonymous ? '익명' : asked.QuestionUser.name,
-          profile: asked.isAnonymous ? null : asked.QuestionUser.profile,
+          name: asked.isAnonymous ? '익명' : asked.questionUser.name,
+          profile: asked.isAnonymous ? null : asked.questionUser.profile,
         },
       }));
 
@@ -203,9 +203,9 @@ class AskedService {
         },
         include: {
           user: true,
-          Asked: {
+          asked: {
             include: {
-              QuestionUser: true,
+              questionUser: true,
             },
             skip: page ? (Number(page) - 1) * 10 : 0,
             take: 10,
@@ -247,14 +247,16 @@ class AskedService {
         return createdAskedUser;
       }
 
-      const filteredAsked = findAskedUser.Asked.map(asked => ({
-        ...asked,
-        QuestionUser: {
-          name: asked.isAnonymous ? '익명' : asked.QuestionUser.name,
-          profile: asked.isAnonymous ? null : asked.QuestionUser.profile,
-        },
-        askedUserId: null,
-      })).sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      const filteredAsked = findAskedUser.asked
+        .map(asked => ({
+          ...asked,
+          questionUser: {
+            name: asked.isAnonymous ? '익명' : asked.questionUser.name,
+            profile: asked.isAnonymous ? null : asked.questionUser.profile,
+          },
+          askedUserId: asked.isAnonymous ? null : asked.askedUserId,
+        }))
+        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
       const askedCount = await this.asked.count({
         where: {

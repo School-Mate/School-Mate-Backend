@@ -44,15 +44,15 @@ class AuthService {
         id: userData.id,
       },
       include: {
-        UserSchool: true,
+        userSchool: true,
       },
     });
     if (!findUser.userSchoolId) throw new HttpException(400, '학교 인증을 마치지 않았습니다.');
 
-    const findSchool = await this.schoolService.getSchoolInfoById(findUser.UserSchool.schoolId);
+    const findSchool = await this.schoolService.getSchoolInfoById(findUser.userSchool.schoolId);
 
     return {
-      ...findUser.UserSchool,
+      ...findUser.userSchool,
       school: findSchool,
     };
   }
@@ -108,7 +108,7 @@ class AuthService {
             email: userData.kakao_account.email as string,
             name: userData.kakao_account.profile.nickname as string,
             provider: 'social',
-            SocialLogin: {
+            socialLogin: {
               create: {
                 provider: 'kakao',
                 socialId: userData.id.toString(),
@@ -117,8 +117,8 @@ class AuthService {
             },
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
         const loginData = await this.iniitalizeLoginData(createUserData, false);
@@ -132,8 +132,8 @@ class AuthService {
             email: userData.kakao_account.email as string,
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
         const loginData = await this.iniitalizeLoginData(findUser, true);
@@ -193,7 +193,7 @@ class AuthService {
             email: userData.email as string,
             name: userData.name as string,
             provider: 'social',
-            SocialLogin: {
+            socialLogin: {
               create: {
                 provider: 'google',
                 socialId: userData.id as string,
@@ -202,8 +202,8 @@ class AuthService {
             },
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
 
@@ -215,8 +215,8 @@ class AuthService {
             id: socialLogin.userId,
           },
           include: {
-            UserSchool: true,
-            SocialLogin: true,
+            userSchool: true,
+            socialLogin: true,
           },
         });
         const loginData = await this.iniitalizeLoginData(findUser, true);
@@ -310,7 +310,7 @@ class AuthService {
       return {
         ...passwordRemovedData,
         UserSchool: {
-          ...userData.UserSchool,
+          ...userData.userSchool,
           school: findSchool,
         },
       };
@@ -328,7 +328,7 @@ class AuthService {
         phone: userData.phone,
       },
       include: {
-        UserSchool: true,
+        userSchool: true,
       },
     });
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
@@ -367,7 +367,7 @@ class AuthService {
           provider: 'id',
           password: hashedPassword,
           isVerified: true,
-          Agreement: {
+          agreement: {
             create: {
               receive: userData.marketingAgree,
             },
@@ -399,7 +399,7 @@ class AuthService {
         name: userData.name,
         phone: userData.phone,
         isVerified: true,
-        Agreement: {
+        agreement: {
           upsert: {
             create: {
               receive: userData.marketingAgree,

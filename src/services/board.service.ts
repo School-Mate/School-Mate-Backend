@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, PrismaClient, User, LikeTargetType, LikeType, BoardRequest } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, LikeType, BoardRequest } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, CommentWithUser, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
@@ -13,11 +13,14 @@ class BoardService {
   public boardRequest = new PrismaClient().boardRequest;
   public comment = new PrismaClient().comment;
   public image = new PrismaClient().image;
-  public like = new PrismaClient().like;
+  public articleLike = new PrismaClient().articleLike;
+  public commentLike = new PrismaClient().commentLike;
+  public reCommentLike = new PrismaClient().reCommentLike;
   public manager = new PrismaClient().boardManager;
   public reComment = new PrismaClient().reComment;
   public school = new PrismaClient().school;
   public user = new PrismaClient().user;
+  public defaultBoard = new PrismaClient().defaultBoard;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -29,57 +32,16 @@ class BoardService {
       });
 
       if (findBoards.length === 0) {
+        const createBoards = await this.defaultBoard.findMany();
         await this.board.createMany({
-          data: [
-            {
-              name: '자유게시판',
-              description: '자유롭게 글을 쓸 수 있는 게시판입니다.',
+          data: createBoards.map(board => {
+            return {
+              name: board.name,
+              description: board.description,
               schoolId: user.userSchoolId,
               default: true,
-            },
-            {
-              name: '취미공유',
-              description: '취미를 공유하는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '질문게시판',
-              description: '질문을 할 수 있는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '새내기게시판',
-              description: '새내기들을 위한 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '연애고민해결',
-              description: '연애고민을 해결해주는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '스터디게시판',
-              description: '공부시간, 플레너 인증, 스터디정보를 공유하는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '졸업생게시판',
-              description: '졸업생들을 위한 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '내찍사게시판',
-              description: '내가찍은사진을 올리는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-          ],
+            };
+          }),
         });
 
         const findBoards = await this.board.findMany({
@@ -97,27 +59,8 @@ class BoardService {
     }
   }
 
-  public async searchCombine(keyword: string, user: UserWithSchool): Promise<{ board: Board[]; article: Article[] }> {
+  public async searchCombine(keyword: string, user: UserWithSchool): Promise<Article[]> {
     try {
-      const findBoards = await this.board.findMany({
-        where: {
-          schoolId: user.userSchoolId,
-          OR: [
-            {
-              name: {
-                contains: keyword,
-              },
-            },
-            {
-              description: {
-                contains: keyword,
-              },
-            },
-          ],
-        },
-        take: 3,
-      });
-
       const findArticles = await this.article.findMany({
         where: {
           schoolId: user.userSchoolId,
@@ -134,11 +77,9 @@ class BoardService {
             },
           ],
         },
-        include: {
-          Board: true,
-          User: true,
+        select: {
+          id: true,
         },
-        take: 3,
       });
 
       const filteredArticles: ArticleWithImage[] = [];
@@ -148,10 +89,7 @@ class BoardService {
         filteredArticles.push(filteredArticle);
       }
 
-      return {
-        board: findBoards,
-        article: filteredArticles,
-      };
+      return filteredArticles;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -194,8 +132,9 @@ class BoardService {
           createdAt: 'desc',
         },
         include: {
-          User: true,
-          Board: true,
+          articleLike: true,
+          comment: true,
+          reComment: true,
         },
       });
 
@@ -203,86 +142,45 @@ class BoardService {
         return [];
       }
 
-      let articlesWithLikes: ArticleWithImage[] = [];
-
-      for await (const article of findArticle) {
-        const likeCounts = await this.like.count({
-          where: {
-            targetId: article.id,
-            targetType: LikeTargetType.article,
-            likeType: LikeType.like,
-          },
-        });
-
-        const disLikeCounts = await this.like.count({
-          where: {
-            targetId: article.id,
-            targetType: LikeTargetType.article,
-            likeType: LikeType.dislike,
-          },
-        });
-
-        articlesWithLikes.push({
-          ...article,
-          likeCounts: likeCounts,
-          disLikeCounts: disLikeCounts,
-        } as unknown as ArticleWithImage);
-      }
-
-      articlesWithLikes.sort((a, b) => {
-        if (a.likeCounts > b.likeCounts) return -1;
-        else if (a.likeCounts < b.likeCounts) return 1;
+      findArticle.sort((a, b) => {
+        if (a.articleLike.length > b.articleLike.length) return -1;
+        else if (a.articleLike.length < b.articleLike.length) return 1;
         else return 0;
       });
-      articlesWithLikes = articlesWithLikes.slice(0, 6);
 
-      const articlesWithComments: ArticleWithImage[] = [];
+      const articlesWithImage = await Promise.all(
+        findArticle.map(async article => {
+          if (article.images.length === 0) {
+            return {
+              ...article,
+              keyOfImages: [],
+              commentCounts: article.comment.length + article.reComment.length,
+              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+            } as unknown as ArticleWithImage;
+          }
 
-      for await (const article of articlesWithLikes) {
-        const commentCounts = await this.comment.count({
-          where: {
-            articleId: article.id,
-          },
-        });
-        const reCommentCounts = await this.reComment.count({
-          where: {
-            articleId: article.id,
-          },
-        });
+          const keyOfImages = await Promise.all(
+            article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
 
-        articlesWithComments.push({
-          ...article,
-          commentCounts: commentCounts + reCommentCounts,
-        } as unknown as ArticleWithImage);
-      }
-
-      const articlesWithImage: ArticleWithImage[] = [];
-
-      for await (const article of articlesWithComments) {
-        const keyOfImages: string[] = [];
-        if (article.images.length == 0) {
-          articlesWithImage.push({
+          return {
             ...article,
-            keyOfImages: [],
-          });
-          continue;
-        }
-
-        for await (const imageId of article.images) {
-          const findImage = await this.image.findUnique({
-            where: {
-              id: imageId,
-            },
-          });
-          if (!findImage) continue;
-          keyOfImages.push(findImage.key);
-        }
-
-        articlesWithImage.push({
-          ...article,
-          keyOfImages: keyOfImages,
-        });
-      }
+            keyOfImages: keyOfImages,
+            commentCounts: article.comment.length + article.reComment.length,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+          } as unknown as ArticleWithImage;
+        }),
+      );
 
       return articlesWithImage.map(article => {
         if (article.isAnonymous) {
@@ -297,8 +195,8 @@ class BoardService {
             ...article,
             isMe: article.userId === user.id,
             User: {
-              name: article.User.name,
-              id: article.User.id,
+              name: article.user.name,
+              id: article.user.id,
             },
           };
         }
@@ -342,69 +240,46 @@ class BoardService {
           id: Number(articleId),
         },
         include: {
-          Board: true,
-          User: true,
+          user: true,
+          board: true,
+          articleLike: true,
+          comment: true,
+          reComment: true,
         },
       });
-
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      if (findArticle.board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
-      if (findArticle.Board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+      const likeCounts = findArticle.articleLike.filter(like => like.likeType === LikeType.like).length;
 
-      const keyOfImages: string[] = [];
+      const keyOfImages = await Promise.all(
+        findArticle.images.map(async imageId => {
+          const findImage = await this.image.findUnique({
+            where: {
+              id: imageId,
+            },
+          });
+          if (!findImage) return;
+          return findImage.key;
+        }),
+      );
 
-      const likeCounts = await this.like.count({
-        where: {
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
-          likeType: LikeType.like,
-        },
-      });
-
-      const disLikeCounts = await this.like.count({
-        where: {
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
-          likeType: LikeType.dislike,
-        },
-      });
-
-      const commentCounts = await this.comment.count({
-        where: {
-          articleId: findArticle.id,
-        },
-      });
-      const reCommentCounts = await this.reComment.count({
-        where: {
-          articleId: findArticle.id,
-        },
-      });
-
-      for await (const imageId of findArticle.images) {
-        const findImage = await this.image.findUnique({
-          where: {
-            id: imageId,
-          },
-        });
-        if (!findImage) continue;
-        keyOfImages.push(findImage.key);
-      }
       return {
         ...findArticle,
         keyOfImages: keyOfImages,
         likeCounts: likeCounts,
-        disLikeCounts: disLikeCounts,
-        commentCounts: commentCounts + reCommentCounts,
+        disLikeCounts: findArticle.articleLike.length - likeCounts,
+        commentCounts: findArticle.comment.length + findArticle.reComment.length,
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
-              User: null,
+              user: null,
               userId: null,
             }
           : {
-              User: {
-                name: findArticle.User.name,
-                id: findArticle.User.id,
+              user: {
+                name: findArticle.user.name,
+                id: findArticle.user.id,
               } as User,
             }),
       } as unknown as ArticleWithImage;
@@ -417,7 +292,7 @@ class BoardService {
     }
   }
 
-  public async getArticles(boardId: string, page: string, user: User): Promise<{ articles: Article[]; totalPage: number }> {
+  public async getBoardPage(boardId: string, page: string, user: User): Promise<{ articles: Article[]; totalPage: number }> {
     try {
       const findArticles = await this.article.findMany({
         where: {
@@ -429,62 +304,46 @@ class BoardService {
           createdAt: 'desc',
         },
         include: {
-          User: true,
+          user: true,
+          comment: true,
+          reComment: true,
+          articleLike: true,
         },
       });
 
-      const articlesWithImage: ArticleWithImage[] = [];
+      const articlesWithImage = await Promise.all(
+        findArticles.map(async article => {
+          if (article.images.length == 0) {
+            return {
+              ...article,
+              keyOfImages: [],
+              commentCounts: article.comment.length + article.reComment.length,
+              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              isMe: article.userId === user.id,
+            };
+          }
 
-      for await (const article of findArticles) {
-        const commentCounts = await this.comment.count({
-          where: {
-            articleId: article.id,
-          },
-        });
-        const reCommentCounts = await this.reComment.count({
-          where: {
-            articleId: article.id,
-          },
-        });
-        const likeCounts = await this.like.count({
-          where: {
-            targetId: article.id,
-            targetType: LikeTargetType.article,
-            likeType: LikeType.like,
-          },
-        });
+          const keyOfImages = await Promise.all(
+            article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
 
-        if (article.images.length == 0) {
-          articlesWithImage.push({
+          return {
             ...article,
-            keyOfImages: [],
-            commentCounts: reCommentCounts + commentCounts,
-            likeCounts: likeCounts,
+            keyOfImages: keyOfImages,
+            commentCounts: article.comment.length + article.reComment.length,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
             isMe: article.userId === user.id,
-          });
-          continue;
-        }
-
-        const ketOfImages: string[] = [];
-
-        for await (const imageId of article.images) {
-          const findImage = await this.image.findUnique({
-            where: {
-              id: imageId,
-            },
-          });
-          if (!findImage) continue;
-          ketOfImages.push(findImage.key);
-        }
-
-        articlesWithImage.push({
-          ...article,
-          commentCounts: commentCounts + reCommentCounts,
-          keyOfImages: ketOfImages,
-          likeCounts: likeCounts,
-          isMe: article.userId === user.id,
-        });
-      }
+          };
+        }),
+      );
 
       const findArticlesCount = await this.article.count({
         where: {
@@ -494,21 +353,22 @@ class BoardService {
 
       return {
         articles: articlesWithImage.map(article => {
-          if (article.isAnonymous)
+          if (article.isAnonymous) {
             return {
               ...article,
               userId: null,
-              User: undefined,
+              user: undefined,
             } as Article;
-          else
+          } else {
             return {
               ...article,
-              User: {
-                ...article.User,
+              user: {
+                ...article.user,
                 password: undefined,
                 phone: undefined,
               },
             };
+          }
         }),
         totalPage: Math.ceil(findArticlesCount / 10),
       };
@@ -561,92 +421,58 @@ class BoardService {
         include: {
           recomments: {
             include: {
-              User: true,
+              user: true,
             },
           },
-          User: true,
+          user: true,
         },
       });
 
-      const findCommentsExcludeUser: CommentWithUser[] = [];
+      const findCommentsExcludeUser = await Promise.all(
+        findComments.map(async comment => {
+          const reCommentsExcludeUser =
+            comment.recomments.length === 0
+              ? []
+              : await Promise.all(
+                  comment.recomments.map(async reComment => {
+                    return {
+                      ...reComment,
+                      content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                      userId: reComment.isAnonymous ? null : reComment.user.id,
+                      isMe: reComment.userId === user.id,
+                      user: reComment.isDeleted
+                        ? {
+                            name: '(삭제됨)',
+                            id: null,
+                          }
+                        : reComment.isAnonymous
+                        ? undefined
+                        : { name: reComment.user.name, id: reComment.user.id },
+                    };
+                  }),
+                );
 
-      for await (const comment of findComments) {
-        const reCommentsExcludeUser: CommentWithUser[] = [];
-        if (comment.recomments.length != 0) {
-          for await (const reComment of comment.recomments) {
-            if (reComment.isAnonymous) {
-              reCommentsExcludeUser.push({
-                ...reComment,
-                content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                userId: null,
-                isMe: reComment.userId === user.id,
-                User: reComment.isDeleted
-                  ? {
-                      name: '(삭제됨)',
-                      id: null,
-                    }
-                  : undefined,
-              });
-            } else {
-              reCommentsExcludeUser.push({
-                ...reComment,
-                content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                userId: reComment.isDeleted ? undefined : reComment.User.id,
-                isMe: comment.userId === user.id,
-                User: reComment.isDeleted
-                  ? {
-                      name: '(삭제됨)',
-                      id: null,
-                    }
-                  : {
-                      name: reComment.User.name,
-                      id: reComment.User.id,
-                    },
-              });
-            }
-          }
-        }
-
-        if (comment.isAnonymous) {
-          findCommentsExcludeUser.push({
+          return {
             ...comment,
             content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
-            userId: null,
+            userId: comment.isAnonymous ? null : comment.user.id,
             isMe: comment.userId === user.id,
-            User: comment.isDeleted
+            user: comment.isDeleted
               ? {
                   name: '(삭제됨)',
                   id: null,
                 }
-              : undefined,
+              : comment.isAnonymous
+              ? undefined
+              : { name: comment.user.name, id: comment.user.id },
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
               else return 0;
             }),
-          });
-        } else {
-          findCommentsExcludeUser.push({
-            ...comment,
-            content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
-            isMe: comment.userId === user.id,
-            User: comment.isDeleted
-              ? {
-                  name: '(삭제됨)',
-                  id: null,
-                }
-              : {
-                  name: comment.User.name,
-                  id: comment.User.id,
-                },
-            recomments: reCommentsExcludeUser.sort((a, b) => {
-              if (a.createdAt > b.createdAt) return 1;
-              else if (a.createdAt < b.createdAt) return -1;
-              else return 0;
-            }),
-          });
-        }
-      }
+          };
+        }),
+      );
 
       const findCommentsCount = await this.comment.count({
         where: {
@@ -716,7 +542,6 @@ class BoardService {
 
       return createComment;
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else {
@@ -756,7 +581,7 @@ class BoardService {
     }
   }
 
-  public async likeArticle(articleId: string, userId: string): Promise<any> {
+  public async likeArticle(articleId: string, userId: string, likeType: LikeType): Promise<any> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
@@ -767,29 +592,27 @@ class BoardService {
       if (!findArticle) {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
-      const ArticleLike = await this.like.findFirst({
+      const ArticleLike = await this.articleLike.findFirst({
         where: {
           userId: userId,
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
+          articleId: findArticle.id,
         },
       });
 
       if (!ArticleLike) {
-        const createArticleLike = await this.like.create({
+        const createArticleLike = await this.articleLike.create({
           data: {
             userId: userId,
-            targetId: findArticle.id,
-            targetType: LikeTargetType.article,
-            likeType: LikeType.like,
+            articleId: findArticle.id,
+            likeType: likeType,
           },
         });
 
         return createArticleLike;
       }
 
-      if (ArticleLike.likeType === LikeType.like) {
-        await this.like.delete({
+      if (ArticleLike.likeType === likeType) {
+        await this.articleLike.delete({
           where: {
             id: ArticleLike.id,
           },
@@ -797,12 +620,12 @@ class BoardService {
 
         return null;
       } else {
-        const updateArticleLike = await this.like.update({
+        const updateArticleLike = await this.articleLike.update({
           where: {
             id: ArticleLike.id,
           },
           data: {
-            likeType: LikeType.like,
+            likeType: likeType === LikeType.like ? LikeType.dislike : LikeType.like,
           },
         });
 
@@ -817,69 +640,7 @@ class BoardService {
     }
   }
 
-  public disLikeArticle = async (articleId: string, userId: string): Promise<any> => {
-    try {
-      const findArticle = await this.article.findUnique({
-        where: {
-          id: Number(articleId),
-        },
-      });
-
-      if (!findArticle) {
-        throw new HttpException(404, '해당하는 게시글이 없습니다.');
-      }
-
-      const ArticleLike = await this.like.findFirst({
-        where: {
-          userId: userId,
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
-        },
-      });
-
-      if (!ArticleLike) {
-        const createArticleLike = await this.like.create({
-          data: {
-            userId: userId,
-            targetId: findArticle.id,
-            targetType: LikeTargetType.article,
-            likeType: LikeType.dislike,
-          },
-        });
-
-        return createArticleLike;
-      }
-
-      if (ArticleLike.likeType === LikeType.dislike) {
-        await this.like.delete({
-          where: {
-            id: ArticleLike.id,
-          },
-        });
-
-        return null;
-      } else {
-        const updateArticleLike = await this.like.update({
-          where: {
-            id: ArticleLike.id,
-          },
-          data: {
-            likeType: LikeType.dislike,
-          },
-        });
-
-        return updateArticleLike;
-      }
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
-        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-      }
-    }
-  };
-
-  public likeComment = async (commentId: string, userId: string): Promise<any> => {
+  public likeComment = async (commentId: string, userId: string, likeType: LikeType): Promise<any> => {
     try {
       const findComment = await this.comment.findUnique({
         where: {
@@ -891,12 +652,11 @@ class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      const createCommentLike = await this.like.create({
+      const createCommentLike = await this.commentLike.create({
         data: {
           userId: userId,
-          targetId: findComment.id,
-          targetType: LikeTargetType.comment,
-          likeType: LikeType.like,
+          commentId: findComment.id,
+          likeType: likeType,
         },
       });
 
@@ -910,38 +670,7 @@ class BoardService {
     }
   };
 
-  public disLikeComment = async (commentId: string, userId: string): Promise<any> => {
-    try {
-      const findComment = await this.comment.findUnique({
-        where: {
-          id: Number(commentId),
-        },
-      });
-
-      if (!findComment) {
-        throw new HttpException(404, '해당하는 댓글이 없습니다.');
-      }
-
-      const createCommentDislike = await this.like.create({
-        data: {
-          userId: userId,
-          targetId: findComment.id,
-          targetType: LikeTargetType.comment,
-          likeType: LikeType.dislike,
-        },
-      });
-
-      return createCommentDislike;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
-        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-      }
-    }
-  };
-
-  public likeReComment = async (reCommentId: string, userId: string): Promise<any> => {
+  public likeReComment = async (reCommentId: string, userId: string, likeType: LikeType): Promise<any> => {
     try {
       const findReComment = await this.reComment.findUnique({
         where: {
@@ -953,47 +682,15 @@ class BoardService {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
       }
 
-      const createReCommentLike = await this.like.create({
+      const createReCommentLike = await this.reCommentLike.create({
         data: {
           userId: userId,
-          targetId: findReComment.id,
-          targetType: LikeTargetType.recomment,
-          likeType: LikeType.like,
+          recommentId: findReComment.id,
+          likeType: likeType,
         },
       });
 
       return createReCommentLike;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      } else {
-        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-      }
-    }
-  };
-
-  public disLikeReComment = async (reCommentId: string, userId: string): Promise<any> => {
-    try {
-      const findReComment = await this.reComment.findUnique({
-        where: {
-          id: Number(reCommentId),
-        },
-      });
-
-      if (!findReComment) {
-        throw new HttpException(404, '해당하는 대댓글이 없습니다.');
-      }
-
-      const createRecommentDislike = await this.like.create({
-        data: {
-          userId: userId,
-          targetId: findReComment.id,
-          targetType: LikeTargetType.recomment,
-          likeType: LikeType.dislike,
-        },
-      });
-
-      return createRecommentDislike;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -1050,10 +747,9 @@ class BoardService {
         },
       });
 
-      await this.like.deleteMany({
+      await this.articleLike.deleteMany({
         where: {
-          targetId: findArticle.id,
-          targetType: LikeTargetType.article,
+          articleId: findArticle.id,
         },
       });
 

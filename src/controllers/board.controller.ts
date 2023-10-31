@@ -5,6 +5,7 @@ import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithUser } from '@/interfaces/auth.interface';
 import { IArticleQuery } from '@/interfaces/board.interface';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
+import { LikeType } from '@prisma/client';
 
 class BoardController {
   public boardService = new BoardService();
@@ -73,10 +74,10 @@ class BoardController {
     }
   };
 
-  public getArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  public getBoardPage = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
-      const articleData = await this.boardService.getArticles(req.params.boardId, req.query.page as string, user);
+      const articleData = await this.boardService.getBoardPage(req.params.boardId, req.query.page as string, user);
 
       ResponseWrapper(req, res, {
         data: articleData,
@@ -163,7 +164,7 @@ class BoardController {
     try {
       const articleId = req.params.articleId;
       const user = req.user;
-      const likeArticleData = await this.boardService.likeArticle(articleId, user.id);
+      const likeArticleData = await this.boardService.likeArticle(articleId, user.id, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeArticleData,
@@ -177,7 +178,7 @@ class BoardController {
     try {
       const articleId = req.params.articleId;
       const user = req.user;
-      const disLikeArticleData = await this.boardService.disLikeArticle(articleId, user.id);
+      const disLikeArticleData = await this.boardService.likeArticle(articleId, user.id, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeArticleData,
@@ -191,7 +192,7 @@ class BoardController {
     try {
       const commentId = req.params.commentId;
       const userId = req.params.userId;
-      const likeCommentData = await this.boardService.likeComment(commentId, userId);
+      const likeCommentData = await this.boardService.likeComment(commentId, userId, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeCommentData,
@@ -205,7 +206,7 @@ class BoardController {
     try {
       const commentId = req.params.commentId;
       const userId = req.params.userId;
-      const disLikeCommentData = await this.boardService.disLikeComment(commentId, userId);
+      const disLikeCommentData = await this.boardService.likeComment(commentId, userId, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeCommentData,
@@ -219,7 +220,7 @@ class BoardController {
     try {
       const recommentId = req.params.recommentId;
       const userId = req.params.userId;
-      const likeReCommentData = await this.boardService.likeReComment(recommentId, userId);
+      const likeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeReCommentData,
@@ -233,7 +234,7 @@ class BoardController {
     try {
       const recommentId = req.params.recommentId;
       const userId = req.params.userId;
-      const disLikeReCommentData = await this.boardService.disLikeReComment(recommentId, userId);
+      const disLikeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeReCommentData,

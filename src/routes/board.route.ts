@@ -25,7 +25,7 @@ class BoardRoute implements Routes {
       `${this.path}/:boardId/articles`,
       validationMiddleware(ArticleRequestQuery, 'query'),
       authMiddleware,
-      this.boardController.getArticles,
+      this.boardController.getBoardPage,
     );
     this.router.get(`${this.path}/:boardId/article/:articleId`, authMiddleware, this.boardController.getArticle);
     this.router.get(
