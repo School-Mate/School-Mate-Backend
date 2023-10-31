@@ -309,7 +309,7 @@ class AuthService {
 
       return {
         ...passwordRemovedData,
-        UserSchool: {
+        userSchool: {
           ...userData.userSchool,
           school: findSchool,
         },
@@ -318,7 +318,7 @@ class AuthService {
 
     return {
       ...passwordRemovedData,
-      UserSchool: null,
+      userSchool: null,
     };
   }
 

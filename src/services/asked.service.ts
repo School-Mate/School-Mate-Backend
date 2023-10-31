@@ -130,7 +130,7 @@ class AskedService {
       const returnAskedList = askedList.map(asked => ({
         ...asked,
         userId: asked.isAnonymous ? null : asked.userId,
-        QuestionUser: {
+        questionUser: {
           name: asked.isAnonymous ? '익명' : asked.questionUser.name,
           profile: asked.isAnonymous ? null : asked.questionUser.profile,
         },

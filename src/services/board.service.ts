@@ -183,23 +183,20 @@ class BoardService {
       );
 
       return articlesWithImage.map(article => {
-        if (article.isAnonymous) {
-          return {
-            ...article,
-            userId: null,
-            isMe: article.userId === user.id,
-            User: undefined,
-          };
-        } else {
-          return {
-            ...article,
-            isMe: article.userId === user.id,
-            User: {
-              name: article.user.name,
-              id: article.user.id,
-            },
-          };
-        }
+        return {
+          ...article,
+          userId: null,
+          isMe: article.userId === user.id,
+          user: article.isAnonymous
+            ? {
+                name: '(익명)',
+                id: null,
+              }
+            : {
+                name: article.user.name,
+                id: article.user.id,
+              },
+        };
       });
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
@@ -353,22 +350,17 @@ class BoardService {
 
       return {
         articles: articlesWithImage.map(article => {
-          if (article.isAnonymous) {
-            return {
-              ...article,
-              userId: null,
-              user: undefined,
-            } as Article;
-          } else {
-            return {
-              ...article,
-              user: {
-                ...article.user,
-                password: undefined,
-                phone: undefined,
-              },
-            };
-          }
+          return {
+            ...article,
+            userId: article.isAnonymous ? null : article.user.id,
+            user: article.isAnonymous
+              ? null
+              : {
+                  ...article.user,
+                  password: undefined,
+                  phone: undefined,
+                },
+          } as Article;
         }),
         totalPage: Math.ceil(findArticlesCount / 10),
       };
