@@ -20,6 +20,7 @@ class BoardService {
   public reComment = new PrismaClient().reComment;
   public school = new PrismaClient().school;
   public user = new PrismaClient().user;
+  public defaultBoard = new PrismaClient().defaultBoard;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -31,57 +32,16 @@ class BoardService {
       });
 
       if (findBoards.length === 0) {
+        const createBoards = await this.defaultBoard.findMany();
         await this.board.createMany({
-          data: [
-            {
-              name: '자유게시판',
-              description: '자유롭게 글을 쓸 수 있는 게시판입니다.',
+          data: createBoards.map(board => {
+            return {
+              name: board.name,
+              description: board.description,
               schoolId: user.userSchoolId,
               default: true,
-            },
-            {
-              name: '취미공유',
-              description: '취미를 공유하는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '질문게시판',
-              description: '질문을 할 수 있는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '새내기게시판',
-              description: '새내기들을 위한 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '연애고민해결',
-              description: '연애고민을 해결해주는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '스터디게시판',
-              description: '공부시간, 플레너 인증, 스터디정보를 공유하는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '졸업생게시판',
-              description: '졸업생들을 위한 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-            {
-              name: '내찍사게시판',
-              description: '내가찍은사진을 올리는 게시판입니다.',
-              schoolId: user.userSchoolId,
-              default: true,
-            },
-          ],
+            };
+          }),
         });
 
         const findBoards = await this.board.findMany({
@@ -235,8 +195,8 @@ class BoardService {
             ...article,
             isMe: article.userId === user.id,
             User: {
-              name: article.User.name,
-              id: article.User.id,
+              name: article.user.name,
+              id: article.user.id,
             },
           };
         }
@@ -280,29 +240,29 @@ class BoardService {
           id: Number(articleId),
         },
         include: {
-          User: true,
-          Board: true,
+          user: true,
+          board: true,
           articleLike: true,
           comment: true,
           reComment: true,
         },
       });
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
-      if (findArticle.Board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
-
-      const keyOfImages: string[] = [];
+      if (findArticle.board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
       const likeCounts = findArticle.articleLike.filter(like => like.likeType === LikeType.like).length;
 
-      for await (const imageId of findArticle.images) {
-        const findImage = await this.image.findUnique({
-          where: {
-            id: imageId,
-          },
-        });
-        if (!findImage) continue;
-        keyOfImages.push(findImage.key);
-      }
+      const keyOfImages = await Promise.all(
+        findArticle.images.map(async imageId => {
+          const findImage = await this.image.findUnique({
+            where: {
+              id: imageId,
+            },
+          });
+          if (!findImage) return;
+          return findImage.key;
+        }),
+      );
 
       return {
         ...findArticle,
@@ -313,15 +273,15 @@ class BoardService {
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
-            User: null,
-            userId: null,
-          }
+              user: null,
+              userId: null,
+            }
           : {
-            User: {
-              name: findArticle.User.name,
-              id: findArticle.User.id,
-            } as User,
-          }),
+              user: {
+                name: findArticle.user.name,
+                id: findArticle.user.id,
+              } as User,
+            }),
       } as unknown as ArticleWithImage;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -344,47 +304,46 @@ class BoardService {
           createdAt: 'desc',
         },
         include: {
-          User: true,
+          user: true,
           comment: true,
           reComment: true,
           articleLike: true,
         },
       });
 
-      const articlesWithImage: ArticleWithImage[] = [];
+      const articlesWithImage = await Promise.all(
+        findArticles.map(async article => {
+          if (article.images.length == 0) {
+            return {
+              ...article,
+              keyOfImages: [],
+              commentCounts: article.comment.length + article.reComment.length,
+              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              isMe: article.userId === user.id,
+            };
+          }
 
-      for await (const article of findArticles) {
-        if (article.images.length == 0) {
-          articlesWithImage.push({
+          const keyOfImages = await Promise.all(
+            article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
+
+          return {
             ...article,
-            keyOfImages: [],
+            keyOfImages: keyOfImages,
             commentCounts: article.comment.length + article.reComment.length,
             likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
             isMe: article.userId === user.id,
-          });
-          continue;
-        }
-
-        const keyOfImages: string[] = [];
-
-        for await (const imageId of article.images) {
-          const findImage = await this.image.findUnique({
-            where: {
-              id: imageId,
-            },
-          });
-          if (!findImage) continue;
-          keyOfImages.push(findImage.key);
-        }
-
-        articlesWithImage.push({
-          ...article,
-          keyOfImages: keyOfImages,
-          commentCounts: article.comment.length + article.reComment.length,
-          likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-          isMe: article.userId === user.id,
-        });
-      }
+          };
+        }),
+      );
 
       const findArticlesCount = await this.article.count({
         where: {
@@ -394,21 +353,22 @@ class BoardService {
 
       return {
         articles: articlesWithImage.map(article => {
-          if (article.isAnonymous)
+          if (article.isAnonymous) {
             return {
               ...article,
               userId: null,
-              User: undefined,
+              user: undefined,
             } as Article;
-          else
+          } else {
             return {
               ...article,
-              User: {
-                ...article.User,
+              user: {
+                ...article.user,
                 password: undefined,
                 phone: undefined,
               },
             };
+          }
         }),
         totalPage: Math.ceil(findArticlesCount / 10),
       };
@@ -461,92 +421,58 @@ class BoardService {
         include: {
           recomments: {
             include: {
-              User: true,
+              user: true,
             },
           },
           user: true,
         },
       });
 
-      const findCommentsExcludeUser: CommentWithUser[] = [];
+      const findCommentsExcludeUser = await Promise.all(
+        findComments.map(async comment => {
+          const reCommentsExcludeUser =
+            comment.recomments.length === 0
+              ? []
+              : await Promise.all(
+                  comment.recomments.map(async reComment => {
+                    return {
+                      ...reComment,
+                      content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                      userId: reComment.isAnonymous ? null : reComment.user.id,
+                      isMe: reComment.userId === user.id,
+                      user: reComment.isDeleted
+                        ? {
+                            name: '(삭제됨)',
+                            id: null,
+                          }
+                        : reComment.isAnonymous
+                        ? undefined
+                        : { name: reComment.user.name, id: reComment.user.id },
+                    };
+                  }),
+                );
 
-      for await (const comment of findComments) {
-        const reCommentsExcludeUser: CommentWithUser[] = [];
-        if (comment.recomments.length != 0) {
-          for await (const reComment of comment.recomments) {
-            if (reComment.isAnonymous) {
-              reCommentsExcludeUser.push({
-                ...reComment,
-                content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                userId: null,
-                isMe: reComment.userId === user.id,
-                User: reComment.isDeleted
-                  ? {
-                    name: '(삭제됨)',
-                    id: null,
-                  }
-                  : undefined,
-              });
-            } else {
-              reCommentsExcludeUser.push({
-                ...reComment,
-                content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                userId: reComment.isDeleted ? undefined : reComment.User.id,
-                isMe: comment.userId === user.id,
-                User: reComment.isDeleted
-                  ? {
-                    name: '(삭제됨)',
-                    id: null,
-                  }
-                  : {
-                    name: reComment.User.name,
-                    id: reComment.User.id,
-                  },
-              });
-            }
-          }
-        }
-
-        if (comment.isAnonymous) {
-          findCommentsExcludeUser.push({
+          return {
             ...comment,
             content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
-            userId: null,
+            userId: comment.isAnonymous ? null : comment.user.id,
             isMe: comment.userId === user.id,
-            User: comment.isDeleted
+            user: comment.isDeleted
               ? {
-                name: '(삭제됨)',
-                id: null,
-              }
-              : undefined,
+                  name: '(삭제됨)',
+                  id: null,
+                }
+              : comment.isAnonymous
+              ? undefined
+              : { name: comment.user.name, id: comment.user.id },
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
               else return 0;
             }),
-          });
-        } else {
-          findCommentsExcludeUser.push({
-            ...comment,
-            content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
-            isMe: comment.userId === user.id,
-            User: comment.isDeleted
-              ? {
-                name: '(삭제됨)',
-                id: null,
-              }
-              : {
-                name: comment.user.name,
-                id: comment.user.id,
-              },
-            recomments: reCommentsExcludeUser.sort((a, b) => {
-              if (a.createdAt > b.createdAt) return 1;
-              else if (a.createdAt < b.createdAt) return -1;
-              else return 0;
-            }),
-          });
-        }
-      }
+          };
+        }),
+      );
 
       const findCommentsCount = await this.comment.count({
         where: {

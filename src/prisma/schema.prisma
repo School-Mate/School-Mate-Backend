@@ -176,7 +176,7 @@ model Board {
   description String
   default     Boolean        @default(false)
   noticeId    Int[]
-  Article     Article[]
+  article     Article[]
   managers    BoardManager[]
 }
 
@@ -199,12 +199,18 @@ model Article {
   userId      String
   createdAt   DateTime      @default(now())
   boardId     Int
-  Board       Board         @relation(fields: [boardId], references: [id])
-  User        User          @relation(fields: [userId], references: [id])
+  board       Board         @relation(fields: [boardId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
   school      School        @relation(fields: [schoolId], references: [schoolId])
   comment     Comment[]
   reComment   ReComment[]
   articleLike ArticleLike[]
+}
+
+model DefaultBoard {
+  id          Int    @id @default(autoincrement())
+  name        String
+  description String
 }
 
 model DeletedArticle {
@@ -258,7 +264,7 @@ model ReComment {
   commentId     Int?
   article       Article         @relation(fields: [articleId], references: [id])
   comment       Comment?        @relation(fields: [commentId], references: [id])
-  User          User            @relation(fields: [userId], references: [id])
+  user          User            @relation(fields: [userId], references: [id])
   reCommentLike ReCommentLike[]
 }
 
