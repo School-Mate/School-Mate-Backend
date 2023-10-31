@@ -17,7 +17,7 @@ model User {
   phone              String?               @unique
   createdAt          DateTime              @default(now())
   provider           UserLoginProviderType
-  serSchoolId       String?
+  userSchoolId       String?
   agreement          Agreement?
   article            Article[]
   asked              Asked[]

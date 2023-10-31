@@ -313,15 +313,15 @@ class BoardService {
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
-              User: null,
-              userId: null,
-            }
+            User: null,
+            userId: null,
+          }
           : {
-              User: {
-                name: findArticle.User.name,
-                id: findArticle.User.id,
-              } as User,
-            }),
+            User: {
+              name: findArticle.User.name,
+              id: findArticle.User.id,
+            } as User,
+          }),
       } as unknown as ArticleWithImage;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -482,9 +482,9 @@ class BoardService {
                 isMe: reComment.userId === user.id,
                 User: reComment.isDeleted
                   ? {
-                      name: '(삭제됨)',
-                      id: null,
-                    }
+                    name: '(삭제됨)',
+                    id: null,
+                  }
                   : undefined,
               });
             } else {
@@ -495,13 +495,13 @@ class BoardService {
                 isMe: comment.userId === user.id,
                 User: reComment.isDeleted
                   ? {
-                      name: '(삭제됨)',
-                      id: null,
-                    }
+                    name: '(삭제됨)',
+                    id: null,
+                  }
                   : {
-                      name: reComment.User.name,
-                      id: reComment.User.id,
-                    },
+                    name: reComment.User.name,
+                    id: reComment.User.id,
+                  },
               });
             }
           }
@@ -515,9 +515,9 @@ class BoardService {
             isMe: comment.userId === user.id,
             User: comment.isDeleted
               ? {
-                  name: '(삭제됨)',
-                  id: null,
-                }
+                name: '(삭제됨)',
+                id: null,
+              }
               : undefined,
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
@@ -532,13 +532,13 @@ class BoardService {
             isMe: comment.userId === user.id,
             User: comment.isDeleted
               ? {
-                  name: '(삭제됨)',
-                  id: null,
-                }
+                name: '(삭제됨)',
+                id: null,
+              }
               : {
-                  name: comment.user.name,
-                  id: comment.user.id,
-                },
+                name: comment.user.name,
+                id: comment.user.id,
+              },
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
