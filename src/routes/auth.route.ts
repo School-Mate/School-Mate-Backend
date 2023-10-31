@@ -39,7 +39,7 @@ class AuthRoute implements Routes {
     this.router.post(`${this.path}/changepass`, validationMiddleware(UpdatePasswordDto, 'body'), this.authController.updatePassword);
     this.router.post(`${this.path}/verify/phone`, validationMiddleware(VerifyPhoneCodeDto, 'body'), this.authController.verifyPhoneCode);
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.sendVerifyMessage);
-    this.router.patch(`${this.path}/me/profile`, validationMiddleware(UpdateProfileDto, 'body'), authMiddleware, this.authController.updateProfile);
+    this.router.patch(`${this.path}/me/profile`, authMiddleware, imageUpload.single('img'), this.authController.updateProfile);
     this.router.patch(
       `${this.path}/me/asked`,
       validationMiddleware(UpdateAskedCustomIdDto, 'body'),
@@ -53,6 +53,7 @@ class AuthRoute implements Routes {
       this.authController.updateNickname,
     );
     this.router.delete(`/image/:imageId`, authMiddleware, this.authController.deleteImage);
+    this.router.delete(`${this.path}/me/profile`, authMiddleware, this.authController.updateProfile);
   }
 }
 

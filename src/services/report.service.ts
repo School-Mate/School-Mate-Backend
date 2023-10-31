@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 
 import { ReportDto } from '@/dtos/report.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { PrismaClient, ReportTargetType, User } from '@prisma/client';
+import { PrismaClient, User } from '@prisma/client';
 
 class ReportService {
   public user = new PrismaClient().user;

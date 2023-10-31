@@ -19,7 +19,7 @@ import {
   SOL_API_SECRET,
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken, RequestWithUser, TokenData } from '@interfaces/auth.interface';
+import { DataStoredInToken, RequestWithUser, TokenData, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@utils/util';
 import { CreateUserDto, LoginUserDto, UpdateProfileDto } from '@/dtos/users.dto';
 import SchoolService from './school.service';
@@ -57,7 +57,19 @@ class AuthService {
     };
   }
 
-  public async kakaoLogin(code: string): Promise<{ cookie: string; findUser: User; redirect?: string }> {
+  public async kakaoLogin(code: string): Promise<{
+    cookie: string;
+    findUser: User & {
+      UserSchool: UserSchool & {
+        school: School;
+      };
+    };
+    token: {
+      accessToken: string;
+      expiresIn: number;
+    };
+    registered: boolean;
+  }> {
     const query = qs.stringify({
       grant_type: 'authorization_code',
       client_id: KAKAO_CLIENT_KEY,
@@ -104,11 +116,13 @@ class AuthService {
               },
             },
           },
+          include: {
+            UserSchool: true,
+            SocialLogin: true,
+          },
         });
-        const tokenData = this.createToken(createUserData);
-        const cookie = this.createCookie(tokenData);
-
-        return { cookie, findUser: createUserData, redirect: '/signup/social' };
+        const loginData = await this.iniitalizeLoginData(createUserData, false);
+        return loginData;
       } else {
         const findUser = await this.users.update({
           where: {
@@ -116,13 +130,14 @@ class AuthService {
           },
           data: {
             email: userData.kakao_account.email as string,
-            name: userData.kakao_account.profile.nickname as string,
+          },
+          include: {
+            UserSchool: true,
+            SocialLogin: true,
           },
         });
-        const tokenData = this.createToken(findUser);
-        const cookie = this.createCookie(tokenData);
-
-        return { cookie, findUser };
+        const loginData = await this.iniitalizeLoginData(findUser, true);
+        return loginData;
       }
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -132,7 +147,19 @@ class AuthService {
     }
   }
 
-  public async googleLogin(code: string): Promise<{ cookie: string; findUser: User; redirect?: string }> {
+  public async googleLogin(code: string): Promise<{
+    cookie: string;
+    findUser: User & {
+      UserSchool: UserSchool & {
+        school: School;
+      };
+    };
+    token: {
+      accessToken: string;
+      expiresIn: number;
+    };
+    registered: boolean;
+  }> {
     const query = qs.stringify({
       code,
       client_id: GOOGLE_CLIENT_KEY,
@@ -174,21 +201,26 @@ class AuthService {
               },
             },
           },
+          include: {
+            UserSchool: true,
+            SocialLogin: true,
+          },
         });
-        const tokenData = this.createToken(createUserData);
-        const cookie = this.createCookie(tokenData);
 
-        return { cookie, findUser: createUserData, redirect: '/signup/social' };
+        const loginData = await this.iniitalizeLoginData(createUserData, false);
+        return loginData;
       } else {
         const findUser = await this.users.findUnique({
           where: {
             id: socialLogin.userId,
           },
+          include: {
+            UserSchool: true,
+            SocialLogin: true,
+          },
         });
-        const tokenData = this.createToken(findUser);
-        const cookie = this.createCookie(tokenData);
-
-        return { cookie, findUser };
+        const loginData = await this.iniitalizeLoginData(findUser, true);
+        return loginData;
       }
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -198,24 +230,105 @@ class AuthService {
     }
   }
 
-  public async uploadImage(req: RequestWithUser): Promise<string> {
-    if (!req.file) throw new HttpException(500, '사진 업로드를 실패했습니다.');
+  public async uploadImage(user: User, file?: Express.MulterS3.File): Promise<string> {
+    if (!file) throw new HttpException(500, '사진 업로드를 실패했습니다.');
 
-    const file = req.file as Express.MulterS3.File;
     const createImage = await this.image.create({
       data: {
         key: file.key,
-        userId: req.user.id,
+        userId: user.id,
       },
     });
 
     return createImage.id;
   }
 
-  public async login(userData: LoginUserDto): Promise<{ cookie: string; findUser: User }> {
+  private async iniitalizeLoginData(
+    user: User & {
+      UserSchool?: UserSchool & {
+        school?: School;
+      };
+    },
+    registered: boolean,
+  ): Promise<{
+    cookie: string;
+    findUser: User & {
+      UserSchool: UserSchool & {
+        school: School;
+      };
+    };
+    token: {
+      accessToken: string;
+      expiresIn: number;
+    };
+    registered: boolean;
+  }> {
+    const passwordRemovedData = excludeUserPassword(user, ['password']);
+
+    const tokenData = this.createToken(user);
+    const cookie = this.createCookie(tokenData);
+
+    if (user.UserSchool) {
+      const findSchool = await this.schoolService.getSchoolInfoById(user.UserSchool.schoolId);
+
+      return {
+        cookie,
+        findUser: {
+          ...passwordRemovedData,
+          UserSchool: {
+            ...user.UserSchool,
+            school: findSchool,
+          },
+        } as any,
+        token: {
+          accessToken: tokenData.token,
+          expiresIn: tokenData.expiresIn,
+        },
+        registered,
+      };
+    }
+
+    return {
+      cookie,
+      findUser: {
+        ...passwordRemovedData,
+        UserSchool: null,
+      } as any,
+      token: {
+        accessToken: tokenData.token,
+        expiresIn: tokenData.expiresIn,
+      },
+      registered,
+    };
+  }
+
+  public async getMe(userData: UserWithSchool): Promise<any> {
+    const passwordRemovedData = excludeUserPassword(userData, ['password']);
+    if (userData.userSchoolId) {
+      const findSchool = await this.schoolService.getSchoolInfoById(userData.userSchoolId);
+
+      return {
+        ...passwordRemovedData,
+        UserSchool: {
+          ...userData.UserSchool,
+          school: findSchool,
+        },
+      };
+    }
+
+    return {
+      ...passwordRemovedData,
+      UserSchool: null,
+    };
+  }
+
+  public async login(userData: LoginUserDto): Promise<any> {
     const findUser = await this.users.findUnique({
       where: {
         phone: userData.phone,
+      },
+      include: {
+        UserSchool: true,
       },
     });
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
@@ -223,15 +336,9 @@ class AuthService {
     const isPasswordMatching: boolean = await bcrypt.compare(userData.password, findUser.password);
     if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
 
-    const passwordRemovedData = excludeUserPassword(findUser, ['password']);
+    const loginData = await this.iniitalizeLoginData(findUser, true);
 
-    const tokenData = this.createToken(findUser);
-    const cookie = this.createCookie(tokenData);
-
-    return {
-      cookie,
-      findUser: passwordRemovedData as User,
-    };
+    return loginData;
   }
 
   public async signUp(userData: CreateUserDto): Promise<User> {
@@ -336,84 +443,37 @@ class AuthService {
     return true;
   }
 
-  public async updateProfile(userData: User, newProfile: UpdateProfileDto): Promise<boolean> {
-    const findUser = await this.users.findUnique({
-      where: {
-        id: userData.id,
-      },
-    });
-    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+  public async updateProfile(userData: User, file: Express.MulterS3.File): Promise<string> {
+    if (userData.profile) {
+      await deleteImage(userData.profile);
+    }
 
-    if (!newProfile.imageId) {
-      const beforeImage = await this.image.findFirst({
-        where: {
-          key: findUser.profileImage,
-        },
-      });
-      if (beforeImage) {
-        await deleteImage(beforeImage.key);
-
-        await this.image.delete({
-          where: {
-            id: beforeImage.id,
-          },
-        });
-      }
-
+    if (!file) {
       await this.users.update({
         where: {
           id: userData.id,
         },
         data: {
-          profileImage: null,
+          profile: null,
         },
       });
 
-      return true;
+      return null;
     }
-
-    if (findUser.profileImage) {
-      const beforeImage = await this.image.findFirst({
-        where: {
-          key: findUser.profileImage,
-        },
-      });
-      await deleteImage(beforeImage.key);
-
-      await this.image.delete({
-        where: {
-          id: beforeImage.id,
-        },
-      });
-    }
-
-    const image = await this.image.findUnique({
-      where: {
-        id: newProfile.imageId,
-      },
-    });
-    if (!image) throw new HttpException(400, '이미지를 찾을 수 없습니다');
 
     await this.users.update({
       where: {
         id: userData.id,
       },
       data: {
-        profileImage: image.key,
+        profile: file.key,
       },
     });
 
-    return true;
+    return file.key;
   }
 
   public async updateNickname(userData: User, newNickname: string): Promise<boolean> {
-    const findUser = await this.users.findUnique({
-      where: {
-        id: userData.id,
-      },
-    });
-    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
-
     await this.users.update({
       where: {
         id: userData.id,

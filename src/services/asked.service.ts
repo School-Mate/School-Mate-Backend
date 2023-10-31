@@ -35,7 +35,7 @@ class AskedService {
         ...asked,
         user: {
           name: asked.user.name,
-          profile: asked.user.profileImage,
+          profile: asked.user.profile,
         },
       }));
 
@@ -168,7 +168,7 @@ class AskedService {
         user: {
           user: {
             name: askedUser.user.name,
-            profile: askedUser.user.profileImage,
+            profile: askedUser.user.profile,
           },
           userId: askedUser.userId,
           customId: askedUser.customId,
@@ -268,7 +268,7 @@ class AskedService {
         askeds: filteredAsked,
         user: {
           user: {
-            profile: findAskedUser.user.profileImage,
+            profile: findAskedUser.user.profile,
             name: findAskedUser.user.name,
           },
           statusMessage: findAskedUser.statusMessage,

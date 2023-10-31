@@ -12,8 +12,7 @@ model User {
   email              String?
   password           String?
   name               String
-  profileImage       String?
-  profileImageKey    String?
+  profile            String?
   isVerified         Boolean               @default(false)
   phone              String?               @unique
   createdAt          DateTime              @default(now())
@@ -40,9 +39,10 @@ model School {
   org         String
   x           Float
   y           Float
-  atpt_code   String
+  atptCode    String
   defaultName String
   name        String?
+  type        String
   userSchool  UserSchool[]
   article     Article[]
 }

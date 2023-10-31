@@ -1,0 +1,52 @@
+name: UPLOAD TYPES
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  FILE_PATH: ~/work/School-Mate-Backend/School-Mate-Backend
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup
+        uses: actions/setup-node@v2
+        with:
+          node-version: 19.x
+          cache: "yarn"
+      - name: Install yarn
+        run: yarn install
+      - name: Prisma
+        run: |
+          yarn prisma generate
+      - name: Checkout types repo
+        uses: actions/checkout@v4
+        with:
+          repository: School-Mate/School-Mate-Types
+          path: types
+          token: ${{secrets.OMBE_TOKEN}}
+      - name: Setup git
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "schoolmate@schoolmate.kr"
+      - name: Copy types
+        run: |
+          rm -rf ${{ env.PATH }}/types/src/@prisma/*
+          rm -rf ${{ env.FILE_PATH }}/types/src/.prisma/*
+          cp -r ${{ env.FILE_PATH }}/node_modules/@prisma/client/* ${{ env.FILE_PATH }}/types/src/@prisma/
+          cp -r ${{ env.FILE_PATH }}/node_modules/.prisma/client/* ${{ env.FILE_PATH }}/types/src/.prisma/
+      - name: Fix files
+        run: |
+          sed -i "6s|@prisma/client|../@prisma|" ${{ env.FILE_PATH }}/types/src/.prisma/index.d.ts
+          sed -i "1s|.prisma/client|../.prisma|" ${{ env.FILE_PATH }}/types/src/@prisma/index.d.ts
+      - name: Commit
+        run: |
+          cd ${{ env.FILE_PATH }}/types
+          git add . 
+          git commit -m "feat: update types"
+          git push https://${{secrets.OMBE_TOKEN}}@github.com/School-Mate/School-Mate-Types.git
+      

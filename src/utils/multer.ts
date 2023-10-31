@@ -22,14 +22,12 @@ export const uploadImage = multerS3({
   bucket: AWS_S3_BUCKET,
   contentType: multerS3.AUTO_CONTENT_TYPE,
   key: function (req: RequestWithUser, file, cb) {
-    if (!req.body.storage) cb(new HttpException(400, 'storage 정보가 없습니다.'));
-    if (!storages.includes(req.body.storage)) cb(new HttpException(400, 'storage 정보가 올바르지 않습니다.'));
+    if (!req.headers.storage) cb(new HttpException(400, 'storage 정보가 없습니다.'));
+    if (!storages.includes(req.headers.storage as string)) cb(new HttpException(400, 'storage 정보가 올바르지 않습니다.'));
     cb(
       null,
-      // images/['profile', 'article']/2023/01/01/test.png
-      `images/${req.body.storage}/${dayjs().format('YYYY')}/${dayjs().format('MM')}/${dayjs().format('dd')}/${req.user.id}_${Date.now()}_${
-        file.originalname
-      }.png`,
+      // images/['profile', 'article']/2023/01/01/12312312.png
+      `images/${req.headers.storage}/${dayjs().format('YYYY')}/${dayjs().format('MM')}/${req.user.id}_${Date.now()}.${file.mimetype.split('/')[1]}`,
     );
   },
   metadata: function (req: RequestWithUser, file, cb) {
@@ -55,4 +53,12 @@ export const deleteImage = async (key: string) => {
 export const imageUpload = multer({
   storage: uploadImage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: function (req, file, cb) {
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new HttpException(400, '올바르지 않은 파일 형식입니다.'));
+    }
+  },
 });
