@@ -9,25 +9,8 @@ env:
   FILE_PATH: ~/work/School-Mate-Backend/School-Mate-Backend
 
 jobs:
-  type-checking:
+  main:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [19.x]
-    steps:
-      - uses: actions/checkout@v1
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node-version }}
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-      - name: Check
-        uses: andoshin11/typescript-error-reporter-action@v1.0.2
-
-  push-types:
-    runs-on: ubuntu-latest
-    needs: type-checking
     steps:
       - uses: actions/checkout@v4
       - name: Setup
