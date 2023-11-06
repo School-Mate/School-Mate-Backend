@@ -141,6 +141,8 @@ model AskedUser {
   userId             String    @id
   customId           String?
   statusMessage      String?
+  image              String?
+  tags               String[]
   receiveAnonymous   Boolean   @default(true)
   receiveOtherSchool Boolean   @default(false)
   lastUpdateCustomId DateTime?

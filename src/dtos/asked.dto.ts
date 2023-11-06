@@ -8,6 +8,11 @@ export class AskedDto {
   public isAnonymous: boolean;
 }
 
+export class AskedTagDto {
+  @IsString({ message: '태그를 입력해주세요.' })
+  public tag: string;
+}
+
 export class AskedReceiveDto {
   @IsString({ message: '답변을 입력해주세요.' })
   public answer: string;
