@@ -1,7 +1,7 @@
 import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, PrismaClient, User, LikeType, BoardRequest } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
-import { ArticleWithImage, CommentWithUser, IArticleQuery } from '@/interfaces/board.interface';
+import { ArticleWithImage, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
 import SchoolService from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
@@ -132,6 +132,7 @@ class BoardService {
           createdAt: 'desc',
         },
         include: {
+          user: true,
           articleLike: true,
           comment: true,
           reComment: true,
