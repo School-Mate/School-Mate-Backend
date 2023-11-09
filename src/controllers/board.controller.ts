@@ -285,6 +285,19 @@ class BoardController {
       next(error);
     }
   };
+
+  public getUserArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const articleData = await this.boardService.getUserArticles(req.params.userId, req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default BoardController;

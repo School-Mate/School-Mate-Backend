@@ -831,6 +831,84 @@ class BoardService {
       }
     }
   }
+
+  public async getUserArticles(userId: string, page: string, user: User): Promise<ArticleWithImage[]> {
+    try {
+      const targetUser = await this.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (targetUser.userSchoolId !== user.userSchoolId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      const findArticles = await this.article.findMany({
+        where: {
+          userId: targetUser.id,
+          isAnonymous: false,
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          comment: true,
+          reComment: true,
+          articleLike: true,
+        },
+      });
+
+      const articlesWithImage = await Promise.all(
+        findArticles.map(async article => {
+          if (article.images.length === 0) {
+            return {
+              ...article,
+              keyOfImages: [],
+              commentCounts: article.comment.length + article.reComment.length,
+              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+            } as unknown as ArticleWithImage;
+          }
+
+          const keyOfImages = await Promise.all(
+            article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
+
+          return {
+            ...article,
+            keyOfImages: keyOfImages,
+            commentCounts: article.comment.length + article.reComment.length,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+          } as unknown as ArticleWithImage;
+        }),
+      );
+
+      return articlesWithImage.map(article => {
+        return {
+          ...article,
+          isMe: article.userId === user.id,
+        };
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
 }
 
 export default BoardService;
