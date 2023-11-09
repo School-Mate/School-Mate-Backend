@@ -190,13 +190,13 @@ class BoardService {
           isMe: article.userId === user.id,
           user: article.isAnonymous
             ? {
-                name: '(익명)',
-                id: null,
-              }
+              name: '(익명)',
+              id: null,
+            }
             : {
-                name: article.user.name,
-                id: article.user.id,
-              },
+              name: article.user.name,
+              id: article.user.id,
+            },
         };
       });
     } catch (error) {
@@ -271,15 +271,15 @@ class BoardService {
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
-              user: null,
-              userId: null,
-            }
+            user: null,
+            userId: null,
+          }
           : {
-              user: {
-                name: findArticle.user.name,
-                id: findArticle.user.id,
-              } as User,
-            }),
+            user: {
+              name: findArticle.user.name,
+              id: findArticle.user.id,
+            } as User,
+          }),
       } as unknown as ArticleWithImage;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -357,10 +357,10 @@ class BoardService {
             user: article.isAnonymous
               ? null
               : {
-                  ...article.user,
-                  password: undefined,
-                  phone: undefined,
-                },
+                ...article.user,
+                password: undefined,
+                phone: undefined,
+              },
           } as Article;
         }),
         totalPage: Math.ceil(findArticlesCount / 10),
@@ -427,23 +427,23 @@ class BoardService {
             comment.recomments.length === 0
               ? []
               : await Promise.all(
-                  comment.recomments.map(async reComment => {
-                    return {
-                      ...reComment,
-                      content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                      userId: reComment.isAnonymous ? null : reComment.user.id,
-                      isMe: reComment.userId === user.id,
-                      user: reComment.isDeleted
-                        ? {
-                            name: '(삭제됨)',
-                            id: null,
-                          }
-                        : reComment.isAnonymous
+                comment.recomments.map(async reComment => {
+                  return {
+                    ...reComment,
+                    content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                    userId: reComment.isAnonymous ? null : reComment.user.id,
+                    isMe: reComment.userId === user.id,
+                    user: reComment.isDeleted
+                      ? {
+                        name: '(삭제됨)',
+                        id: null,
+                      }
+                      : reComment.isAnonymous
                         ? undefined
                         : { name: reComment.user.name, id: reComment.user.id },
-                    };
-                  }),
-                );
+                  };
+                }),
+              );
 
           return {
             ...comment,
@@ -452,12 +452,12 @@ class BoardService {
             isMe: comment.userId === user.id,
             user: comment.isDeleted
               ? {
-                  name: '(삭제됨)',
-                  id: null,
-                }
+                name: '(삭제됨)',
+                id: null,
+              }
               : comment.isAnonymous
-              ? undefined
-              : { name: comment.user.name, id: comment.user.id },
+                ? undefined
+                : { name: comment.user.name, id: comment.user.id },
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
