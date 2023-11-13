@@ -943,7 +943,7 @@ class BoardService {
         findLikes.map(async like => {
           if (like.article.images.length === 0) {
             return {
-              ...like, // TODO: fix this
+              ...like.article,
               keyOfImages: [],
               commentCounts: like.article.comment.length + like.article.reComment.length,
               likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
@@ -964,7 +964,7 @@ class BoardService {
           );
 
           return {
-            ...like, // TODO: fix this
+            ...like.article,
             keyOfImages: keyOfImages,
             commentCounts: like.article.comment.length + like.article.reComment.length,
             likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
