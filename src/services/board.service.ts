@@ -991,6 +991,47 @@ class BoardService {
       }
     }
   }
+
+  public async getUserComments(userId: string, page: string, user: User): Promise<Comment[]> {
+    try {
+      const targetUser = await this.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (targetUser.userSchoolId !== user.userSchoolId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      const findComments = await this.comment.findMany({
+        where: {
+          userId: targetUser.id,
+          ...(targetUser.id === user.id
+            ? {}
+            : {
+              isAnonymous: false,
+            }),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          article: true,
+        }
+      });
+
+      return findComments;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
 }
 
 export default BoardService;
