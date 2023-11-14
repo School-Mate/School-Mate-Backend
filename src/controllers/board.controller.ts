@@ -298,6 +298,32 @@ class BoardController {
       next(error);
     }
   }
+
+  public getUserLikes = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const articleData = await this.boardService.getUserLikes(req.params.userId, req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public getUserComments = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const articleData = await this.boardService.getUserComments(req.params.userId, req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default BoardController;

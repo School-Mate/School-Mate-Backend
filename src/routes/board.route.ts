@@ -35,6 +35,8 @@ class BoardRoute implements Routes {
       this.boardController.getComments,
     );
     this.router.get(`${this.path}/articles/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserArticles);
+    this.router.get(`${this.path}/likes/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserLikes);
+    this.router.get(`${this.path}/comments/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserComments);
     this.router.post(
       `${this.path}/request`,
       authMiddleware,
