@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Board" ALTER COLUMN "icon" DROP NOT NULL;
