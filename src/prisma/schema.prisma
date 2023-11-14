@@ -176,6 +176,7 @@ model Board {
   schoolId    String
   name        String
   description String
+  icon        String
   default     Boolean        @default(false)
   noticeId    Int[]
   article     Article[]
