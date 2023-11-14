@@ -19,6 +19,7 @@ class AskedRoute implements Routes {
     this.router.get(`${this.path}`, authMiddleware, validationMiddleware(AskedRequestQuery, 'query'), this.askedController.getAsked);
     this.router.get(`${this.path}/:userId`, authMiddleware, validationMiddleware(AskedRequestQuery, 'query'), this.askedController.getAskedUser);
     this.router.get(`${this.path}/:userId/:askedId`, authMiddleware, this.askedController.getAskedById);
+    this.router.get(`${this.path}/count`, authMiddleware, this.askedController.getAskedCount);
     this.router.post(
       `${this.path}/changestatusmessage`,
       authMiddleware,

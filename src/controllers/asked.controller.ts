@@ -130,6 +130,16 @@ class AskedController {
       next(error);
     }
   };
+
+  public async getAskedCount(req: RequestWithUser, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const askedCount = await this.askedService.askedCount(req.user);
+
+      ResponseWrapper(req, res, { data: askedCount });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default AskedController;
