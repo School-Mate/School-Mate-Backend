@@ -1,5 +1,5 @@
 import BoardController from '@/controllers/board.controller';
-import { BoardDto, CommentDto, SendBoardRequestDto, UserArticleQuery } from '@/dtos/board.dto';
+import { BoardDto, CommentDto, SendBoardRequestDto, UserPageQuery } from '@/dtos/board.dto';
 import { ArticleRequestQuery, SearchCombineDto } from '@/dtos/article.dto';
 import { CommentRequestQuery } from '@/dtos/comment.dto';
 import authMiddleware from '@/middlewares/auth.middleware';
@@ -34,7 +34,7 @@ class BoardRoute implements Routes {
       validationMiddleware(CommentRequestQuery, 'query'),
       this.boardController.getComments,
     );
-    this.router.get(`${this.path}/articles/:userId`, validationMiddleware(UserArticleQuery, 'query'), this.boardController.getUserArticles);
+    this.router.get(`${this.path}/articles/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserArticles);
     this.router.post(
       `${this.path}/request`,
       authMiddleware,

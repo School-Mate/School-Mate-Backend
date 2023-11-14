@@ -30,7 +30,7 @@ export class SendBoardRequestDto {
   public description: string;
 }
 
-export class UserArticleQuery {
+export class UserPageQuery {
   @IsString({ message: '페이지를 입력해주세요.' })
   public page: string;
 }
