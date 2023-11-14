@@ -847,7 +847,11 @@ class BoardService {
       const findArticles = await this.article.findMany({
         where: {
           userId: targetUser.id,
-          isAnonymous: false,
+          ...(targetUser.id === user.id
+            ? {}
+            : {
+              isAnonymous: false,
+            }),
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 10,
