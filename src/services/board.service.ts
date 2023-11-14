@@ -1023,7 +1023,33 @@ class BoardService {
         }
       });
 
-      return findComments;
+      const findReComments = await this.reComment.findMany({
+        where: {
+          userId: targetUser.id,
+          ...(targetUser.id === user.id
+            ? {}
+            : {
+              isAnonymous: false,
+            }),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          article: true,
+        }
+      });
+
+      const combinedComments = [...findComments, ...findReComments];
+      combinedComments.sort((a, b) => {
+        if (a.createdAt > b.createdAt) return -1;
+        else if (a.createdAt < b.createdAt) return 1;
+        else return 0;
+      });
+
+      return combinedComments.slice(0, 10);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
