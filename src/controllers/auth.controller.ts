@@ -55,6 +55,17 @@ class AuthController {
     }
   };
 
+  public meSchoolVerify = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const meSchoolVerify = await this.authService.meSchoolVerify(userData);
+
+      ResponseWrapper(req, res, { data: meSchoolVerify });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public logOut = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       res.setHeader('Set-Cookie', [`Authorization=; Max-age=0; Path=/; HttpOnly; Domain=${DOMAIN};`]);

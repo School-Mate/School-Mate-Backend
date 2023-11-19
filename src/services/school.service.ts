@@ -28,16 +28,32 @@ class SchoolService {
       // });
       // if (findSchoolList) return findSchoolList;
 
-      const { data: schoolFetch } = await neisClient.get('/hub/schoolInfo', {
+      const { data: schoolFetchMiddle } = await neisClient.get('/hub/schoolInfo', {
         params: {
           SCHUL_NM: keyword,
+          SCHUL_KND_SC_NM: '중학교',
         },
       });
-      const schoolResponse: ISchoolInfoResponse = schoolFetch.schoolInfo;
-      if (!schoolResponse) throw new HttpException(404, '해당하는 학교가 없습니다.');
 
-      const schoolList: ISchoolInfoRow[] = schoolResponse[1].row;
-      return schoolList;
+      const { data: schoolFetchHigh } = await neisClient.get('/hub/schoolInfo', {
+        params: {
+          SCHUL_NM: keyword,
+          SCHUL_KND_SC_NM: '고등학교',
+        },
+      });
+
+      const schoolResponseMiddle: ISchoolInfoResponse = schoolFetchMiddle.schoolInfo;
+      const schoolResponseHigh: ISchoolInfoResponse = schoolFetchHigh.schoolInfo;
+      
+      if (schoolResponseMiddle && schoolResponseHigh) {
+        return [...schoolResponseMiddle[1].row, ...schoolResponseHigh[1].row];
+      } else if (schoolResponseMiddle) {
+        return schoolResponseMiddle[1].row;
+      } else if (schoolResponseHigh) {
+        return schoolResponseHigh[1].row;
+      } else {
+        throw new HttpException(404, '학교를 찾을 수 없습니다.');
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -150,7 +166,7 @@ class SchoolService {
       const schoolInfo = await this.getSchoolInfoById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '학교를 찾을 수 없습니다.');
 
-      const endpoint = schoolInfo.type === "고등학교" ? '/hub/hisTimetable' : '/hub/misTimetable';
+      const endpoint = schoolInfo.type === '고등학교' ? '/hub/hisTimetable' : '/hub/misTimetable';
       const { data: response } = await neisClient.get(endpoint, {
         params: {
           ATPT_OFCDC_SC_CODE: schoolInfo.atptCode,
@@ -164,7 +180,7 @@ class SchoolService {
         },
       });
 
-      const timetableInfo: ITimeTableResponse = schoolInfo.type === "고등학교" ? response.hisTimetable : response.misTimetable;
+      const timetableInfo: ITimeTableResponse = schoolInfo.type === '고등학교' ? response.hisTimetable : response.misTimetable;
       if (!timetableInfo) throw new HttpException(404, '해당하는 시간표를 찾을 수 없습니다.');
 
       return timetableInfo[1].row;
