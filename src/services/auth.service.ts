@@ -4,7 +4,7 @@ import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
 import bcrypt from 'bcrypt';
 
-import { Image, PrismaClient, School, User, UserSchool } from '@prisma/client';
+import { Image, PrismaClient, Process, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -33,6 +33,7 @@ class AuthService {
   public socialLogin = new PrismaClient().socialLogin;
   public users = new PrismaClient().user;
   public phoneVerifyRequest = new PrismaClient().phoneVerifyRequest;
+  public schoolVerify = new PrismaClient().userSchoolVerify;
 
   public async meSchool(userData: User): Promise<
     UserSchool & {
@@ -145,6 +146,19 @@ class AuthService {
       }
       throw new HttpException(400, error);
     }
+  }
+
+  public async meSchoolVerify(userData: User): Promise<UserSchoolVerify[]> {
+    const schoolverifyList = await this.schoolVerify.findMany({
+      where: {
+        userId: userData.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return schoolverifyList;
   }
 
   public async googleLogin(code: string): Promise<{
