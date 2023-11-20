@@ -51,6 +51,24 @@ class AuthController {
     }
   };
 
+  public appLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tokenData = req.params.code;
+      const { cookie, findUser, token, registered } = await this.authService.appLogin(tokenData);
+
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, {
+        data: {
+          user: findUser,
+          token: token,
+          registered: registered,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public meSchool = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;

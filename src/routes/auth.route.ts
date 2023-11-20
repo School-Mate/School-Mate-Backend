@@ -37,6 +37,7 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/google/callback`, this.authController.googleLoginCallback);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginUserDto, 'body'), this.authController.login);
+    this.router.post(`${this.path}/applogin`, this.authController.appLogin);
     this.router.post(`${this.path}/signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
     this.router.post(`${this.path}/apptoken`, validationMiddleware(TokenDto, 'body'), this.authController.appToken);
     this.router.post(`${this.path}/apprefreshtoken`, validationMiddleware(TokenDto, 'body'), this.authController.appRefreshToken);

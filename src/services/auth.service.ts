@@ -404,6 +404,31 @@ class AuthService {
     };
   }
 
+  public async appLogin(token: string): Promise<any> {
+    let verificationResponse: DataStoredInToken;
+    try {
+      verificationResponse = verify(token, SECRET_KEY) as DataStoredInToken;
+    } catch (error) {
+      throw new HttpException(409, '만료된 토큰입니다.');
+    }
+
+    if (!verificationResponse) throw new HttpException(409, '만료된 토큰입니다.');
+
+    const userId = verificationResponse.id;
+
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    const loginData = await this.iniitalizeLoginData(findUser, true);
+
+    return loginData;
+  }
+
   public async login(userData: LoginUserDto): Promise<any> {
     const findUser = await this.users.findUnique({
       where: {
