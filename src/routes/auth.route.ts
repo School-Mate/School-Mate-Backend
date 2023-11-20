@@ -7,6 +7,7 @@ import { imageUpload } from '@/utils/multer';
 import {
   CreateUserDto,
   LoginUserDto,
+  TokenDto,
   UpdateAskedCustomIdDto,
   UpdateNicknameDto,
   UpdatePasswordDto,
@@ -36,6 +37,8 @@ class AuthRoute implements Routes {
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginUserDto, 'body'), this.authController.login);
     this.router.post(`${this.path}/signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
+    this.router.post(`${this.path}/apptoken`, validationMiddleware(TokenDto, 'body'), this.authController.appToken);
+    this.router.post(`${this.path}/apprefreshtoken`, validationMiddleware(TokenDto, 'body'), this.authController.appRefreshToken);
     this.router.post(`${this.path}/changepass`, validationMiddleware(UpdatePasswordDto, 'body'), this.authController.updatePassword);
     this.router.post(`${this.path}/verify/phone`, validationMiddleware(VerifyPhoneCodeDto, 'body'), this.authController.verifyPhoneCode);
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.sendVerifyMessage);

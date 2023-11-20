@@ -31,6 +31,26 @@ class AuthController {
     }
   };
 
+  public appToken = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const token = await this.authService.appToken(req.body.token);
+
+      ResponseWrapper(req, res, { data: token });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public appRefreshToken = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const token = await this.authService.appRefreshToken(req.body.token);
+
+      ResponseWrapper(req, res, { data: token });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public meSchool = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;
