@@ -53,7 +53,7 @@ class AuthController {
 
   public appLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const tokenData = req.params.code;
+      const tokenData = req.query.code as string;
       const { cookie, findUser, token, registered } = await this.authService.appLogin(tokenData);
 
       res.setHeader('Set-Cookie', [cookie]);
