@@ -420,6 +420,9 @@ class AuthService {
       where: {
         id: userId,
       },
+      include: {
+        userSchool: true,
+      },
     });
 
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
