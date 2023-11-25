@@ -135,6 +135,7 @@ class BoardService {
           articleLike: true,
           comment: true,
           reComment: true,
+          board: true,
         },
       });
 

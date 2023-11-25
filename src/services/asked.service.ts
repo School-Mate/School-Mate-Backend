@@ -18,26 +18,48 @@ class AskedService {
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 10,
-      });
-
-      const askedList = await this.askedUser.findMany({
-        where: {
-          userId: {
-            in: schoolUsers.map(user => user.id),
-          },
-        },
-        include: {
-          user: true,
+        orderBy: {
+          createdAt: 'desc',
         },
       });
 
-      const askedUserList = askedList.map(asked => ({
-        ...asked,
-        user: {
-          name: asked.user.name,
-          profile: asked.user.profile,
-        },
-      }));
+      const askedUserList = await Promise.all(
+        schoolUsers.map(async schoolUser => {
+          const askedUser = await this.askedUser.findUnique({
+            where: {
+              userId: schoolUser.id,
+            },
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  profile: true,
+                },
+              },
+            },
+          });
+
+          if (!askedUser) {
+            const createdAskedUser = await this.askedUser.create({
+              data: {
+                userId: schoolUser.id,
+              },
+              include: {
+                user: {
+                  select: {
+                    name: true,
+                    profile: true,
+                  },
+                },
+              },
+            });
+
+            return createdAskedUser;
+          } else {
+            return askedUser;
+          }
+        }),
+      );
 
       return askedUserList;
     } catch (error) {
