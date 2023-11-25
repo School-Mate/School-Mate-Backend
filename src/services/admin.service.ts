@@ -48,7 +48,7 @@ class AdminService {
         loginId: adminData.id,
       },
     });
-    console.log(await bcrypt.hash(adminData.password, 10))
+
     if (!findAdmin) throw new HttpException(409, '어드민을 찾을 수 없습니다.');
 
     const isPasswordMatch: boolean = await bcrypt.compare(adminData.password, findAdmin.password);
