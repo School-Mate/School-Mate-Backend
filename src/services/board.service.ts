@@ -240,34 +240,34 @@ class BoardService {
         include: {
           user: true,
           board: true,
-          articleLike: true,
-          comment: true,
-          reComment: true,
         },
       });
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
       if (findArticle.board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
-      const likeCounts = findArticle.articleLike.filter(like => like.likeType === LikeType.like).length;
+      const likeCounts = await this.articleLike.count({
+        where: {
+          articleId: findArticle.id,
+          likeType: LikeType.like,
+        },
+      });
 
-      const keyOfImages = await Promise.all(
-        findArticle.images.map(async imageId => {
-          const findImage = await this.image.findUnique({
-            where: {
-              id: imageId,
-            },
-          });
-          if (!findImage) return;
-          return findImage.key;
-        }),
-      );
+      const commnetCounts = await this.comment.count({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
+
+      const reCommentCounts = await this.reComment.count({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
 
       return {
         ...findArticle,
-        keyOfImages: keyOfImages,
         likeCounts: likeCounts,
-        disLikeCounts: findArticle.articleLike.length - likeCounts,
-        commentCounts: findArticle.comment.length + findArticle.reComment.length,
+        commentCounts: commnetCounts + reCommentCounts,
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
@@ -278,6 +278,7 @@ class BoardService {
               user: {
                 name: findArticle.user.name,
                 id: findArticle.user.id,
+                profile: findArticle.user.profile,
               } as User,
             }),
       } as unknown as ArticleWithImage;
