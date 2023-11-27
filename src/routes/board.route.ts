@@ -18,7 +18,7 @@ class BoardRoute implements Routes {
 
   private initializeRoutes() {
     this.router.get(`${this.path}`, authMiddleware, this.boardController.getBoards);
-    this.router.get(`${this.path}/suggest`, authMiddleware, this.boardController.getSuggestArticles);
+    this.router.get(`${this.path}/hot`, authMiddleware, this.boardController.getHotArticles);
     this.router.get(`${this.path}/search`, authMiddleware, validationMiddleware(SearchCombineDto, 'query'), this.boardController.searchCombine);
     this.router.get(`${this.path}/:boardId`, authMiddleware, this.boardController.getBoard);
     this.router.get(
