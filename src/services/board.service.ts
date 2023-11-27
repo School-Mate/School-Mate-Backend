@@ -1074,6 +1074,39 @@ class BoardService {
       }
     }
   }
+
+  public async getHotArticles(user: User): Promise<ArticleWithImage[]> {
+    try {
+      const findHotArticles = await this.hotArticle.findMany({
+        include: {
+          article: {
+            include: {
+              user: true,
+              articleLike: true,
+              comment: true,
+              reComment: true,
+            },
+          },
+        },
+      });
+
+      const filteredArticles: ArticleWithImage[] = [];
+
+      for await (const hotArticle of findHotArticles) {
+        const filteredArticle = await this.getArticle(hotArticle.articleId.toString(), user);
+        filteredArticles.push(filteredArticle);
+      }
+
+      return filteredArticles;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
   private async handleHotArticle(article: Article): Promise<void> {
     try {
       const likeCount = await this.articleLike.count({
