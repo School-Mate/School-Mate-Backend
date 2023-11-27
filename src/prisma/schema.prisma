@@ -317,6 +317,15 @@ model HotArticle {
   article   Article @relation(fields: [articleId], references: [id])
 }
 
+model Advertise {
+  id        Int      @id @default(autoincrement())
+  title     String
+  image     String
+  link      String
+  startDate DateTime @default(now())
+  endDate   DateTime
+}
+
 enum LikeType {
   like
   dislike
