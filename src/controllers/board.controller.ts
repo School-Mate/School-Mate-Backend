@@ -324,6 +324,19 @@ class BoardController {
       next(error);
     }
   }
+
+  public increaseViews = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const articleId = req.params.articleId;
+      const increaseViews = await this.boardService.increaseViews(articleId);
+
+      ResponseWrapper(req, res, {
+        data: increaseViews,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default BoardController;
