@@ -47,13 +47,13 @@ class BoardController {
     }
   };
 
-  public getSuggestArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  public getHotArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
-      const suggestArticles = await this.boardService.getSuggestArticles(user);
+      const hotArticles = await this.boardService.getHotArticles(user);
 
       ResponseWrapper(req, res, {
-        data: suggestArticles,
+        data: hotArticles,
       });
     } catch (error) {
       next(error);
