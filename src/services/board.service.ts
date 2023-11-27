@@ -21,6 +21,7 @@ class BoardService {
   public school = new PrismaClient().school;
   public user = new PrismaClient().user;
   public defaultBoard = new PrismaClient().defaultBoard;
+  public hotArticle = new PrismaClient().hotArticle;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -600,6 +601,7 @@ class BoardService {
             likeType: likeType,
           },
         });
+        this.handleHotArticle(findArticle);
 
         return createArticleLike;
       }
@@ -621,6 +623,7 @@ class BoardService {
             likeType: likeType === LikeType.like ? LikeType.dislike : LikeType.like,
           },
         });
+        this.handleHotArticle(findArticle);
 
         return updateArticleLike;
       }
@@ -707,6 +710,19 @@ class BoardService {
 
       if (findArticle.userId !== userId) {
         throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      const isHotArticle = await this.hotArticle.findUnique({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
+      if (isHotArticle) {
+        await this.hotArticle.delete({
+          where: {
+            articleId: findArticle.id,
+          },
+        });
       }
 
       const images = findArticle.images;
@@ -1050,6 +1066,31 @@ class BoardService {
       });
 
       return combinedComments.slice(0, 10);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+  private async handleHotArticle(article: Article): Promise<void> {
+    try {
+      const likeCount = await this.articleLike.count({
+        where: {
+          articleId: article.id,
+          likeType: LikeType.like,
+        },
+      });
+
+      if (likeCount >= 20) {
+        await this.hotArticle.create({
+          data: {
+            articleId: article.id,
+            schoolId: article.schoolId,
+          },
+        });
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
