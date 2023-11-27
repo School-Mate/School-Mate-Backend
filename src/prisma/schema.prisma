@@ -198,6 +198,7 @@ model Article {
   title       String
   content     String
   images      String[]
+  views       Int           @default(0)
   isAnonymous Boolean
   userId      String
   createdAt   DateTime      @default(now())
