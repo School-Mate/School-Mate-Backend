@@ -1107,6 +1107,31 @@ class BoardService {
     }
   }
 
+  public async increaseViews(articleId: string): Promise<void> {
+    try {
+      const findArticle = await this.article.findUnique({
+        where: {
+          id: Number(articleId),
+        },
+      });
+
+      if (!findArticle) {
+        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      }
+
+      await this.article.update({
+        where: {
+          id: Number(articleId),
+        },
+        data: {
+          views: findArticle.views + 1,
+        },
+      });
+    } catch (error) {
+      throw new HttpException(500, error.message);
+    }
+  }
+
   private async handleHotArticle(article: Article): Promise<void> {
     try {
       const likeCount = await this.articleLike.count({
