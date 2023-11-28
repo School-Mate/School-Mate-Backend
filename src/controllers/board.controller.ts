@@ -168,6 +168,7 @@ class BoardController {
 
       ResponseWrapper(req, res, {
         data: likeArticleData,
+        message: likeArticleData ? '공감을 표시했습니다' : '공감을 취소했습니다',
       });
     } catch (error) {
       next(error);
@@ -297,7 +298,7 @@ class BoardController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public getUserLikes = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -310,7 +311,7 @@ class BoardController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public getUserComments = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -323,7 +324,7 @@ class BoardController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public increaseViews = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -336,7 +337,7 @@ class BoardController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
 
 export default BoardController;

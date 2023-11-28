@@ -1072,7 +1072,10 @@ class BoardService {
     }
   }
 
-  public async getHotArticles(user: User): Promise<ArticleWithImage[]> {
+  public async getHotArticles(user: User): Promise<{
+    articles: ArticleWithImage[];
+    totalPage: number;
+  }> {
     try {
       const findHotArticles = await this.hotArticle.findMany({
         include: {
@@ -1087,6 +1090,9 @@ class BoardService {
         },
       });
 
+      const hotArticleTotal = await this.hotArticle.count();
+      const hotArticleTotalPage = Math.ceil(hotArticleTotal / 10);
+
       const filteredArticles = await Promise.all(
         findHotArticles.map(async hotArticle => {
           const filteredArticle = await this.getArticle(hotArticle.articleId.toString(), user);
@@ -1094,7 +1100,10 @@ class BoardService {
         }),
       );
 
-      return filteredArticles;
+      return {
+        articles: filteredArticles,
+        totalPage: hotArticleTotalPage,
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
