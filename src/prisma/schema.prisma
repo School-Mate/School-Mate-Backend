@@ -209,7 +209,7 @@ model Article {
   comment     Comment[]
   reComment   ReComment[]
   articleLike ArticleLike[]
-  HotArticle  HotArticle[]
+  hotArticle  HotArticle[]
 }
 
 model DefaultBoard {
