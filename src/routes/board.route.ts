@@ -1,5 +1,5 @@
 import BoardController from '@/controllers/board.controller';
-import { BoardDto, CommentDto, SendBoardRequestDto } from '@/dtos/board.dto';
+import { BoardDto, CommentDto, SendBoardRequestDto, UserPageQuery } from '@/dtos/board.dto';
 import { ArticleRequestQuery, SearchCombineDto } from '@/dtos/article.dto';
 import { CommentRequestQuery } from '@/dtos/comment.dto';
 import authMiddleware from '@/middlewares/auth.middleware';
@@ -18,7 +18,7 @@ class BoardRoute implements Routes {
 
   private initializeRoutes() {
     this.router.get(`${this.path}`, authMiddleware, this.boardController.getBoards);
-    this.router.get(`${this.path}/suggest`, authMiddleware, this.boardController.getSuggestArticles);
+    this.router.get(`${this.path}/hot`, authMiddleware, this.boardController.getHotArticles);
     this.router.get(`${this.path}/search`, authMiddleware, validationMiddleware(SearchCombineDto, 'query'), this.boardController.searchCombine);
     this.router.get(`${this.path}/:boardId`, authMiddleware, this.boardController.getBoard);
     this.router.get(
@@ -34,6 +34,10 @@ class BoardRoute implements Routes {
       validationMiddleware(CommentRequestQuery, 'query'),
       this.boardController.getComments,
     );
+    this.router.get(`${this.path}/articles/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserArticles);
+    this.router.get(`${this.path}/likes/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserLikes);
+    this.router.get(`${this.path}/comments/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserComments);
+    this.router.get(`${this.path}/:articleId/views`, authMiddleware, this.boardController.increaseViews);
     this.router.post(
       `${this.path}/request`,
       authMiddleware,

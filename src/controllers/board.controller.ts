@@ -47,13 +47,13 @@ class BoardController {
     }
   };
 
-  public getSuggestArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  public getHotArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
-      const suggestArticles = await this.boardService.getSuggestArticles(user);
+      const hotArticles = await this.boardService.getHotArticles(user);
 
       ResponseWrapper(req, res, {
-        data: suggestArticles,
+        data: hotArticles,
       });
     } catch (error) {
       next(error);
@@ -285,6 +285,58 @@ class BoardController {
       next(error);
     }
   };
+
+  public getUserArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const articleData = await this.boardService.getUserArticles(req.params.userId, req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public getUserLikes = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const articleData = await this.boardService.getUserLikes(req.params.userId, req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public getUserComments = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const articleData = await this.boardService.getUserComments(req.params.userId, req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: articleData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public increaseViews = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const articleId = req.params.articleId;
+      const increaseViews = await this.boardService.increaseViews(articleId);
+
+      ResponseWrapper(req, res, {
+        data: increaseViews,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default BoardController;

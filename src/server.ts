@@ -8,6 +8,7 @@ import AdminRoute from './routes/admin.route';
 import BoardRoute from './routes/board.route';
 import AskedRoute from './routes/asked.route';
 import ReportRoute from './routes/report.route';
+import AdRoute from './routes/ad.route';
 
 validateEnv();
 
@@ -20,6 +21,7 @@ const app = new App([
   new IndexRoute(),
   new ReportRoute(),
   new SchoolRoute(),
+  new AdRoute(),
 ]);
 
 app.listen();

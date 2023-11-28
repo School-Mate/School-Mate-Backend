@@ -66,6 +66,16 @@ class AskedController {
     }
   };
 
+  public updateImage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const askedData = await this.askedService.updateImage(req.user, req.file as Express.MulterS3.File);
+
+      ResponseWrapper(req, res, { data: askedData });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public changeStatusmessage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const message = req.body.message as string;
@@ -76,6 +86,27 @@ class AskedController {
       next(error);
     }
   };
+
+  public addTag = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const tag = req.body.tag;
+      const askedData = await this.askedService.addTag(req.user, tag);
+
+      ResponseWrapper(req, res, { data: askedData });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public removeTags = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const askedData = await this.askedService.removeTags(req.user);
+
+      ResponseWrapper(req, res, { data: askedData });
+    } catch (error) {
+      next(error);
+    }
+  }
 
   public receiveAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -99,6 +130,16 @@ class AskedController {
       next(error);
     }
   };
+
+  public async getAskedCount(req: RequestWithUser, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const askedCount = await this.askedService.askedCount(req.user);
+
+      ResponseWrapper(req, res, { data: askedCount });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default AskedController;

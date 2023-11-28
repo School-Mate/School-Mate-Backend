@@ -19,9 +19,9 @@ import {
   SOL_API_SECRET,
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
-import { DataStoredInToken, RequestWithUser, TokenData, UserWithSchool } from '@interfaces/auth.interface';
+import { DataStoredInToken, TokenData, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@utils/util';
-import { CreateUserDto, LoginUserDto, UpdateProfileDto } from '@/dtos/users.dto';
+import { CreateUserDto, LoginUserDto } from '@/dtos/users.dto';
 import SchoolService from './school.service';
 import { deleteImage } from '@/utils/multer';
 
@@ -122,7 +122,7 @@ class AuthService {
             socialLogin: true,
           },
         });
-        const loginData = await this.iniitalizeLoginData(createUserData, false);
+        const loginData = await this.initializeLoginData(createUserData, false);
         return loginData;
       } else {
         const findUser = await this.users.update({
@@ -137,7 +137,7 @@ class AuthService {
             socialLogin: true,
           },
         });
-        const loginData = await this.iniitalizeLoginData(findUser, true);
+        const loginData = await this.initializeLoginData(findUser, true);
         return loginData;
       }
     } catch (error) {
@@ -221,7 +221,7 @@ class AuthService {
           },
         });
 
-        const loginData = await this.iniitalizeLoginData(createUserData, false);
+        const loginData = await this.initializeLoginData(createUserData, false);
         return loginData;
       } else {
         const findUser = await this.users.findUnique({
@@ -233,7 +233,7 @@ class AuthService {
             socialLogin: true,
           },
         });
-        const loginData = await this.iniitalizeLoginData(findUser, true);
+        const loginData = await this.initializeLoginData(findUser, true);
         return loginData;
       }
     } catch (error) {
@@ -257,7 +257,7 @@ class AuthService {
     return createImage.id;
   }
 
-  private async iniitalizeLoginData(
+  private async initializeLoginData(
     user: User & {
       userSchool?: UserSchool & {
         school?: School;
@@ -446,7 +446,7 @@ class AuthService {
     const isPasswordMatching: boolean = await bcrypt.compare(userData.password, findUser.password);
     if (!isPasswordMatching) throw new HttpException(409, '비밀번호가 일치하지 않습니다.');
 
-    const loginData = await this.iniitalizeLoginData(findUser, true);
+    const loginData = await this.initializeLoginData(findUser, true);
 
     return loginData;
   }

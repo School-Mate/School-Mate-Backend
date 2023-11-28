@@ -29,3 +29,8 @@ export class SendBoardRequestDto {
   @IsString({ message: '게시판 설명을 입력해주세요.' })
   public description: string;
 }
+
+export class UserPageQuery {
+  @IsString({ message: '페이지를 입력해주세요.' })
+  public page: string;
+}

@@ -141,6 +141,8 @@ model AskedUser {
   userId             String    @id
   customId           String?
   statusMessage      String?
+  image              String?
+  tags               String[]
   receiveAnonymous   Boolean   @default(true)
   receiveOtherSchool Boolean   @default(false)
   lastUpdateCustomId DateTime?
@@ -174,6 +176,7 @@ model Board {
   schoolId    String
   name        String
   description String
+  icon        String?
   default     Boolean        @default(false)
   noticeId    Int[]
   article     Article[]
@@ -195,6 +198,7 @@ model Article {
   title       String
   content     String
   images      String[]
+  views       Int           @default(0)
   isAnonymous Boolean
   userId      String
   createdAt   DateTime      @default(now())
@@ -205,6 +209,7 @@ model Article {
   comment     Comment[]
   reComment   ReComment[]
   articleLike ArticleLike[]
+  hotArticle  HotArticle[]
 }
 
 model DefaultBoard {
@@ -303,6 +308,22 @@ model ReCommentLike {
   likeType    LikeType
   user        User      @relation(fields: [userId], references: [id])
   recomment   ReComment @relation(fields: [recommentId], references: [id])
+}
+
+model HotArticle {
+  id        Int     @id @default(autoincrement())
+  articleId Int     @unique
+  schoolId  String
+  article   Article @relation(fields: [articleId], references: [id])
+}
+
+model Advertise {
+  id        Int      @id @default(autoincrement())
+  title     String
+  image     String
+  link      String
+  startDate DateTime @default(now())
+  endDate   DateTime
 }
 
 enum LikeType {

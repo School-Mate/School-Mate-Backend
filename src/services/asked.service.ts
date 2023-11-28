@@ -1,6 +1,7 @@
 import { AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { UserWithSchool } from '@/interfaces/auth.interface';
+import { deleteImage } from '@/utils/multer';
 import { AskedUser, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 
@@ -70,6 +71,52 @@ class AskedService {
       }
     }
   };
+
+  public updateImage = async (user: User, file: Express.MulterS3.File): Promise<string> => {
+    try {
+      const findAskedInfo = await this.askedUser.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '권한이 없습니다.');
+
+      if (findAskedInfo.image) {
+        await deleteImage(findAskedInfo.image);
+      }
+
+      if (!file) {
+        await this.askedUser.update({
+          where: {
+            userId: user.id,
+          },
+          data: {
+            image: null,
+          },
+        });
+
+        return null;
+      }
+
+      await this.askedUser.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          image: file.key,
+        },
+      });
+
+      return file.key;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
 
   public updateAskedCustomId = async (user: User, customId: string): Promise<AskedUser> => {
     try {
@@ -363,6 +410,70 @@ class AskedService {
     }
   };
 
+  public addTag = async (user: User, tag: string): Promise<string[]> => {
+    try {
+      const findAskedInfo = await this.askedUser.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '권한이 없습니다.');
+
+      const updatedTags = findAskedInfo.tags;
+      if (updatedTags.length >= 2) {
+        updatedTags.shift();
+      }
+      updatedTags.push(tag);
+
+      await this.askedUser.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          tags: updatedTags,
+        },
+      });
+
+      return updatedTags;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public removeTags = async (user: User): Promise<string[]> => {
+    try {
+      const findAskedInfo = await this.askedUser.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '권한이 없습니다.');
+
+      await this.askedUser.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          tags: [],
+        },
+      });
+
+      return [];
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
   public denyAsked = async (user: User, askedId: string): Promise<any> => {
     try {
       const findAskedInfo = await this.asked.findFirst({
@@ -488,6 +599,22 @@ class AskedService {
       }
     }
   };
+
+  public async askedCount(user: User): Promise<number> {
+    try {
+      return await this.asked.count({
+        where: {
+          askedUserId: user.id,
+        }
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
 }
 
 export default AskedService;

@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "LikeType" AS ENUM ('like', 'dislike');
+
+-- CreateEnum
 CREATE TYPE "Process" AS ENUM ('pending', 'denied', 'success');
 
 -- CreateEnum
@@ -15,12 +18,6 @@ CREATE TYPE "ReportTargetType" AS ENUM ('user', 'article', 'comment', 'asked', '
 
 -- CreateEnum
 CREATE TYPE "ReportProcess" AS ENUM ('pending', 'success');
-
--- CreateEnum
-CREATE TYPE "LikeType" AS ENUM ('like', 'dislike');
-
--- CreateEnum
-CREATE TYPE "LikeTargetType" AS ENUM ('article', 'comment', 'recomment');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -166,6 +163,8 @@ CREATE TABLE "AskedUser" (
     "userId" TEXT NOT NULL,
     "customId" TEXT,
     "statusMessage" TEXT,
+    "image" TEXT,
+    "tags" TEXT[],
     "receiveAnonymous" BOOLEAN NOT NULL DEFAULT true,
     "receiveOtherSchool" BOOLEAN NOT NULL DEFAULT false,
     "lastUpdateCustomId" TIMESTAMP(3),
@@ -204,6 +203,7 @@ CREATE TABLE "Board" (
     "schoolId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "icon" TEXT NOT NULL,
     "default" BOOLEAN NOT NULL DEFAULT false,
     "noticeId" INTEGER[],
 
@@ -236,6 +236,15 @@ CREATE TABLE "Article" (
 );
 
 -- CreateTable
+CREATE TABLE "DefaultBoard" (
+    "id" SERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+
+    CONSTRAINT "DefaultBoard_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "DeletedArticle" (
     "id" INTEGER NOT NULL,
     "schoolId" TEXT NOT NULL,
@@ -245,7 +254,7 @@ CREATE TABLE "DeletedArticle" (
     "isAnonymous" BOOLEAN NOT NULL,
     "userId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL,
-    "DeletedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deletedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "boardId" INTEGER NOT NULL,
 
     CONSTRAINT "DeletedArticle_pkey" PRIMARY KEY ("id")
@@ -308,14 +317,33 @@ CREATE TABLE "Report" (
 );
 
 -- CreateTable
-CREATE TABLE "Like" (
+CREATE TABLE "ArticleLike" (
     "id" TEXT NOT NULL,
+    "articleId" INTEGER NOT NULL,
     "userId" TEXT NOT NULL,
-    "targetId" INTEGER NOT NULL,
-    "targetType" "LikeTargetType" NOT NULL,
     "likeType" "LikeType" NOT NULL,
 
-    CONSTRAINT "Like_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "ArticleLike_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CommentLike" (
+    "id" TEXT NOT NULL,
+    "commentId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
+    "likeType" "LikeType" NOT NULL,
+
+    CONSTRAINT "CommentLike_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ReCommentLike" (
+    "id" TEXT NOT NULL,
+    "recommentId" INTEGER NOT NULL,
+    "userId" TEXT NOT NULL,
+    "likeType" "LikeType" NOT NULL,
+
+    CONSTRAINT "ReCommentLike_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -406,4 +434,19 @@ ALTER TABLE "ReComment" ADD CONSTRAINT "ReComment_commentId_fkey" FOREIGN KEY ("
 ALTER TABLE "ReComment" ADD CONSTRAINT "ReComment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Like" ADD CONSTRAINT "Like_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "ArticleLike" ADD CONSTRAINT "ArticleLike_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ArticleLike" ADD CONSTRAINT "ArticleLike_articleId_fkey" FOREIGN KEY ("articleId") REFERENCES "Article"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CommentLike" ADD CONSTRAINT "CommentLike_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CommentLike" ADD CONSTRAINT "CommentLike_commentId_fkey" FOREIGN KEY ("commentId") REFERENCES "Comment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ReCommentLike" ADD CONSTRAINT "ReCommentLike_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ReCommentLike" ADD CONSTRAINT "ReCommentLike_recommentId_fkey" FOREIGN KEY ("recommentId") REFERENCES "ReComment"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

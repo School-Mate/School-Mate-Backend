@@ -1,7 +1,7 @@
 import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, PrismaClient, User, LikeType, BoardRequest } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
-import { ArticleWithImage, CommentWithUser, IArticleQuery } from '@/interfaces/board.interface';
+import { ArticleWithImage, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
 import SchoolService from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
@@ -21,6 +21,7 @@ class BoardService {
   public school = new PrismaClient().school;
   public user = new PrismaClient().user;
   public defaultBoard = new PrismaClient().defaultBoard;
+  public hotArticle = new PrismaClient().hotArticle;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -273,9 +274,9 @@ class BoardService {
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
-              user: null,
-              userId: null,
-            }
+            user: null,
+            userId: null,
+          }
           : {
               user: {
                 name: findArticle.user.name,
@@ -360,10 +361,10 @@ class BoardService {
             user: article.isAnonymous
               ? null
               : {
-                  ...article.user,
-                  password: undefined,
-                  phone: undefined,
-                },
+                ...article.user,
+                password: undefined,
+                phone: undefined,
+              },
           } as Article;
         }),
         totalPage: Math.ceil(findArticlesCount / 10),
@@ -430,23 +431,23 @@ class BoardService {
             comment.recomments.length === 0
               ? []
               : await Promise.all(
-                  comment.recomments.map(async reComment => {
-                    return {
-                      ...reComment,
-                      content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                      userId: reComment.isAnonymous ? null : reComment.user.id,
-                      isMe: reComment.userId === user.id,
-                      user: reComment.isDeleted
-                        ? {
-                            name: '(삭제됨)',
-                            id: null,
-                          }
-                        : reComment.isAnonymous
+                comment.recomments.map(async reComment => {
+                  return {
+                    ...reComment,
+                    content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                    userId: reComment.isAnonymous ? null : reComment.user.id,
+                    isMe: reComment.userId === user.id,
+                    user: reComment.isDeleted
+                      ? {
+                        name: '(삭제됨)',
+                        id: null,
+                      }
+                      : reComment.isAnonymous
                         ? undefined
                         : { name: reComment.user.name, id: reComment.user.id },
-                    };
-                  }),
-                );
+                  };
+                }),
+              );
 
           return {
             ...comment,
@@ -455,12 +456,12 @@ class BoardService {
             isMe: comment.userId === user.id,
             user: comment.isDeleted
               ? {
-                  name: '(삭제됨)',
-                  id: null,
-                }
+                name: '(삭제됨)',
+                id: null,
+              }
               : comment.isAnonymous
-              ? undefined
-              : { name: comment.user.name, id: comment.user.id },
+                ? undefined
+                : { name: comment.user.name, id: comment.user.id },
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
@@ -603,6 +604,7 @@ class BoardService {
             likeType: likeType,
           },
         });
+        this.handleHotArticle(findArticle);
 
         return createArticleLike;
       }
@@ -624,6 +626,7 @@ class BoardService {
             likeType: likeType === LikeType.like ? LikeType.dislike : LikeType.like,
           },
         });
+        this.handleHotArticle(findArticle);
 
         return updateArticleLike;
       }
@@ -710,6 +713,19 @@ class BoardService {
 
       if (findArticle.userId !== userId) {
         throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      const isHotArticle = await this.hotArticle.findUnique({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
+      if (isHotArticle) {
+        await this.hotArticle.delete({
+          where: {
+            articleId: findArticle.id,
+          },
+        });
       }
 
       const images = findArticle.images;
@@ -826,6 +842,316 @@ class BoardService {
       });
 
       return true;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
+  public async getUserArticles(userId: string, page: string, user: User): Promise<ArticleWithImage[]> {
+    try {
+      const targetUser = await this.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (targetUser.userSchoolId !== user.userSchoolId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      const findArticles = await this.article.findMany({
+        where: {
+          userId: targetUser.id,
+          ...(targetUser.id === user.id
+            ? {}
+            : {
+              isAnonymous: false,
+            }),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          comment: true,
+          reComment: true,
+          articleLike: true,
+        },
+      });
+
+      const articlesWithImage = await Promise.all(
+        findArticles.map(async article => {
+          if (article.images.length === 0) {
+            return {
+              ...article,
+              keyOfImages: [],
+              commentCounts: article.comment.length + article.reComment.length,
+              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+            } as unknown as ArticleWithImage;
+          }
+
+          const keyOfImages = await Promise.all(
+            article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
+
+          return {
+            ...article,
+            keyOfImages: keyOfImages,
+            commentCounts: article.comment.length + article.reComment.length,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+          } as unknown as ArticleWithImage;
+        }),
+      );
+
+      return articlesWithImage.map(article => {
+        return {
+          ...article,
+          isMe: article.userId === user.id,
+        };
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
+  public async getUserLikes(userId: string, page: string, user: User): Promise<ArticleWithImage[]> {
+    try {
+      const targetUser = await this.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (targetUser.userSchoolId !== user.userSchoolId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      const findLikes = await this.articleLike.findMany({
+        where: {
+          userId: targetUser.id,
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        select: {
+          article: {
+            include: {
+              comment: true,
+              reComment: true,
+              articleLike: true,
+            }
+          }
+        }
+      });
+
+      const articlesWithImage = await Promise.all(
+        findLikes.map(async like => {
+          if (like.article.images.length === 0) {
+            return {
+              ...like.article,
+              keyOfImages: [],
+              commentCounts: like.article.comment.length + like.article.reComment.length,
+              likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              disLikeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+            } as unknown as ArticleWithImage;
+          }
+
+          const keyOfImages = await Promise.all(
+            like.article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
+
+          return {
+            ...like.article,
+            keyOfImages: keyOfImages,
+            commentCounts: like.article.comment.length + like.article.reComment.length,
+            likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+          } as unknown as ArticleWithImage;
+        }),
+      );
+
+      return articlesWithImage.map(article => {
+        return {
+          ...article,
+          isMe: article.userId === user.id,
+        };
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
+  public async getUserComments(userId: string, page: string, user: User): Promise<Comment[]> {
+    try {
+      const targetUser = await this.user.findUnique({
+        where: {
+          id: userId,
+        },
+      });
+
+      if (targetUser.userSchoolId !== user.userSchoolId) {
+        throw new HttpException(403, '권한이 없습니다.');
+      }
+
+      const findComments = await this.comment.findMany({
+        where: {
+          userId: targetUser.id,
+          ...(targetUser.id === user.id
+            ? {}
+            : {
+              isAnonymous: false,
+            }),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          article: true,
+        }
+      });
+
+      const findReComments = await this.reComment.findMany({
+        where: {
+          userId: targetUser.id,
+          ...(targetUser.id === user.id
+            ? {}
+            : {
+              isAnonymous: false,
+            }),
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          article: true,
+        }
+      });
+
+      const combinedComments = [...findComments, ...findReComments];
+      combinedComments.sort((a, b) => {
+        if (a.createdAt > b.createdAt) return -1;
+        else if (a.createdAt < b.createdAt) return 1;
+        else return 0;
+      });
+
+      return combinedComments.slice(0, 10);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
+  public async getHotArticles(user: User): Promise<ArticleWithImage[]> {
+    try {
+      const findHotArticles = await this.hotArticle.findMany({
+        include: {
+          article: {
+            include: {
+              user: true,
+              articleLike: true,
+              comment: true,
+              reComment: true,
+            },
+          },
+        },
+      });
+
+      const filteredArticles: ArticleWithImage[] = [];
+
+      for await (const hotArticle of findHotArticles) {
+        const filteredArticle = await this.getArticle(hotArticle.articleId.toString(), user);
+        filteredArticles.push(filteredArticle);
+      }
+
+      return filteredArticles;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, error.message);
+      }
+    }
+  }
+
+  public async increaseViews(articleId: string): Promise<void> {
+    try {
+      const findArticle = await this.article.findUnique({
+        where: {
+          id: Number(articleId),
+        },
+      });
+
+      if (!findArticle) {
+        throw new HttpException(404, '해당하는 게시글이 없습니다.');
+      }
+
+      await this.article.update({
+        where: {
+          id: Number(articleId),
+        },
+        data: {
+          views: findArticle.views + 1,
+        },
+      });
+    } catch (error) {
+      throw new HttpException(500, error.message);
+    }
+  }
+
+  private async handleHotArticle(article: Article): Promise<void> {
+    try {
+      const likeCount = await this.articleLike.count({
+        where: {
+          articleId: article.id,
+          likeType: LikeType.like,
+        },
+      });
+
+      if (likeCount >= 20) {
+        await this.hotArticle.create({
+          data: {
+            articleId: article.id,
+            schoolId: article.schoolId,
+          },
+        });
+      }
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
