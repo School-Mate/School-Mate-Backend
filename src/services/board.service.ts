@@ -59,7 +59,7 @@ class BoardService {
     }
   }
 
-  public async searchCombine(keyword: string, user: UserWithSchool): Promise<Article[]> {
+  public async searchCombine(keyword: string, page: string, user: UserWithSchool): Promise<Article[]> {
     try {
       const findArticles = await this.article.findMany({
         where: {
@@ -80,6 +80,8 @@ class BoardService {
         select: {
           id: true,
         },
+        skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 10,
+        take: 10,
       });
 
       const filteredArticles: ArticleWithImage[] = [];

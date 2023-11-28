@@ -11,4 +11,6 @@ export class ArticleRequestQuery {
 export class SearchCombineDto {
   @IsString({ message: '검색어를 입력해주세요.' })
   public keyword: string;
+  @IsOptional()
+  public page: number;
 }

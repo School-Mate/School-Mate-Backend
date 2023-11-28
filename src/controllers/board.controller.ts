@@ -37,7 +37,7 @@ class BoardController {
 
   public searchCombine = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const searchData = await this.boardService.searchCombine(req.query.keyword as string, req.user);
+      const searchData = await this.boardService.searchCombine(req.query.keyword as string, req.query.page as string, req.user);
 
       ResponseWrapper(req, res, {
         data: searchData,
