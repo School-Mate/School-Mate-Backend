@@ -1,10 +1,10 @@
-import { sign } from 'jsonwebtoken';
+import { sign, verify } from 'jsonwebtoken';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
 import bcrypt from 'bcrypt';
 
-import { Image, PrismaClient, School, User, UserSchool } from '@prisma/client';
+import { Image, PrismaClient, Process, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -33,6 +33,7 @@ class AuthService {
   public socialLogin = new PrismaClient().socialLogin;
   public users = new PrismaClient().user;
   public phoneVerifyRequest = new PrismaClient().phoneVerifyRequest;
+  public schoolVerify = new PrismaClient().userSchoolVerify;
 
   public async meSchool(userData: User): Promise<
     UserSchool & {
@@ -147,6 +148,19 @@ class AuthService {
     }
   }
 
+  public async meSchoolVerify(userData: User): Promise<UserSchoolVerify[]> {
+    const schoolverifyList = await this.schoolVerify.findMany({
+      where: {
+        userId: userData.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return schoolverifyList;
+  }
+
   public async googleLogin(code: string): Promise<{
     cookie: string;
     findUser: User & {
@@ -259,6 +273,7 @@ class AuthService {
     };
     token: {
       accessToken: string;
+      refreshToken: string;
       expiresIn: number;
     };
     registered: boolean;
@@ -266,6 +281,7 @@ class AuthService {
     const passwordRemovedData = excludeUserPassword(user, ['password']);
 
     const tokenData = this.createToken(user);
+    const refreshToken = this.createToken(user, 15);
     const cookie = this.createCookie(tokenData);
 
     if (user.userSchool) {
@@ -282,6 +298,7 @@ class AuthService {
         } as any,
         token: {
           accessToken: tokenData.token,
+          refreshToken: refreshToken.token,
           expiresIn: tokenData.expiresIn,
         },
         registered,
@@ -296,6 +313,7 @@ class AuthService {
       } as any,
       token: {
         accessToken: tokenData.token,
+        refreshToken: refreshToken.token,
         expiresIn: tokenData.expiresIn,
       },
       registered,
@@ -320,6 +338,98 @@ class AuthService {
       ...passwordRemovedData,
       userSchool: null,
     };
+  }
+
+  public async appToken(accessToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    let verificationResponse: DataStoredInToken;
+    try {
+      verificationResponse = verify(accessToken, SECRET_KEY) as DataStoredInToken;
+    } catch (error) {
+      throw new HttpException(409, '만료된 토큰입니다.');
+    }
+
+    if (!verificationResponse) throw new HttpException(409, '만료된 토큰입니다.');
+
+    const userId = verificationResponse.id;
+
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    const tokenData = this.createToken(findUser);
+    const refreshTokenData = this.createToken(findUser, 15);
+
+    return {
+      accessToken: tokenData.token,
+      refreshToken: refreshTokenData.token,
+    };
+  }
+
+  public async appRefreshToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+  }> {
+    let verificationResponse: DataStoredInToken;
+    try {
+      verificationResponse = verify(refreshToken, SECRET_KEY) as DataStoredInToken;
+    } catch (error) {
+      throw new HttpException(409, '만료된 토큰입니다.');
+    }
+
+    if (!verificationResponse) throw new HttpException(409, '만료된 토큰입니다.');
+
+    const userId = verificationResponse.id;
+
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    const tokenData = this.createToken(findUser);
+    const refreshTokenData = this.createToken(findUser, 15);
+
+    return {
+      accessToken: tokenData.token,
+      refreshToken: refreshTokenData.token,
+    };
+  }
+
+  public async appLogin(token: string): Promise<any> {
+    let verificationResponse: DataStoredInToken;
+    try {
+      verificationResponse = verify(token, SECRET_KEY) as DataStoredInToken;
+    } catch (error) {
+      throw new HttpException(409, '만료된 토큰입니다.');
+    }
+
+    if (!verificationResponse) throw new HttpException(409, '만료된 토큰입니다.');
+
+    const userId = verificationResponse.id;
+
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userId,
+      },
+      include: {
+        userSchool: true,
+      },
+    });
+
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    const loginData = await this.iniitalizeLoginData(findUser, true);
+
+    return loginData;
   }
 
   public async login(userData: LoginUserDto): Promise<any> {
@@ -551,10 +661,10 @@ class AuthService {
     return imageData;
   }
 
-  public createToken(user: User): TokenData {
+  public createToken(user: User, expires?: number): TokenData {
     const dataStoredInToken: DataStoredInToken = { id: user.id };
     const secretKey: string = SECRET_KEY;
-    const expiresIn: number = 60 * 60 * 24 * 7;
+    const expiresIn: number = 60 * 60 * 24 * (expires || 7);
 
     return { expiresIn, token: sign(dataStoredInToken, secretKey, { expiresIn }) };
   }

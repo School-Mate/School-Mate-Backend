@@ -84,3 +84,8 @@ export class UpdateNicknameDto {
   @IsString({ message: '닉네임을 입력해주세요.' })
   public nickname: string;
 }
+
+export class TokenDto {
+  @IsString({ message: '토큰을 입력해주세요.' })
+  public token: string;
+}

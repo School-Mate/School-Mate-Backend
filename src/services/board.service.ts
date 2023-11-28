@@ -60,7 +60,7 @@ class BoardService {
     }
   }
 
-  public async searchCombine(keyword: string, user: UserWithSchool): Promise<Article[]> {
+  public async searchCombine(keyword: string, page: string, user: UserWithSchool): Promise<Article[]> {
     try {
       const findArticles = await this.article.findMany({
         where: {
@@ -81,6 +81,8 @@ class BoardService {
         select: {
           id: true,
         },
+        skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 10,
+        take: 10,
       });
 
       const filteredArticles: ArticleWithImage[] = [];
@@ -122,88 +124,88 @@ class BoardService {
     }
   }
 
-  // public async getSuggestArticles(user: User): Promise<ArticleWithImage[]> {
-  //   try {
-  //     const findArticle = await this.article.findMany({
-  //       where: {
-  //         schoolId: user.userSchoolId,
-  //       },
-  //       take: 100,
-  //       orderBy: {
-  //         createdAt: 'desc',
-  //       },
-  //       include: {
-  //         user: true,
-  //         articleLike: true,
-  //         comment: true,
-  //         reComment: true,
-  //       },
-  //     });
+  public async getSuggestArticles(user: User): Promise<ArticleWithImage[]> {
+    try {
+      const findArticle = await this.article.findMany({
+        where: {
+          schoolId: user.userSchoolId,
+        },
+        take: 100,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          articleLike: true,
+          comment: true,
+          reComment: true,
+          board: true,
+        },
+      });
 
-  //     if (findArticle.length === 0) {
-  //       return [];
-  //     }
+      if (findArticle.length === 0) {
+        return [];
+      }
 
-  //     findArticle.sort((a, b) => {
-  //       if (a.articleLike.length > b.articleLike.length) return -1;
-  //       else if (a.articleLike.length < b.articleLike.length) return 1;
-  //       else return 0;
-  //     });
+      findArticle.sort((a, b) => {
+        if (a.articleLike.length > b.articleLike.length) return -1;
+        else if (a.articleLike.length < b.articleLike.length) return 1;
+        else return 0;
+      });
 
-  //     const articlesWithImage = await Promise.all(
-  //       findArticle.map(async article => {
-  //         if (article.images.length === 0) {
-  //           return {
-  //             ...article,
-  //             keyOfImages: [],
-  //             commentCounts: article.comment.length + article.reComment.length,
-  //             likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-  //             disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-  //           } as unknown as ArticleWithImage;
-  //         }
+      const articlesWithImage = await Promise.all(
+        findArticle.map(async article => {
+          if (article.images.length === 0) {
+            return {
+              ...article,
+              keyOfImages: [],
+              commentCounts: article.comment.length + article.reComment.length,
+              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+              disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+            } as unknown as ArticleWithImage;
+          }
 
-  //         const keyOfImages = await Promise.all(
-  //           article.images.map(async imageId => {
-  //             const findImage = await this.image.findUnique({
-  //               where: {
-  //                 id: imageId,
-  //               },
-  //             });
-  //             if (!findImage) return;
-  //             return findImage.key;
-  //           }),
-  //         );
+          const keyOfImages = await Promise.all(
+            article.images.map(async imageId => {
+              const findImage = await this.image.findUnique({
+                where: {
+                  id: imageId,
+                },
+              });
+              if (!findImage) return;
+              return findImage.key;
+            }),
+          );
 
-  //         return {
-  //           ...article,
-  //           keyOfImages: keyOfImages,
-  //           commentCounts: article.comment.length + article.reComment.length,
-  //           likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-  //           disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-  //         } as unknown as ArticleWithImage;
-  //       }),
-  //     );
+          return {
+            ...article,
+            keyOfImages: keyOfImages,
+            commentCounts: article.comment.length + article.reComment.length,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+          } as unknown as ArticleWithImage;
+        }),
+      );
 
-  //     return articlesWithImage.map(article => {
-  //       return {
-  //         ...article,
-  //         userId: null,
-  //         isMe: article.userId === user.id,
-  //         user: article.isAnonymous
-  //           ? {
-  //             name: '(익명)',
-  //             id: null,
-  //           }
-  //           : {
-  //             name: article.user.name,
-  //             id: article.user.id,
-  //           },
-  //       };
-  //     });
-  //   } catch (error) {
-  //     throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-  //   }
-  // }
+      return articlesWithImage.map(article => {
+        return {
+          ...article,
+          userId: null,
+          isMe: article.userId === user.id,
+          user: article.isAnonymous
+            ? {
+                name: '(익명)',
+                id: null,
+              }
+            : {
+                name: article.user.name,
+                id: article.user.id,
+              },
+        };
+      });
+    } catch (error) {
+      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+    }
+  }
 
   public async postArticle(boardId: string, user: User, data: IArticleQuery): Promise<Article> {
     try {
@@ -241,34 +243,34 @@ class BoardService {
         include: {
           user: true,
           board: true,
-          articleLike: true,
-          comment: true,
-          reComment: true,
         },
       });
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
       if (findArticle.board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
-      const likeCounts = findArticle.articleLike.filter(like => like.likeType === LikeType.like).length;
+      const likeCounts = await this.articleLike.count({
+        where: {
+          articleId: findArticle.id,
+          likeType: LikeType.like,
+        },
+      });
 
-      const keyOfImages = await Promise.all(
-        findArticle.images.map(async imageId => {
-          const findImage = await this.image.findUnique({
-            where: {
-              id: imageId,
-            },
-          });
-          if (!findImage) return;
-          return findImage.key;
-        }),
-      );
+      const commnetCounts = await this.comment.count({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
+
+      const reCommentCounts = await this.reComment.count({
+        where: {
+          articleId: findArticle.id,
+        },
+      });
 
       return {
         ...findArticle,
-        keyOfImages: keyOfImages,
         likeCounts: likeCounts,
-        disLikeCounts: findArticle.articleLike.length - likeCounts,
-        commentCounts: findArticle.comment.length + findArticle.reComment.length,
+        commentCounts: commnetCounts + reCommentCounts,
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
@@ -276,11 +278,12 @@ class BoardService {
             userId: null,
           }
           : {
-            user: {
-              name: findArticle.user.name,
-              id: findArticle.user.id,
-            } as User,
-          }),
+              user: {
+                name: findArticle.user.name,
+                id: findArticle.user.id,
+                profile: findArticle.user.profile,
+              } as User,
+            }),
       } as unknown as ArticleWithImage;
     } catch (error) {
       if (error instanceof HttpException) {

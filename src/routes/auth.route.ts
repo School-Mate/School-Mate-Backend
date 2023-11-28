@@ -7,6 +7,7 @@ import { imageUpload } from '@/utils/multer';
 import {
   CreateUserDto,
   LoginUserDto,
+  TokenDto,
   UpdateAskedCustomIdDto,
   UpdateNicknameDto,
   UpdatePasswordDto,
@@ -28,6 +29,7 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/me`, authMiddleware, this.authController.me);
     this.router.get(`${this.path}/me/school`, authMiddleware, this.authController.meSchool);
     this.router.get(`${this.path}/me/asked`, authMiddleware, this.authController.meAsked);
+    this.router.get(`${this.path}/me/schoolverify`, authMiddleware, this.authController.meSchoolVerify);
     this.router.get(`${this.path}/logout`, authMiddleware, this.authController.logOut);
     this.router.get(`${this.path}/kakao`, this.authController.kakaoLogin);
     this.router.get(`${this.path}/kakao/callback`, this.authController.kakaoLoginCallback);
@@ -35,7 +37,10 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/google/callback`, this.authController.googleLoginCallback);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginUserDto, 'body'), this.authController.login);
+    this.router.post(`${this.path}/applogin`, this.authController.appLogin);
     this.router.post(`${this.path}/signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
+    this.router.post(`${this.path}/apptoken`, validationMiddleware(TokenDto, 'body'), this.authController.appToken);
+    this.router.post(`${this.path}/apprefreshtoken`, validationMiddleware(TokenDto, 'body'), this.authController.appRefreshToken);
     this.router.post(`${this.path}/changepass`, validationMiddleware(UpdatePasswordDto, 'body'), this.authController.updatePassword);
     this.router.post(`${this.path}/verify/phone`, validationMiddleware(VerifyPhoneCodeDto, 'body'), this.authController.verifyPhoneCode);
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.sendVerifyMessage);
