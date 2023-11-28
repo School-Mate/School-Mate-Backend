@@ -22,6 +22,7 @@ class BoardService {
   public user = new PrismaClient().user;
   public defaultBoard = new PrismaClient().defaultBoard;
   public hotArticle = new PrismaClient().hotArticle;
+  public deletedArticle = new PrismaClient().deletedArticle;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -274,9 +275,9 @@ class BoardService {
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
-            user: null,
-            userId: null,
-          }
+              user: null,
+              userId: null,
+            }
           : {
               user: {
                 name: findArticle.user.name,
@@ -306,7 +307,13 @@ class BoardService {
           createdAt: 'desc',
         },
         include: {
-          user: true,
+          user: {
+            select: {
+              name: true,
+              id: true,
+              profile: true,
+            },
+          },
           comment: true,
           reComment: true,
           articleLike: true,
@@ -358,13 +365,7 @@ class BoardService {
           return {
             ...article,
             userId: article.isAnonymous ? null : article.user.id,
-            user: article.isAnonymous
-              ? null
-              : {
-                ...article.user,
-                password: undefined,
-                phone: undefined,
-              },
+            user: article.isAnonymous ? null : article.user,
           } as Article;
         }),
         totalPage: Math.ceil(findArticlesCount / 10),
@@ -431,23 +432,23 @@ class BoardService {
             comment.recomments.length === 0
               ? []
               : await Promise.all(
-                comment.recomments.map(async reComment => {
-                  return {
-                    ...reComment,
-                    content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
-                    userId: reComment.isAnonymous ? null : reComment.user.id,
-                    isMe: reComment.userId === user.id,
-                    user: reComment.isDeleted
-                      ? {
-                        name: '(삭제됨)',
-                        id: null,
-                      }
-                      : reComment.isAnonymous
-                        ? undefined
-                        : { name: reComment.user.name, id: reComment.user.id },
-                  };
-                }),
-              );
+                  comment.recomments.map(async reComment => {
+                    return {
+                      ...reComment,
+                      content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                      userId: reComment.isAnonymous ? null : reComment.user.id,
+                      isMe: reComment.userId === user.id,
+                      user: reComment.isDeleted
+                        ? {
+                            name: '(삭제됨)',
+                            id: null,
+                          }
+                        : reComment.isAnonymous
+                        ? null
+                        : { name: reComment.user.name, id: reComment.user.id, profile: reComment.user.profile },
+                    };
+                  }),
+                );
 
           return {
             ...comment,
@@ -456,12 +457,12 @@ class BoardService {
             isMe: comment.userId === user.id,
             user: comment.isDeleted
               ? {
-                name: '(삭제됨)',
-                id: null,
-              }
+                  name: '(삭제됨)',
+                  id: null,
+                }
               : comment.isAnonymous
-                ? undefined
-                : { name: comment.user.name, id: comment.user.id },
+              ? null
+              : { name: comment.user.name, id: comment.user.id, profile: comment.user.profile },
             recomments: reCommentsExcludeUser.sort((a, b) => {
               if (a.createdAt > b.createdAt) return 1;
               else if (a.createdAt < b.createdAt) return -1;
@@ -604,7 +605,7 @@ class BoardService {
             likeType: likeType,
           },
         });
-        this.handleHotArticle(findArticle);
+        await this.handleHotArticle(findArticle);
 
         return createArticleLike;
       }
@@ -626,7 +627,7 @@ class BoardService {
             likeType: likeType === LikeType.like ? LikeType.dislike : LikeType.like,
           },
         });
-        this.handleHotArticle(findArticle);
+        await this.handleHotArticle(findArticle);
 
         return updateArticleLike;
       }
@@ -715,18 +716,11 @@ class BoardService {
         throw new HttpException(403, '권한이 없습니다.');
       }
 
-      const isHotArticle = await this.hotArticle.findUnique({
-        where: {
-          articleId: findArticle.id,
+      await this.deletedArticle.create({
+        data: {
+          ...findArticle,
         },
       });
-      if (isHotArticle) {
-        await this.hotArticle.delete({
-          where: {
-            articleId: findArticle.id,
-          },
-        });
-      }
 
       const images = findArticle.images;
 
@@ -869,8 +863,8 @@ class BoardService {
           ...(targetUser.id === user.id
             ? {}
             : {
-              isAnonymous: false,
-            }),
+                isAnonymous: false,
+              }),
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 10,
@@ -957,9 +951,9 @@ class BoardService {
               comment: true,
               reComment: true,
               articleLike: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       const articlesWithImage = await Promise.all(
@@ -1029,8 +1023,8 @@ class BoardService {
           ...(targetUser.id === user.id
             ? {}
             : {
-              isAnonymous: false,
-            }),
+                isAnonymous: false,
+              }),
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 10,
@@ -1039,7 +1033,7 @@ class BoardService {
         },
         include: {
           article: true,
-        }
+        },
       });
 
       const findReComments = await this.reComment.findMany({
@@ -1048,8 +1042,8 @@ class BoardService {
           ...(targetUser.id === user.id
             ? {}
             : {
-              isAnonymous: false,
-            }),
+                isAnonymous: false,
+              }),
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 10,
@@ -1058,7 +1052,7 @@ class BoardService {
         },
         include: {
           article: true,
-        }
+        },
       });
 
       const combinedComments = [...findComments, ...findReComments];
@@ -1093,12 +1087,12 @@ class BoardService {
         },
       });
 
-      const filteredArticles: ArticleWithImage[] = [];
-
-      for await (const hotArticle of findHotArticles) {
-        const filteredArticle = await this.getArticle(hotArticle.articleId.toString(), user);
-        filteredArticles.push(filteredArticle);
-      }
+      const filteredArticles = await Promise.all(
+        findHotArticles.map(async hotArticle => {
+          const filteredArticle = await this.getArticle(hotArticle.articleId.toString(), user);
+          return filteredArticle;
+        }),
+      );
 
       return filteredArticles;
     } catch (error) {

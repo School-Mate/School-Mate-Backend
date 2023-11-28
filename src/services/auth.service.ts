@@ -4,7 +4,7 @@ import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
 import bcrypt from 'bcrypt';
 
-import { Image, PrismaClient, Process, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
+import { Image, PrismaClient, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -427,7 +427,7 @@ class AuthService {
 
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
 
-    const loginData = await this.iniitalizeLoginData(findUser, true);
+    const loginData = await this.initializeLoginData(findUser, true);
 
     return loginData;
   }

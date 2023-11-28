@@ -314,7 +314,7 @@ model HotArticle {
   id        Int     @id @default(autoincrement())
   articleId Int     @unique
   schoolId  String
-  article   Article @relation(fields: [articleId], references: [id])
+  article   Article @relation(fields: [articleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 }
 
 model Advertise {
