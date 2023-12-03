@@ -124,9 +124,21 @@ class BoardController {
     }
   };
 
-  public getComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public getComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
-      const commentData = await this.boardService.getComment(req.params.commentId);
+      const commentData = await this.boardService.getComment(req.params.commentId, req.user);
+
+      ResponseWrapper(req, res, {
+        data: commentData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getReComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const commentData = await this.boardService.getReComment(req.user, req.params.commentId, req.params.reCommentId);
 
       ResponseWrapper(req, res, {
         data: commentData,
@@ -189,10 +201,10 @@ class BoardController {
     }
   };
 
-  public likeComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public likeComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const commentId = req.params.commentId;
-      const userId = req.params.userId;
+      const userId = req.user.id;
       const likeCommentData = await this.boardService.likeComment(commentId, userId, LikeType.like);
 
       ResponseWrapper(req, res, {
@@ -217,10 +229,10 @@ class BoardController {
     }
   };
 
-  public likeReComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public likeReComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const recommentId = req.params.recommentId;
-      const userId = req.params.userId;
+      const userId = req.user.id;
       const likeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.like);
 
       ResponseWrapper(req, res, {
@@ -231,10 +243,10 @@ class BoardController {
     }
   };
 
-  public disLikeReComment = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public disLikeReComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const recommentId = req.params.recommentId;
-      const userId = req.params.userId;
+      const userId = req.user.id;
       const disLikeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.dislike);
 
       ResponseWrapper(req, res, {

@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, PrismaClient, User, LikeType, BoardRequest } from '@prisma/client';
+import { Article, Board, Comment, PrismaClient, User, LikeType, BoardRequest, ReComment } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
@@ -272,6 +272,7 @@ class BoardService {
         ...findArticle,
         likeCounts: likeCounts,
         commentCounts: commnetCounts + reCommentCounts,
+        comments: await this.getComments(articleId, '1', user),
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
@@ -419,15 +420,33 @@ class BoardService {
         include: {
           recomments: {
             include: {
-              user: true,
+              user: {
+                select: {
+                  name: true,
+                  id: true,
+                  profile: true,
+                },
+              },
             },
           },
-          user: true,
+          user: {
+            select: {
+              name: true,
+              id: true,
+              profile: true,
+            },
+          },
         },
       });
 
       const findCommentsExcludeUser = await Promise.all(
         findComments.map(async comment => {
+          const likeCount = await this.commentLike.count({
+            where: {
+              commentId: comment.id,
+              likeType: LikeType.like,
+            },
+          });
           const reCommentsExcludeUser =
             comment.recomments.length === 0
               ? []
@@ -446,6 +465,7 @@ class BoardService {
                         : reComment.isAnonymous
                         ? null
                         : { name: reComment.user.name, id: reComment.user.id, profile: reComment.user.profile },
+                      likeCounts: likeCount,
                     };
                   }),
                 );
@@ -455,6 +475,7 @@ class BoardService {
             content: comment.isDeleted ? '삭제된 댓글입니다.' : comment.content,
             userId: comment.isAnonymous ? null : comment.user.id,
             isMe: comment.userId === user.id,
+            likeCounts: likeCount,
             user: comment.isDeleted
               ? {
                   name: '(삭제됨)',
@@ -493,14 +514,41 @@ class BoardService {
     }
   }
 
-  public async getComment(commentId: string): Promise<Comment> {
+  public async getComment(
+    commentId: string,
+    user: User,
+  ): Promise<
+    Comment & {
+      isMe: boolean;
+      likeCounts: number;
+      user: any;
+      recomments: any;
+    }
+  > {
     try {
       const findComment = await this.comment.findUnique({
         where: {
           id: Number(commentId),
         },
         include: {
-          recomments: true,
+          recomments: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  id: true,
+                  profile: true,
+                },
+              },
+            },
+          },
+          user: {
+            select: {
+              name: true,
+              id: true,
+              profile: true,
+            },
+          },
         },
       });
 
@@ -508,7 +556,118 @@ class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      return findComment;
+      const likeCount = await this.commentLike.count({
+        where: {
+          commentId: findComment.id,
+          likeType: LikeType.like,
+        },
+      });
+
+      const reCommentsExcludeUser =
+        findComment.recomments.length === 0
+          ? []
+          : await Promise.all(
+              findComment.recomments.map(async reComment => {
+                return {
+                  ...reComment,
+                  content: reComment.isDeleted ? '삭제된 댓글입니다.' : reComment.content,
+                  userId: reComment.isAnonymous ? null : reComment.user.id,
+                  isMe: reComment.userId === user.id,
+                  user: reComment.isDeleted
+                    ? {
+                        name: '(삭제됨)',
+                        id: null,
+                      }
+                    : reComment.isAnonymous
+                    ? null
+                    : { name: reComment.user.name, id: reComment.user.id, profile: reComment.user.profile },
+                  likeCounts: likeCount,
+                };
+              }),
+            );
+
+      return {
+        ...findComment,
+        content: findComment.isDeleted ? '삭제된 댓글입니다.' : findComment.content,
+        userId: findComment.isAnonymous ? null : findComment.user.id,
+        isMe: findComment.userId === user.id,
+        likeCounts: likeCount,
+        user: findComment.isDeleted
+          ? {
+              name: '(삭제됨)',
+              id: null,
+            }
+          : findComment.isAnonymous
+          ? null
+          : { name: findComment.user.name, id: findComment.user.id, profile: findComment.user.profile },
+        recomments: reCommentsExcludeUser.sort((a, b) => {
+          if (a.createdAt > b.createdAt) return 1;
+          else if (a.createdAt < b.createdAt) return -1;
+          else return 0;
+        }),
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async getReComment(
+    user: User,
+    commentId: string,
+    recommnetId: string,
+  ): Promise<
+    ReComment & {
+      isMe: boolean;
+      likeCounts: number;
+      user: any;
+    }
+  > {
+    try {
+      const findReComment = await this.reComment.findUnique({
+        where: {
+          id: Number(recommnetId),
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              id: true,
+              profile: true,
+            },
+          },
+        },
+      });
+
+      if (!findReComment) {
+        throw new HttpException(404, '해당하는 댓글이 없습니다.');
+      }
+
+      const likeCount = await this.reCommentLike.count({
+        where: {
+          recommentId: findReComment.id,
+          likeType: LikeType.like,
+        },
+      });
+
+      return {
+        ...findReComment,
+        content: findReComment.isDeleted ? '삭제된 댓글입니다.' : findReComment.content,
+        userId: findReComment.isAnonymous ? null : findReComment.user.id,
+        isMe: findReComment.userId === user.id,
+        likeCounts: likeCount,
+        user: findReComment.isDeleted
+          ? {
+              name: '(삭제됨)',
+              id: null,
+            }
+          : findReComment.isAnonymous
+          ? null
+          : { name: findReComment.user.name, id: findReComment.user.id, profile: findReComment.user.profile },
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -652,6 +811,24 @@ class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
+      const isCommentLike = await this.commentLike.findFirst({
+        where: {
+          userId: userId,
+          commentId: findComment.id,
+          likeType: likeType,
+        },
+      });
+
+      if (isCommentLike) {
+        await this.commentLike.delete({
+          where: {
+            id: isCommentLike.id,
+          },
+        });
+
+        return null;
+      }
+
       const createCommentLike = await this.commentLike.create({
         data: {
           userId: userId,
@@ -680,6 +857,24 @@ class BoardService {
 
       if (!findReComment) {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
+      }
+
+      const hasReCommentLike = await this.reCommentLike.findFirst({
+        where: {
+          userId: userId,
+          recommentId: findReComment.id,
+          likeType: likeType,
+        },
+      });
+
+      if (hasReCommentLike) {
+        await this.reCommentLike.delete({
+          where: {
+            id: hasReCommentLike.id,
+          },
+        });
+
+        return null;
       }
 
       const createReCommentLike = await this.reCommentLike.create({

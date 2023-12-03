@@ -34,6 +34,8 @@ class BoardRoute implements Routes {
       validationMiddleware(CommentRequestQuery, 'query'),
       this.boardController.getComments,
     );
+    this.router.get(`${this.path}/article/:articleId/comment/:commentId`, authMiddleware, this.boardController.getComment);
+    this.router.get(`${this.path}/article/:articleId/comment/:commentId/recomment/:reCommentId`, authMiddleware, this.boardController.getReComment);
     this.router.get(`${this.path}/articles/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserArticles);
     this.router.get(`${this.path}/likes/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserLikes);
     this.router.get(`${this.path}/comments/:userId`, validationMiddleware(UserPageQuery, 'query'), this.boardController.getUserComments);
