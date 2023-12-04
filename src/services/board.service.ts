@@ -217,12 +217,20 @@ class BoardService {
       });
       if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
 
+      const images = await this.image.findMany({
+        where: {
+          id: {
+            in: data.images,
+          },
+        },
+      });
+
       const article = await this.article.create({
         data: {
           schoolId: findBoard.schoolId,
           title: data.title,
           content: data.content,
-          images: data.images,
+          images: images.map(image => image.key),
           isAnonymous: data.isAnonymous,
           userId: user.id,
           boardId: findBoard.id,
@@ -231,6 +239,7 @@ class BoardService {
 
       return article;
     } catch (error) {
+      console.log(error);
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
   }

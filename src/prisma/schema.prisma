@@ -193,7 +193,7 @@ model BoardManager {
 }
 
 model Article {
-  id          Int           @id @default(autoincrement())
+  id          Int           @id @default(autoincrement()) @unique
   schoolId    String
   title       String
   content     String
