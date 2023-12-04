@@ -270,9 +270,9 @@ class SchoolService {
   private semesterHandler(): number {
     const today = dayjs();
 
-    const semester1Start = dayjs('03-01');
-    const semester2Start = dayjs('08-01');
-    const semester2End = dayjs('12-31');
+    const semester1Start = dayjs(`${today.format("YYYY")}-03-01`);
+    const semester2Start = dayjs(`${today.format("YYYY")}-08-01`);
+    const semester2End = dayjs(`${today.format("YYYY")}-12-31`);
 
     if (today.isAfter(semester1Start) && today.isBefore(semester2Start)) {
       return 1;
