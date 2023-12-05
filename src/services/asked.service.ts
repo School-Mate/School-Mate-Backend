@@ -1,4 +1,4 @@
-import { AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
+import { AskedCreateDto, AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { deleteImage } from '@/utils/multer';
@@ -41,28 +41,14 @@ class AskedService {
           });
 
           if (!askedUser) {
-            const createdAskedUser = await this.askedUser.create({
-              data: {
-                userId: schoolUser.id,
-              },
-              include: {
-                user: {
-                  select: {
-                    name: true,
-                    profile: true,
-                  },
-                },
-              },
-            });
-
-            return createdAskedUser;
+            return;
           } else {
             return askedUser;
           }
         }),
       );
 
-      return askedUserList;
+      return askedUserList.filter(askedUser => askedUser);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -116,7 +102,7 @@ class AskedService {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
     }
-  }
+  };
 
   public updateAskedCustomId = async (user: User, customId: string): Promise<AskedUser> => {
     try {
@@ -257,6 +243,38 @@ class AskedService {
     }
   };
 
+  public createAskedUser = async (user: User, askedUser: AskedCreateDto): Promise<any> => {
+    try {
+      const findAskedUser = await this.askedUser.findFirst({
+        where: {
+          customId: askedUser.id,
+        },
+      });
+
+      if (findAskedUser) throw new HttpException(409, '이미 사용중인 아이디입니다.');
+
+      const createdAskedUser = await this.askedUser.create({
+        data: {
+          userId: user.id,
+          receiveAnonymous: true,
+          receiveOtherSchool: false,
+          tags: [askedUser.tag1, askedUser.tag2],
+          customId: askedUser.id,
+        },
+      });
+
+      return createdAskedUser;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof AxiosError) {
+        throw new HttpException(500, '오류가 발생했습니다.');
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
   public getAskedUser = async (userId: string, page: string, user: User): Promise<any> => {
     try {
       const findAskedUser = await this.askedUser.findFirst({
@@ -271,7 +289,14 @@ class AskedService {
           ],
         },
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              profile: true,
+              userSchoolId: true,
+            },
+          },
           asked: {
             include: {
               questionUser: true,
@@ -295,25 +320,10 @@ class AskedService {
         },
       });
 
+      if (!findAskedUser) throw new HttpException(404, '찾을 수 없는 유저입니다.');
+
       if (!findAskedUser.receiveOtherSchool) {
         if (findAskedUser.user.userSchoolId !== user.userSchoolId) throw new HttpException(403, '권한이 없습니다.');
-      }
-
-      if (!findAskedUser) {
-        const findUser = await this.user.findUnique({
-          where: {
-            id: userId,
-          },
-        });
-        if (!findUser) throw new HttpException(404, '찾을 수 없는 유저입니다.');
-
-        const createdAskedUser = await this.askedUser.create({
-          data: {
-            userId: findUser.id,
-          },
-        });
-
-        return createdAskedUser;
       }
 
       const filteredAsked = findAskedUser.asked
@@ -443,7 +453,7 @@ class AskedService {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
     }
-  }
+  };
 
   public removeTags = async (user: User): Promise<string[]> => {
     try {
@@ -472,7 +482,7 @@ class AskedService {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
     }
-  }
+  };
 
   public denyAsked = async (user: User, askedId: string): Promise<any> => {
     try {
@@ -605,7 +615,7 @@ class AskedService {
       return await this.asked.count({
         where: {
           askedUserId: user.id,
-        }
+        },
       });
     } catch (error) {
       if (error instanceof HttpException) {

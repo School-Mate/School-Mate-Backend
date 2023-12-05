@@ -1,4 +1,4 @@
-import { AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
+import { AskedCreateDto, AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
 import AskedService from '@/services/asked.service';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import ResponseWrapper from '@/utils/responseWarpper';
@@ -15,6 +15,18 @@ class AskedController {
       const askedUserData = await this.askedService.getAskedUser(targetUserId, page, user);
 
       ResponseWrapper(req, res, { data: askedUserData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public createAskedUser = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const questionData = req.body as AskedCreateDto;
+      const user = req.user;
+      const askedData = await this.askedService.createAskedUser(user, questionData);
+
+      ResponseWrapper(req, res, { data: askedData });
     } catch (error) {
       next(error);
     }
@@ -74,7 +86,7 @@ class AskedController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public changeStatusmessage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -96,7 +108,7 @@ class AskedController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public removeTags = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -106,7 +118,7 @@ class AskedController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public receiveAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
