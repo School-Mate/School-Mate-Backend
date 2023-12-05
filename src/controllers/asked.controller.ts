@@ -88,6 +88,16 @@ class AskedController {
     }
   };
 
+  public deleteImage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const askedData = await this.askedService.deleteImage(req.user);
+
+      ResponseWrapper(req, res, { data: askedData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public changeStatusmessage = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const message = req.body.message as string;
@@ -132,6 +142,16 @@ class AskedController {
     }
   };
 
+  public updateAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const askedData = await this.askedService.updateAsked(req.user, req.body);
+
+      ResponseWrapper(req, res, { data: askedData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public deleteAsked = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const askedId = req.params.askedId;
@@ -148,6 +168,16 @@ class AskedController {
       const askedCount = await this.askedService.askedCount(req.user);
 
       ResponseWrapper(req, res, { data: askedCount });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async updateAskedProfile(req: RequestWithUser, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const askedData = await this.askedService.updateAskedProfile(req.user, req.file as Express.MulterS3.File);
+
+      ResponseWrapper(req, res, { data: askedData });
     } catch (error) {
       next(error);
     }

@@ -1,6 +1,6 @@
 import { Process } from '@prisma/client';
 
-export const storages = ['profile', 'article', 'schoolverify', 'report'];
+export const storages = ['profile', 'article', 'schoolverify', 'report', 'asked'];
 
 export const processMap = {
   pending: Process.pending,

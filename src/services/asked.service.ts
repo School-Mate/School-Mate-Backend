@@ -1,14 +1,16 @@
-import { AskedCreateDto, AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
+import { AskedCreateDto, AskedDto, AskedReceiveDto, AskedUpdateDto } from '@/dtos/asked.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { UserWithSchool } from '@/interfaces/auth.interface';
+import { logger } from '@/utils/logger';
 import { deleteImage } from '@/utils/multer';
-import { AskedUser, PrismaClient, Process, User } from '@prisma/client';
+import { AskedUser, Image, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 
 class AskedService {
   public asked = new PrismaClient().asked;
   public askedUser = new PrismaClient().askedUser;
   public user = new PrismaClient().user;
+  public image = new PrismaClient().image;
 
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -49,6 +51,37 @@ class AskedService {
       );
 
       return askedUserList.filter(askedUser => askedUser);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
+  public deleteImage = async (user: User): Promise<void> => {
+    try {
+      const findAskedInfo = await this.askedUser.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '권한이 없습니다.');
+
+      if (findAskedInfo.image) {
+        await deleteImage(findAskedInfo.image);
+      }
+
+      await this.askedUser.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          image: null,
+        },
+      });
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -162,7 +195,7 @@ class AskedService {
         },
       });
 
-      let askedUser = await this.askedUser.findUnique({
+      const askedUser = await this.askedUser.findUnique({
         where: {
           userId: user.id,
         },
@@ -171,16 +204,7 @@ class AskedService {
         },
       });
 
-      if (!askedUser) {
-        askedUser = await this.askedUser.create({
-          data: {
-            userId: user.id,
-          },
-          include: {
-            user: true,
-          },
-        });
-      }
+      if (!askedUser) throw new HttpException(404, '에스크 사용자를 등록해주세요');
 
       const returnAskedList = askedList.map(asked => ({
         ...asked,
@@ -222,9 +246,10 @@ class AskedService {
         askeds: returnAskedList,
         user: {
           user: {
+            profile: askedUser.image ? askedUser.image : null,
             name: askedUser.user.name,
-            profile: askedUser.user.profile,
           },
+          tags: askedUser.tags,
           userId: askedUser.userId,
           customId: askedUser.customId,
           statusMessage: askedUser.statusMessage,
@@ -245,6 +270,17 @@ class AskedService {
 
   public createAskedUser = async (user: User, askedUser: AskedCreateDto): Promise<any> => {
     try {
+      let image: Image | null = null;
+      if (askedUser.image) {
+        image = await this.image.findUnique({
+          where: {
+            id: askedUser.image,
+          },
+        });
+
+        if (!image) throw new HttpException(404, '이미지를 찾을 수 없습니다.');
+      }
+
       const findAskedUser = await this.askedUser.findFirst({
         where: {
           customId: askedUser.id,
@@ -260,6 +296,7 @@ class AskedService {
           receiveOtherSchool: false,
           tags: [askedUser.tag1, askedUser.tag2],
           customId: askedUser.id,
+          ...(image && { image: image.key }),
         },
       });
 
@@ -347,9 +384,10 @@ class AskedService {
         askeds: filteredAsked,
         user: {
           user: {
-            profile: findAskedUser.user.profile,
+            profile: findAskedUser.image ? findAskedUser.image : null,
             name: findAskedUser.user.name,
           },
+          tags: findAskedUser.tags,
           statusMessage: findAskedUser.statusMessage,
           userId: findAskedUser.user.id,
           customId: findAskedUser.customId,
@@ -556,6 +594,61 @@ class AskedService {
     }
   };
 
+  public updateAsked = async (user: User, asked: AskedUpdateDto): Promise<any> => {
+    try {
+      const findAskedUser = await this.askedUser.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (!findAskedUser) throw new HttpException(404, '찾을 수 없는 질문입니다.');
+
+      if (asked.id) {
+        if (findAskedUser.lastUpdateCustomId && findAskedUser.lastUpdateCustomId.getTime() + 1000 * 60 * 60 * 24 * 30 > new Date().getTime())
+          throw new HttpException(403, '아이디는 한달에 한번만 변경할 수 있습니다.');
+
+        const alreadyAsked = await this.askedUser.findFirst({
+          where: {
+            customId: asked.id,
+          },
+        });
+
+        if (alreadyAsked) throw new HttpException(403, '이미 사용중인 아이디입니다.');
+
+        await this.askedUser.update({
+          where: {
+            userId: user.id,
+          },
+          data: {
+            lastUpdateCustomId: new Date(),
+            customId: asked.id,
+          },
+        });
+      }
+
+      if (asked.tag1 && asked.tag2) {
+        await this.askedUser.update({
+          where: {
+            userId: user.id,
+          },
+          data: {
+            tags: [asked.tag1, asked.tag2],
+          },
+        });
+      }
+    } catch (error) {
+      logger.error(error);
+      if (error instanceof HttpException) {
+        throw error;
+      } else if (error instanceof AxiosError) {
+        throw new HttpException(500, '오류가 발생했습니다.');
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
   public receiveAsked = async (user: User, askedId: string, answer: AskedReceiveDto): Promise<any> => {
     const findAsked = await this.asked.findUnique({
       where: {
@@ -617,6 +710,39 @@ class AskedService {
           askedUserId: user.id,
         },
       });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  }
+
+  public async updateAskedProfile(user: User, askedProfile: Express.MulterS3.File): Promise<any> {
+    try {
+      const findAskedInfo = await this.askedUser.findUnique({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (findAskedInfo.userId !== user.id) throw new HttpException(403, '권한이 없습니다.');
+
+      if (findAskedInfo.image) {
+        await deleteImage(findAskedInfo.image);
+      }
+
+      const updatedAsked = await this.askedUser.update({
+        where: {
+          userId: user.id,
+        },
+        data: {
+          image: askedProfile.key,
+        },
+      });
+
+      return updatedAsked;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

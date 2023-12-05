@@ -11,7 +11,6 @@ import {
   UpdateAskedCustomIdDto,
   UpdateNicknameDto,
   UpdatePasswordDto,
-  UpdateProfileDto,
   VerifyPhoneCodeDto,
   VerifyPhoneMessageDto,
 } from '@/dtos/users.dto';

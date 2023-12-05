@@ -52,7 +52,7 @@ export const deleteImage = async (key: string) => {
 
 export const imageUpload = multer({
   storage: uploadImage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
     if (allowedMimes.includes(file.mimetype)) {

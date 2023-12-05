@@ -28,6 +28,20 @@ export class AskedCreateDto {
   public id: string;
 }
 
+export class AskedUpdateDto {
+  @IsOptional()
+  @IsString({ message: '첫번째 태그를 입력해주세요.' })
+  public tag1: string;
+
+  @IsOptional()
+  @IsString({ message: '두번째 태그를 입력해주세요.' })
+  public tag2: string;
+
+  @IsOptional()
+  @IsString({ message: '아이디를 입력해주세요.' })
+  public id: string;
+}
+
 export class AskedReceiveDto {
   @IsString({ message: '답변을 입력해주세요.' })
   public answer: string;
