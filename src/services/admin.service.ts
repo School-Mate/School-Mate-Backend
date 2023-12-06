@@ -215,6 +215,7 @@ class AdminService {
           userId: findArticle.userId,
           createdAt: findArticle.createdAt,
           boardId: findArticle.boardId,
+          views: findArticle.views,
         },
       });
     } catch (error) {

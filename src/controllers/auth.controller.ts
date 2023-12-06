@@ -6,6 +6,7 @@ import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIREC
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import {
+  ChangeEmailDto,
   CreateUserDto,
   LoginUserDto,
   UpdateAskedCustomIdDto,
@@ -231,6 +232,18 @@ class AuthController {
       const updateProfileUserData: string = await this.authService.updateProfile(userData, req.file as Express.MulterS3.File);
 
       ResponseWrapper(req, res, { data: updateProfileUserData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public updateEmail = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const { email } = req.body as ChangeEmailDto;
+      const updateEmailUserData: boolean = await this.authService.updateEmail(userData, email);
+
+      ResponseWrapper(req, res, { data: updateEmailUserData });
     } catch (error) {
       next(error);
     }

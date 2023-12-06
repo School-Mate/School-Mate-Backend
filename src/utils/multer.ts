@@ -7,6 +7,7 @@ import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET } f
 import type { RequestWithUser } from '@/interfaces/auth.interface';
 import dayjs from 'dayjs';
 import { storages } from './util';
+import { PrismaClient } from '@prisma/client';
 
 export const s3 = new S3({
   credentials: {
@@ -26,8 +27,8 @@ export const uploadImage = multerS3({
     if (!storages.includes(req.headers.storage as string)) cb(new HttpException(400, 'storage 정보가 올바르지 않습니다.'));
     cb(
       null,
-      // images/['profile', 'article']/2023/01/01/12312312.png
-      `images/${req.headers.storage}/${dayjs().format('YYYY')}/${dayjs().format('MM')}/${req.user.id}_${Date.now()}.${file.mimetype.split('/')[1]}`,
+      // ['profile', 'article']/2023/01/01/12312312.png
+      `${req.headers.storage}/${dayjs().format('YYYY')}/${dayjs().format('MM')}/${req.user.id}_${Date.now()}.${file.mimetype.split('/')[1]}`,
     );
   },
   metadata: function (req: RequestWithUser, file, cb) {
@@ -45,6 +46,20 @@ export const deleteImage = async (key: string) => {
       Key: key,
     };
     await s3.deleteObject(params);
+
+    const imageData = await new PrismaClient().image.findFirst({
+      where: {
+        key: key,
+      },
+    });
+
+    if (imageData) {
+      await new PrismaClient().image.delete({
+        where: {
+          id: imageData.id,
+        },
+      });
+    }
   } catch (error) {
     throw new HttpException(500, '이미지 삭제에 실패했습니다.');
   }

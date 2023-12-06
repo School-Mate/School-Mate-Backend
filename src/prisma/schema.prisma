@@ -193,7 +193,7 @@ model BoardManager {
 }
 
 model Article {
-  id          Int           @id @default(autoincrement()) @unique
+  id          Int           @id @unique @default(autoincrement())
   schoolId    String
   title       String
   content     String
@@ -225,6 +225,7 @@ model DeletedArticle {
   content     String
   images      String[]
   isAnonymous Boolean
+  views       Int
   userId      String
   createdAt   DateTime
   deletedAt   DateTime @default(now())

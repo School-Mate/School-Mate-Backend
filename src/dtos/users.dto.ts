@@ -1,5 +1,5 @@
 import { Provider } from '@/interfaces/auth.interface';
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Matches, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength, ValidateIf } from 'class-validator';
 
 export class CreateUserDto {
   @IsEmail({}, { message: '이메일 형식이 아닙니다.' })
@@ -13,6 +13,7 @@ export class CreateUserDto {
   @IsString({ message: '비밀번호 형식이 아닙니다.' })
   public password: string;
 
+  @MaxLength(6, { message: '이름은 6자 이내로 입력해주세요.' })
   @IsString({ message: '이름을 입력해주세요.' })
   public name: string;
 
@@ -39,6 +40,11 @@ export class LoginUserDto {
 
   @IsString({ message: '비밀번호를 입력해주세요.' })
   public password: string;
+}
+
+export class ChangeEmailDto {
+  @IsEmail({}, { message: '이메일 형식이 아닙니다.' })
+  public email: string;
 }
 
 export class VerifyPhoneMessageDto {
@@ -81,6 +87,7 @@ export class UpdatePasswordDto {
 }
 
 export class UpdateNicknameDto {
+  @MaxLength(6, { message: '닉네임은 6자 이내로 입력해주세요.' })
   @IsString({ message: '닉네임을 입력해주세요.' })
   public nickname: string;
 }

@@ -5,6 +5,7 @@ import authMiddleware from '@middlewares/auth.middleware';
 import validationMiddleware from '@middlewares/validation.middleware';
 import { imageUpload } from '@/utils/multer';
 import {
+  ChangeEmailDto,
   CreateUserDto,
   LoginUserDto,
   TokenDto,
@@ -44,6 +45,7 @@ class AuthRoute implements Routes {
     this.router.post(`${this.path}/verify/phone`, validationMiddleware(VerifyPhoneCodeDto, 'body'), this.authController.verifyPhoneCode);
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.sendVerifyMessage);
     this.router.patch(`${this.path}/me/profile`, authMiddleware, imageUpload.single('img'), this.authController.updateProfile);
+    this.router.patch(`${this.path}/me/email`, authMiddleware, validationMiddleware(ChangeEmailDto, 'body'), this.authController.updateEmail);
     this.router.patch(
       `${this.path}/me/asked`,
       validationMiddleware(UpdateAskedCustomIdDto, 'body'),

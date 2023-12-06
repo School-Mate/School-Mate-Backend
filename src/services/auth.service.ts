@@ -553,6 +553,27 @@ class AuthService {
     return true;
   }
 
+  public async updateEmail(userData: User, email: string): Promise<boolean> {
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    await this.users.update({
+      where: {
+        id: userData.id,
+      },
+      data: {
+        email,
+      },
+    });
+
+    return true;
+  }
+
   public async updateProfile(userData: User, file: Express.MulterS3.File): Promise<string> {
     if (userData.profile) {
       await deleteImage(userData.profile);
@@ -652,13 +673,8 @@ class AuthService {
     if (findImage.userId !== userData.id) throw new HttpException(400, '이미지를 삭제할 권한이 없습니다');
 
     await deleteImage(findImage.key);
-    const imageData = await this.image.delete({
-      where: {
-        id: imageId,
-      },
-    });
 
-    return imageData;
+    return findImage;
   }
 
   public createToken(user: User, expires?: number): TokenData {
