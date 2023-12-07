@@ -930,18 +930,7 @@ class BoardService {
 
       if (images.length !== 0) {
         for await (const imageId of images) {
-          const image = await this.image.findUnique({
-            where: {
-              id: imageId,
-            },
-          });
-          await deleteImage(image.key);
-
-          await this.image.delete({
-            where: {
-              id: imageId,
-            },
-          });
+          await deleteImage(imageId);
         }
       }
 

@@ -74,9 +74,8 @@ class AdminService {
     const findImage = await this.image.findUnique({ where: { id: imageId } });
     if (!findImage) throw new HttpException(409, '이미지를 찾을 수 없습니다.');
 
-    const deleteImageInfo = await this.image.delete({ where: { id: imageId } });
     try {
-      await deleteImage(deleteImageInfo.key);
+      await deleteImage(findImage.key);
     } catch (error) {
       throw error;
     }
