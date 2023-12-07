@@ -43,6 +43,18 @@ class AskedController {
     }
   };
 
+  public getAskedSearch = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const page = req.query.page as string;
+      const keyword = req.query.keyword as string;
+      const askedUserData = await this.askedService.getAskedSearch(req.user, page, keyword);
+
+      ResponseWrapper(req, res, { data: askedUserData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public getAskedById = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const askedId = req.params.askedId;

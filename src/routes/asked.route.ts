@@ -1,5 +1,5 @@
 import AskedController from '@/controllers/asked.controller';
-import { AskedCreateDto, AskedDto, AskedReceiveDto, AskedRequestQuery, AskedStatusMessageDto, AskedTagDto, AskedUpdateDto } from '@/dtos/asked.dto';
+import { AskedCreateDto, AskedDto, AskedReceiveDto, AskedRequestQuery, AskedRequestSearchQuery, AskedStatusMessageDto, AskedTagDto, AskedUpdateDto } from '@/dtos/asked.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import authMiddleware from '@/middlewares/auth.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -17,6 +17,7 @@ class AskedRoute implements Routes {
 
   private initializeRoutes() {
     this.router.get(`${this.path}`, authMiddleware, validationMiddleware(AskedRequestQuery, 'query'), this.askedController.getAsked);
+    this.router.get(`${this.path}/search`, authMiddleware, validationMiddleware(AskedRequestSearchQuery, 'query'), this.askedController.getAskedSearch);
     this.router.get(`${this.path}/:userId`, authMiddleware, validationMiddleware(AskedRequestQuery, 'query'), this.askedController.getAskedUser);
     this.router.get(`${this.path}/:userId/:askedId`, authMiddleware, this.askedController.getAskedById);
     this.router.get(`${this.path}/count`, authMiddleware, this.askedController.getAskedCount);
