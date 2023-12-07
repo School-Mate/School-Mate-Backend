@@ -60,6 +60,104 @@ class AskedService {
     }
   };
 
+  public getAskedSearch = async (user: UserWithSchool, page: string, keyword: string): Promise<any> => {
+    if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
+    try {
+      const schoolUsers = await this.askedUser.findMany({
+        where: {
+          AND: [
+            {
+              OR: [
+                {
+                  customId: {
+                    contains: keyword,
+                  },
+                },
+                {
+                  tags: {
+                    has: keyword,
+                  },
+                },
+                {
+                  user: {
+                    name: {
+                      contains: keyword,
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              user: {
+                userSchoolId: user.userSchoolId,
+              },
+              receiveAnonymous: true,
+            },
+          ],
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              profile: true,
+            },
+          },
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          lastUpdateCustomId: 'desc',
+        },
+      });
+
+      const totalCnt = await this.askedUser.count({
+        where: {
+          AND: [
+            {
+              OR: [
+                {
+                  customId: {
+                    contains: keyword,
+                  },
+                },
+                {
+                  tags: {
+                    has: keyword,
+                  },
+                },
+                {
+                  user: {
+                    name: {
+                      contains: keyword,
+                    },
+                  },
+                },
+              ],
+            },
+            {
+              user: {
+                userSchoolId: user.userSchoolId,
+              },
+              receiveAnonymous: true,
+            },
+          ],
+        },
+      });
+
+      return {
+        askeds: schoolUsers,
+        totalPage: Math.ceil(totalCnt / 10),
+      };
+    } catch (error) {
+      logger.error(error);
+      if (error instanceof HttpException) {
+        throw error;
+      } else {
+        throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
+
   public deleteImage = async (user: User): Promise<void> => {
     try {
       const findAskedInfo = await this.askedUser.findUnique({
@@ -186,7 +284,7 @@ class AskedService {
           askedUserId: user.id,
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
-        take: 7,
+        take: 10,
         include: {
           questionUser: true,
         },
@@ -217,27 +315,27 @@ class AskedService {
 
       const askedCount = await this.asked.count({
         where: {
-          userId: user.id,
+          askedUserId: user.id,
         },
       });
 
       const deniedCount = await this.asked.count({
         where: {
-          userId: user.id,
+          askedUserId: user.id,
           process: Process.denied,
         },
       });
 
       const successCount = await this.asked.count({
         where: {
-          userId: user.id,
+          askedUserId: user.id,
           process: Process.success,
         },
       });
 
       const pendingCount = await this.asked.count({
         where: {
-          userId: user.id,
+          askedUserId: user.id,
           process: Process.pending,
         },
       });
@@ -254,7 +352,7 @@ class AskedService {
           customId: askedUser.customId,
           statusMessage: askedUser.statusMessage,
         },
-        pages: Math.ceil(askedCount / 7),
+        pages: Math.ceil(askedCount / 10),
         deniedCount,
         successCount,
         pendingCount,
@@ -288,6 +386,9 @@ class AskedService {
       });
 
       if (findAskedUser) throw new HttpException(409, '이미 사용중인 아이디입니다.');
+
+      const forbiddenId = ['admin', 'administrator', 'root', 'esc', 'asked', 'ask', 'question', 'questions', '', 'intro', 'modify'];
+      if (forbiddenId.includes(askedUser.id)) throw new HttpException(403, '사용할 수 없는 아이디입니다.');
 
       const createdAskedUser = await this.askedUser.create({
         data: {
@@ -371,6 +472,7 @@ class AskedService {
             profile: asked.isAnonymous ? null : asked.questionUser.profile,
           },
           askedUserId: asked.isAnonymous ? null : asked.askedUserId,
+          isMyAsked: asked.userId === user.id,
         }))
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
@@ -411,11 +513,25 @@ class AskedService {
         where: {
           id: askedId,
         },
+        include: {
+          questionUser: {
+            select: {
+              name: true,
+              profile: true,
+            },
+          },
+        },
       });
-
       if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 질문입니다.');
 
-      return findAskedInfo;
+      return {
+        ...findAskedInfo,
+        questionUser: {
+          name: findAskedInfo.isAnonymous ? '익명' : findAskedInfo.questionUser.name,
+          profile: findAskedInfo.isAnonymous ? null : findAskedInfo.questionUser.profile,
+        },
+        askedUserId: findAskedInfo.isAnonymous ? null : findAskedInfo.askedUserId,
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -533,7 +649,7 @@ class AskedService {
       if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 질문입니다.');
       if (findAskedInfo.askedUserId !== user.id) throw new HttpException(403, '거절할 권한이 없습니다.');
 
-      const updatedAsked = await this.asked.update({
+      await this.asked.update({
         where: {
           id: askedId,
         },
@@ -542,6 +658,7 @@ class AskedService {
         },
       });
 
+      const updatedAsked = await this.getAskedById(askedId);
       return updatedAsked;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -662,7 +779,7 @@ class AskedService {
     if (findAsked.process === 'success') throw new HttpException(403, '이미 답장한 질문입니다.');
     if (findAsked.process === 'denied') throw new HttpException(403, '이미 거절한 질문입니다.');
 
-    const updatedAsked = await this.asked.update({
+    await this.asked.update({
       where: {
         id: askedId,
       },
@@ -672,6 +789,8 @@ class AskedService {
         answerTimeAt: new Date(),
       },
     });
+
+    const updatedAsked = await this.getAskedById(askedId);
 
     return updatedAsked;
   };
