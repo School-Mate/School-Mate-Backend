@@ -241,8 +241,9 @@ class AuthController {
 
   public deleteUser = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
+      const verfiyDto = req.body as VerifyPhoneCodeDto;
       const userData: User = req.user;
-      const deleteUserUserData: boolean = await this.authService.deleteUser(userData);
+      const deleteUserUserData: boolean = await this.authService.deleteUser(userData, verfiyDto);
 
       ResponseWrapper(req, res, { data: deleteUserUserData });
     } catch (error) {
