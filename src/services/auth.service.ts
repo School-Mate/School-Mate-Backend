@@ -34,6 +34,7 @@ class AuthService {
   public users = new PrismaClient().user;
   public phoneVerifyRequest = new PrismaClient().phoneVerifyRequest;
   public schoolVerify = new PrismaClient().userSchoolVerify;
+  public pushDevice = new PrismaClient().pushDevice;
 
   public async meSchool(userData: User): Promise<
     UserSchool & {
@@ -340,7 +341,10 @@ class AuthService {
     };
   }
 
-  public async appToken(accessToken: string): Promise<{
+  public async appToken(
+    accessToken: string,
+    pushToken?: string,
+  ): Promise<{
     accessToken: string;
     refreshToken: string;
   }> {
@@ -359,9 +363,23 @@ class AuthService {
       where: {
         id: userId,
       },
+      include: {
+        pushDevice: true,
+      },
     });
 
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+    if ((findUser.pushDevice || findUser.pushDevice.length != 0) && pushToken) {
+      const findPushDevice = findUser.pushDevice.find(device => device.token === pushToken);
+      if (!findPushDevice) {
+        await this.pushDevice.create({
+          data: {
+            token: pushToken,
+            userId: findUser.id,
+          },
+        });
+      }
+    }
 
     const tokenData = this.createToken(findUser);
     const refreshTokenData = this.createToken(findUser, 15);

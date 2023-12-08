@@ -95,4 +95,8 @@ export class UpdateNicknameDto {
 export class TokenDto {
   @IsString({ message: '토큰을 입력해주세요.' })
   public token: string;
+
+  @IsOptional()
+  @IsString({ message: '푸시 토큰을 입력해주세요.' })
+  public pushToken: string;
 }

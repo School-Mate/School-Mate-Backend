@@ -32,6 +32,7 @@ model User {
   socialLogin        SocialLogin?
   userSchool         UserSchool?
   userSchoolVerify   UserSchoolVerify[]
+  pushDevice         PushDevice[]
 }
 
 model School {
@@ -325,6 +326,14 @@ model Advertise {
   link      String
   startDate DateTime @default(now())
   endDate   DateTime
+}
+
+model PushDevice {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 enum LikeType {

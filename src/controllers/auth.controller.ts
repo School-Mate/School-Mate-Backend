@@ -9,6 +9,7 @@ import {
   ChangeEmailDto,
   CreateUserDto,
   LoginUserDto,
+  TokenDto,
   UpdateAskedCustomIdDto,
   UpdatePasswordDto,
   UpdateProfileDto,
@@ -34,7 +35,8 @@ class AuthController {
 
   public appToken = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const token = await this.authService.appToken(req.body.token);
+      const data = req.body as TokenDto
+      const token = await this.authService.appToken(data.token, data.pushToken);
 
       ResponseWrapper(req, res, { data: token });
     } catch (error) {
