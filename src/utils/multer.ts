@@ -25,10 +25,13 @@ export const uploadImage = multerS3({
   key: function (req: RequestWithUser, file, cb) {
     if (!req.headers.storage) cb(new HttpException(400, 'storage 정보가 없습니다.'));
     if (!storages.includes(req.headers.storage as string)) cb(new HttpException(400, 'storage 정보가 올바르지 않습니다.'));
+    const filetype = file.mimetype.split('/')[1];
     cb(
       null,
       // ['profile', 'article']/2023/01/01/12312312.png
-      `${req.headers.storage}/${dayjs().format('YYYY')}/${dayjs().format('MM')}/${req.user.id}_${Date.now()}.${file.mimetype.split('/')[1]}`,
+      `${req.headers.storage}/${dayjs().format('YYYY')}/${dayjs().format('MM')}/${req.user.id}_${Date.now()}.${
+        filetype === 'heic' ? 'jpg' : filetype
+      }`,
     );
   },
   metadata: function (req: RequestWithUser, file, cb) {
@@ -69,7 +72,7 @@ export const imageUpload = multer({
   storage: uploadImage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg', 'image/heic'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {

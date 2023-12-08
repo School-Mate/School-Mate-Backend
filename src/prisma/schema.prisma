@@ -53,7 +53,7 @@ model Image {
   key              String
   userId           String
   createdAt        DateTime           @default(now())
-  user             User               @relation(fields: [userId], references: [id])
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   userSchoolVerify UserSchoolVerify[]
 }
 
@@ -69,14 +69,14 @@ model SocialLogin {
   userId       String                  @id @default(uuid())
   socialId     String                  @unique
   provider     SocialLoginProviderType
-  user         User                    @relation(fields: [userId], references: [id])
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Agreement {
   updatedAt DateTime @updatedAt
   userId    String   @id @default(uuid())
   receive   Boolean  @default(false)
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserSchoolVerify {
@@ -92,8 +92,8 @@ model UserSchoolVerify {
   schoolName String
   userName   String
   dept       String
-  image      Image    @relation(fields: [imageId], references: [id])
-  user       User     @relation(fields: [userId], references: [id])
+  image      Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserSchool {
@@ -103,7 +103,7 @@ model UserSchool {
   grade    String
   class    String
   school   School @relation(fields: [schoolId], references: [schoolId])
-  user     User   @relation(fields: [userId], references: [id])
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model BusStation {
@@ -148,7 +148,7 @@ model AskedUser {
   receiveOtherSchool Boolean   @default(false)
   lastUpdateCustomId DateTime?
   asked              Asked[]
-  user               User      @relation(fields: [userId], references: [id])
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Asked {
@@ -161,8 +161,8 @@ model Asked {
   createdAt    DateTime  @default(now())
   answerTimeAt DateTime?
   isAnonymous  Boolean
-  askedUser    AskedUser @relation(fields: [askedUserId], references: [userId])
-  questionUser User      @relation(fields: [userId], references: [id])
+  askedUser    AskedUser @relation(fields: [askedUserId], references: [userId], onDelete: Cascade)
+  questionUser User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Admin {
@@ -190,7 +190,7 @@ model BoardManager {
   name    String
   userId  String
   board   Board  @relation(fields: [boardId], references: [id])
-  user    User   @relation(fields: [userId], references: [id])
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Article {
@@ -205,7 +205,7 @@ model Article {
   createdAt   DateTime      @default(now())
   boardId     Int
   board       Board         @relation(fields: [boardId], references: [id])
-  user        User          @relation(fields: [userId], references: [id])
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   school      School        @relation(fields: [schoolId], references: [schoolId])
   comment     Comment[]
   reComment   ReComment[]
@@ -253,8 +253,8 @@ model Comment {
   updatedAt   DateTime      @updatedAt
   id          Int           @id @default(autoincrement())
   articleId   Int
-  article     Article       @relation(fields: [articleId], references: [id])
-  user        User          @relation(fields: [userId], references: [id])
+  article     Article       @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   commentLike CommentLike[]
   recomments  ReComment[]
 }
@@ -269,9 +269,9 @@ model ReComment {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   commentId     Int?
-  article       Article         @relation(fields: [articleId], references: [id])
-  comment       Comment?        @relation(fields: [commentId], references: [id])
-  user          User            @relation(fields: [userId], references: [id])
+  article       Article         @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  comment       Comment?        @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   reCommentLike ReCommentLike[]
 }
 
@@ -290,8 +290,8 @@ model ArticleLike {
   articleId Int
   userId    String
   likeType  LikeType
-  user      User     @relation(fields: [userId], references: [id])
-  article   Article  @relation(fields: [articleId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
 }
 
 model CommentLike {
@@ -299,8 +299,8 @@ model CommentLike {
   commentId Int
   userId    String
   likeType  LikeType
-  user      User     @relation(fields: [userId], references: [id])
-  comment   Comment  @relation(fields: [commentId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
 }
 
 model ReCommentLike {
@@ -308,8 +308,8 @@ model ReCommentLike {
   recommentId Int
   userId      String
   likeType    LikeType
-  user        User      @relation(fields: [userId], references: [id])
-  recomment   ReComment @relation(fields: [recommentId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recomment   ReComment @relation(fields: [recommentId], references: [id], onDelete: Cascade)
 }
 
 model HotArticle {
@@ -333,7 +333,7 @@ model PushDevice {
   userId    String
   token     String
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum LikeType {

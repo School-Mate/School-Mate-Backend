@@ -21,7 +21,7 @@ import {
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@utils/util';
-import { CreateUserDto, LoginUserDto } from '@/dtos/users.dto';
+import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto } from '@/dtos/users.dto';
 import SchoolService from './school.service';
 import { deleteImage } from '@/utils/multer';
 
@@ -592,6 +592,26 @@ class AuthService {
     return true;
   }
 
+  public async deleteUser(userData: User, verfiyDto: VerifyPhoneCodeDto): Promise<boolean> {
+    await this.verifyPhoneCode(verfiyDto.phone, verfiyDto.code, verfiyDto.token);
+
+    const findUser = await this.users.findUnique({
+      where: {
+        id: userData.id,
+      },
+    });
+
+    if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    await this.users.delete({
+      where: {
+        id: userData.id,
+      },
+    });
+
+    return true;
+  }
+
   public async updateProfile(userData: User, file: Express.MulterS3.File): Promise<string> {
     if (userData.profile) {
       await deleteImage(userData.profile);
@@ -635,13 +655,15 @@ class AuthService {
     return true;
   }
 
-  public async sendVerifyMessage(phone: string): Promise<string> {
-    const findUser = await this.users.findUnique({
-      where: {
-        phone: phone,
-      },
-    });
-    if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+  public async sendVerifyMessage(phone: string, authed: boolean): Promise<string> {
+    if (!authed) {
+      const findUser = await this.users.findUnique({
+        where: {
+          phone: phone,
+        },
+      });
+      if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
+    }
 
     const verifyCode = Math.floor(1000 + Math.random() * 9000).toString();
 

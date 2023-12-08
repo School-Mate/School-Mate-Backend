@@ -35,7 +35,7 @@ class AuthController {
 
   public appToken = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const data = req.body as TokenDto
+      const data = req.body as TokenDto;
       const token = await this.authService.appToken(data.token, data.pushToken);
 
       ResponseWrapper(req, res, { data: token });
@@ -239,6 +239,17 @@ class AuthController {
     }
   };
 
+  public deleteUser = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const deleteUserUserData: boolean = await this.authService.deleteUser(userData);
+
+      ResponseWrapper(req, res, { data: deleteUserUserData });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public updateEmail = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;
@@ -265,7 +276,18 @@ class AuthController {
   public sendVerifyMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { phone } = req.body as VerifyPhoneMessageDto;
-      const verifyId = await this.authService.sendVerifyMessage(phone);
+      const verifyId = await this.authService.sendVerifyMessage(phone, false);
+
+      ResponseWrapper(req, res, { data: verifyId });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public sendAuthVerifyMessage = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { phone } = req.body as VerifyPhoneMessageDto;
+      const verifyId = await this.authService.sendVerifyMessage(phone, true);
 
       ResponseWrapper(req, res, { data: verifyId });
     } catch (error) {
