@@ -5,12 +5,14 @@ import { logger } from '@/utils/logger';
 import { deleteImage } from '@/utils/multer';
 import { AskedUser, Image, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
+import AdminService from './admin.service';
 
 class AskedService {
   public asked = new PrismaClient().asked;
   public askedUser = new PrismaClient().askedUser;
   public user = new PrismaClient().user;
   public image = new PrismaClient().image;
+  public adminService = new AdminService();
 
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -471,7 +473,6 @@ class AskedService {
             name: asked.isAnonymous ? '익명' : asked.questionUser.name,
             profile: asked.isAnonymous ? null : asked.questionUser.profile,
           },
-          askedUserId: asked.isAnonymous ? null : asked.askedUserId,
           isMyAsked: asked.userId === user.id,
         }))
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
@@ -520,6 +521,17 @@ class AskedService {
               profile: true,
             },
           },
+          askedUser: {
+            select: {
+              customId: true,
+              user: {
+                select: {
+                  name: true,
+                  profile: true,
+                },
+              },
+            },
+          },
         },
       });
       if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 질문입니다.');
@@ -530,7 +542,7 @@ class AskedService {
           name: findAskedInfo.isAnonymous ? '익명' : findAskedInfo.questionUser.name,
           profile: findAskedInfo.isAnonymous ? null : findAskedInfo.questionUser.profile,
         },
-        askedUserId: findAskedInfo.isAnonymous ? null : findAskedInfo.askedUserId,
+        askedUserId: findAskedInfo.askedUserId,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -699,6 +711,16 @@ class AskedService {
         },
       });
 
+      await this.adminService.sendPushNotification(
+        targetUserId,
+        '💬 질문이 도착했어요',
+        `${askedQuestion.isAnonymous ? '익명으로 누군가 질문을 남겼어요' : `${user.name}님으로부터 질문이 도착했어요`}`,
+        {
+          type: 'openstacks',
+          url: ['/asked', `/asked/${targetUserId}/${createdAsked.id}`],
+        },
+      );
+
       return createdAsked;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -791,6 +813,16 @@ class AskedService {
     });
 
     const updatedAsked = await this.getAskedById(askedId);
+
+    await this.adminService.sendPushNotification(
+      updatedAsked.userId,
+      '📢 답장이 도착했어요',
+      `${updatedAsked.askedUser.user.name}님으로부터 답장이 도착했어요`,
+      {
+        type: 'openstacks',
+        url: ['/asked', `/asked/${updatedAsked.askedUserId}`],
+      },
+    );
 
     return updatedAsked;
   };

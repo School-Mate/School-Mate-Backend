@@ -5,6 +5,7 @@ import { ArticleWithImage, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
 import SchoolService from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
+import AdminService from './admin.service';
 
 class BoardService {
   public schoolService = new SchoolService();
@@ -23,6 +24,7 @@ class BoardService {
   public defaultBoard = new PrismaClient().defaultBoard;
   public hotArticle = new PrismaClient().hotArticle;
   public deletedArticle = new PrismaClient().deletedArticle;
+  public adminService = new AdminService();
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -706,6 +708,16 @@ class BoardService {
         },
       });
 
+      await this.adminService.sendPushNotification(
+        findArticle.userId,
+        '새로운 댓글이 추가되었어요',
+        `${findArticle.title.length > 10 ? `${findArticle.title.slice(0, 10)}...` : findArticle.title} 게시글에 새로운 댓글이 추가되었어요!`,
+        {
+          type: 'openstacks',
+          url: [`/board/`, `/board/${findArticle.boardId}/${findArticle.id}`],
+        },
+      );
+
       return createComment;
     } catch (error) {
       if (error instanceof HttpException) {
@@ -722,6 +734,9 @@ class BoardService {
         where: {
           id: Number(commentId),
         },
+        include: {
+          article: true,
+        },
       });
 
       if (!findComment) {
@@ -736,6 +751,18 @@ class BoardService {
           userId: user.id,
         },
       });
+
+      await this.adminService.sendPushNotification(
+        findComment.article.userId,
+        '새로운 댓글이 추가되었어요',
+        `${
+          findComment.article.title.length > 10 ? `${findComment.article.title.slice(0, 10)}...` : findComment.article.title
+        } 게시글에 새로운 댓글이 추가되었어요!`,
+        {
+          type: 'openstacks',
+          url: [`/board`, `/board/${findComment.article.boardId}/${findComment.article.id}`],
+        },
+      );
 
       return createReComment;
     } catch (error) {

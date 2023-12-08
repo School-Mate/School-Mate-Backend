@@ -4,12 +4,13 @@ import { sign } from 'jsonwebtoken';
 import { DOMAIN, SECRET_KEY } from '@/config';
 import { AdminDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
+import { DataStoredInToken, PushMessage, TokenData } from '@/interfaces/auth.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
 import { Admin, BoardRequest, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
 import SchoolService from './school.service';
 import { processMap } from '@/utils/util';
+import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 
 class AdminService {
   public schoolService = new SchoolService();
@@ -24,6 +25,7 @@ class AdminService {
   public users = new PrismaClient().user;
   public userSchool = new PrismaClient().userSchool;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
+  public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
   public async signUpService(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -130,6 +132,12 @@ class AdminService {
         userSchoolId: findRequest.schoolId,
       },
     });
+
+    await this.sendPushNotification(findRequest.userId, '🎉 축하합니다!', `${schoolInfo.defaultName} 학생 인증이 완료되었어요!`, {
+      type: 'resetstack',
+      url: '/me',
+    });
+
     return true;
   };
 
@@ -192,6 +200,36 @@ class AdminService {
       },
     });
     return updateReport;
+  };
+
+  public sendPushNotification = async <T extends keyof PushMessage>(
+    userId: string,
+    title: string,
+    body: string,
+    data: {
+      type: T;
+      url: PushMessage[T];
+    },
+  ): Promise<ExpoPushTicket[]> => {
+    try {
+      const findUser = await this.users.findUnique({ where: { id: userId }, include: { pushDevice: true } });
+      if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+      const pushTokens = findUser.pushDevice.map(device => device.token);
+
+      const pushNotificationResult = await this.expo.sendPushNotificationsAsync([
+        {
+          to: pushTokens,
+          sound: 'default',
+          title: title,
+          body: body,
+          data: data,
+        },
+      ]);
+
+      return pushNotificationResult;
+    } catch (error) {
+      throw error;
+    }
   };
 
   public deleteBoardArticle = async (boardId: string, articleId: string): Promise<boolean> => {
