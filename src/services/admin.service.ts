@@ -214,6 +214,7 @@ class AdminService {
     try {
       const findUser = await this.users.findUnique({ where: { id: userId }, include: { pushDevice: true } });
       if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+      if (findUser.pushDevice.length === 0) return [];
       const pushTokens = findUser.pushDevice.map(device => device.token);
 
       const pushNotificationResult = await this.expo.sendPushNotificationsAsync([
