@@ -49,6 +49,7 @@ export class SchoolVerifyDto {
   @IsString({ message: '반을 입력해주세요.' })
   public class: string;
 
+  @IsOptional()
   @IsString({ message: '학과(계열)을 입력해주세요.' })
   public dept: string;
 }
