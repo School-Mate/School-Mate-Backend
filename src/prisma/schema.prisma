@@ -277,6 +277,7 @@ model ReComment {
 
 model Report {
   id             String           @id @default(uuid())
+  createdAt      DateTime         @default(now())
   reportUserId   String
   targetType     ReportTargetType
   message        String
