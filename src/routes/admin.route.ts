@@ -1,5 +1,5 @@
 import AdminController from '@/controllers/admin.controller';
-import { AdminDto, CompleteReportDto, GetBoardRequestDto, GetReportRequestDto, GetVerifyRequestDto, AdminRequestDto } from '@/dtos/admin.dto';
+import { AdminDto, CompleteReportDto, GetBoardRequestDto, GetReportRequestDto, GetVerifyRequestDto, AdminRequestDto, GetAllDto } from '@/dtos/admin.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import adminMiddleware, { adminFlagMiddleware } from '@/middlewares/admin.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -17,10 +17,20 @@ class AdminRoute implements Routes {
   private initializeRoutes() {
     this.router.get(`${this.path}/me`, adminMiddleware, this.adminController.me);
     this.router.get(`${this.path}/logout`, adminMiddleware, this.adminController.logOut);
-    this.router.get(`${this.path}/user/all`, adminMiddleware,adminFlagMiddleware('USER_MANAGE'), this.adminController.getAllUsers);
+    this.router.get(`${this.path}/user/all`,
+      adminMiddleware,
+      adminFlagMiddleware('USER_MANAGE'),
+      validationMiddleware(GetAllDto, 'query'),
+      this.adminController.getAllUsers
+    );
     this.router.get(`${this.path}/user/:userId`, adminMiddleware, adminFlagMiddleware('USER_MANAGE'), this.adminController.getUserInfo);
     this.router.get(
-      `${this.path}/article/all`, adminMiddleware, adminFlagMiddleware('BOARD_MANAGE'), this.adminController.getAllArticles);
+      `${this.path}/article/all`, 
+      adminMiddleware, 
+      adminFlagMiddleware('BOARD_MANAGE'), 
+      validationMiddleware(GetAllDto, 'query'), 
+      this.adminController.getAllArticles
+    );
     this.router.get(
       `${this.path}/verify`,
       adminMiddleware,

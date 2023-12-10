@@ -143,7 +143,7 @@ class AdminController {
 
   public getAllUsers = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const getAllUsers = await this.adminService.getAllUsers();
+      const getAllUsers = await this.adminService.getAllUsers(req.query.page as string);
       ResponseWrapper(req, res, { data: getAllUsers });
     } catch (error) {
       next(error);
@@ -152,7 +152,7 @@ class AdminController {
 
   public getAllArticles = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const getAllArticles = await this.adminService.getAllArticles();
+      const getAllArticles = await this.adminService.getAllArticles(req.query.page as string);
       ResponseWrapper(req, res, { data: getAllArticles });
     } catch (error) {
       next(error);

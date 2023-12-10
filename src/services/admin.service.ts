@@ -269,7 +269,7 @@ class AdminService {
     return findUser;
   };
 
-  public async getAllUsers(): Promise<Array<User>> {
+  public async getAllUsers(page: string): Promise<Array<User>> {
     const users = await this.users.findMany({
       include: {
         userSchool: {
@@ -278,16 +278,20 @@ class AdminService {
           },
         }
       },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
+      take: 100,
     });
     return users;
   }
 
-  public async getAllArticles(): Promise<Array<Article>> {
+  public async getAllArticles(page: string): Promise<Array<Article>> {
     const articles = await this.article.findMany({
       include: {
         user: true,
         board: true,
       },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
+      take: 100,
     });
     return articles;
   }
