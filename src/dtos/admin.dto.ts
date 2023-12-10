@@ -64,3 +64,8 @@ export class GetAllDto {
   @IsOptional()
   public page: number;
 }
+
+export class SchoolNameDto {
+  @IsString({ message: '학교 이름을 입력해주세요.' })
+  public name: string;
+}

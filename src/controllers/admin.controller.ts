@@ -167,6 +167,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public setSchoolName = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const setSchoolName = await this.adminService.setSchoolName(req.params.schoolId, req.body.name);
+      ResponseWrapper(req, res, { data: setSchoolName });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default AdminController;

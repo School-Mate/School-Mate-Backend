@@ -305,6 +305,20 @@ class AdminService {
     return schools;
   }
 
+  public async setSchoolName(schoolId: string, name: string): Promise<School> {
+    const findSchool = await this.school.findUnique({ where: { schoolId: schoolId } });
+    if (!findSchool) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
+
+    const updateSchool = await this.school.update({
+      where: { schoolId: schoolId },
+      data: {
+        name: name,
+      },
+    });
+
+    return updateSchool;
+  }
+
   public createToken(admin: Admin): TokenData {
     const dataStoredInToken: DataStoredInToken = { id: admin.id };
     const secretKey: string = SECRET_KEY;

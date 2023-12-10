@@ -1,5 +1,5 @@
 import AdminController from '@/controllers/admin.controller';
-import { AdminDto, CompleteReportDto, GetBoardRequestDto, GetReportRequestDto, GetVerifyRequestDto, AdminRequestDto, GetAllDto } from '@/dtos/admin.dto';
+import { AdminDto, CompleteReportDto, GetBoardRequestDto, GetReportRequestDto, GetVerifyRequestDto, AdminRequestDto, GetAllDto, SchoolNameDto } from '@/dtos/admin.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import adminMiddleware, { adminFlagMiddleware } from '@/middlewares/admin.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -88,6 +88,12 @@ class AdminRoute implements Routes {
       adminFlagMiddleware('USER_REPORT_REVIEWER'),
       this.adminController.completeReport,
     );
+    this.router.post(
+      `${this.path}/:schoolId/name`,
+      adminMiddleware,
+      validationMiddleware(SchoolNameDto, 'body'),
+      this.adminController.setSchoolName,
+    )
     this.router.delete(
       `${this.path}/board/:boardId/article/:articleId`,
       adminMiddleware,
