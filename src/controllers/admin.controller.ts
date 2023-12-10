@@ -149,6 +149,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public getAllArticles = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const getAllArticles = await this.adminService.getAllArticles();
+      ResponseWrapper(req, res, { data: getAllArticles });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default AdminController;

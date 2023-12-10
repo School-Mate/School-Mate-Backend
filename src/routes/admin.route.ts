@@ -20,6 +20,8 @@ class AdminRoute implements Routes {
     this.router.get(`${this.path}/user/all`, adminMiddleware,adminFlagMiddleware('USER_MANAGE'), this.adminController.getAllUsers);
     this.router.get(`${this.path}/user/:userId`, adminMiddleware, adminFlagMiddleware('USER_MANAGE'), this.adminController.getUserInfo);
     this.router.get(
+      `${this.path}/article/all`, adminMiddleware, adminFlagMiddleware('BOARD_MANAGE'), this.adminController.getAllArticles);
+    this.router.get(
       `${this.path}/verify`,
       adminMiddleware,
       validationMiddleware(GetVerifyRequestDto, 'query'),

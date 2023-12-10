@@ -7,7 +7,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, PushMessage, TokenData } from '@/interfaces/auth.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, BoardRequest, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
 import SchoolService from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -280,6 +280,16 @@ class AdminService {
       },
     });
     return users;
+  }
+
+  public async getAllArticles(): Promise<Array<Article>> {
+    const articles = await this.article.findMany({
+      include: {
+        user: true,
+        board: true,
+      },
+    });
+    return articles;
   }
 
   public createToken(admin: Admin): TokenData {
