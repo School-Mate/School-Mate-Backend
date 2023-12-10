@@ -7,7 +7,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, PushMessage, TokenData } from '@/interfaces/auth.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, Article, BoardRequest, PrismaClient, Process, Report, ReportTargetType, User, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, PrismaClient, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
 import SchoolService from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -25,6 +25,7 @@ class AdminService {
   public users = new PrismaClient().user;
   public userSchool = new PrismaClient().userSchool;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
+  public school = new PrismaClient().school;
   public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
 
   public async signUpService(adminData: AdminDto): Promise<Admin> {
@@ -294,6 +295,14 @@ class AdminService {
       take: 100,
     });
     return articles;
+  }
+
+  public async getAllSchools(page: string): Promise<Array<School>> {
+    const schools = await this.school.findMany({
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
+      take: 100,
+    });
+    return schools;
   }
 
   public createToken(admin: Admin): TokenData {

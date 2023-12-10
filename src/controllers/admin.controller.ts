@@ -157,7 +157,16 @@ class AdminController {
     } catch (error) {
       next(error);
     }
-  }
+  };
+
+  public getAllSchools = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const getAllSchools = await this.adminService.getAllSchools(req.query.page as string);
+      ResponseWrapper(req, res, { data: getAllSchools });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;

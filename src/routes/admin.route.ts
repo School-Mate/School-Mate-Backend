@@ -32,6 +32,13 @@ class AdminRoute implements Routes {
       this.adminController.getAllArticles
     );
     this.router.get(
+      `${this.path}/school/all`,
+      adminMiddleware,
+      adminFlagMiddleware('USER_SCHOOL_REVIEWER'),
+      validationMiddleware(GetAllDto, 'query'),
+      this.adminController.getAllSchools,
+    )
+    this.router.get(
       `${this.path}/verify`,
       adminMiddleware,
       validationMiddleware(GetVerifyRequestDto, 'query'),
