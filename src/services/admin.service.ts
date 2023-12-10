@@ -269,6 +269,15 @@ class AdminService {
     return findUser;
   };
 
+  public async getAllUsers(): Promise<Array<User>> {
+    const users = await this.users.findMany({
+      include: {
+        userSchool: true,
+      },
+    });
+    return users;
+  }
+
   public createToken(admin: Admin): TokenData {
     const dataStoredInToken: DataStoredInToken = { id: admin.id };
     const secretKey: string = SECRET_KEY;

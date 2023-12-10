@@ -140,6 +140,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public getAllUsers = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const getAllUsers = await this.adminService.getAllUsers();
+      ResponseWrapper(req, res, { data: getAllUsers });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default AdminController;

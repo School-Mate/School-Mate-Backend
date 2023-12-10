@@ -26,6 +26,7 @@ class AdminRoute implements Routes {
     this.router.post(`${this.path}/login`, validationMiddleware(AdminDto, 'body'), this.adminController.login);
     this.router.get(`${this.path}/logout`, adminMiddleware, this.adminController.logOut);
     this.router.delete(`${this.path}/image/:id`, adminMiddleware, adminFlagMiddleware('USER_MANAGE'), this.adminController.deleteImage);
+    this.router.get(`${this.path}/user/all`, adminMiddleware,adminFlagMiddleware('USER_MANAGE'), this.adminController.getAllUsers);
     this.router.get(
       `${this.path}/verify`,
       adminMiddleware,
