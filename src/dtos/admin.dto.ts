@@ -1,5 +1,5 @@
 import { Process } from '@prisma/client';
-import { IsIn, IsString } from 'class-validator';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class AdminDto {
   @IsString({ message: '아이디를 입력해주세요.' })
@@ -57,4 +57,10 @@ export class GetReportRequestDto {
 export class CompleteReportDto {
   @IsString({ message: '신고ID를 입력해주세요.' })
   public reportId: string;
+}
+
+
+export class GetAllDto {
+  @IsOptional()
+  public page: number;
 }
