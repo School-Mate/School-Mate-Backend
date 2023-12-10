@@ -272,7 +272,11 @@ class AdminService {
   public async getAllUsers(): Promise<Array<User>> {
     const users = await this.users.findMany({
       include: {
-        userSchool: true,
+        userSchool: {
+          include: {
+            school: true,
+          },
+        }
       },
     });
     return users;
