@@ -15,7 +15,9 @@ class ReportRoute implements Routes {
   }
 
   private initializeRoutes() {
+    this.router.get(`${this.path}/:reportId`, authMiddleware, this.reportController.getReport);
     this.router.post(`${this.path}`, authMiddleware, validationMiddleware(ReportDto, 'body'), this.reportController.postReport);
+    this.router.post(`${this.path}/:reportId/blind`, authMiddleware, this.reportController.postBlind);
   }
 }
 

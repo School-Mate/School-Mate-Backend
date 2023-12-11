@@ -24,6 +24,7 @@ class BoardService {
   public defaultBoard = new PrismaClient().defaultBoard;
   public hotArticle = new PrismaClient().hotArticle;
   public deletedArticle = new PrismaClient().deletedArticle;
+  public blindArticle = new PrismaClient().reportBlindArticle;
   public adminService = new AdminService();
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
@@ -334,6 +335,15 @@ class BoardService {
 
       const articlesWithImage = await Promise.all(
         findArticles.map(async article => {
+          const bliendedArticle = await this.blindArticle.findFirst({
+            where: {
+              articleId: article.id,
+              userId: user.id,
+            },
+          });
+
+          if (bliendedArticle) return null;
+
           if (article.images.length == 0) {
             return {
               ...article,
@@ -373,13 +383,15 @@ class BoardService {
       });
 
       return {
-        articles: articlesWithImage.map(article => {
-          return {
-            ...article,
-            userId: article.isAnonymous ? null : article.user.id,
-            user: article.isAnonymous ? null : article.user,
-          } as Article;
-        }),
+        articles: articlesWithImage
+          .filter(article => article)
+          .map(article => {
+            return {
+              ...article,
+              userId: article.isAnonymous ? null : article.user.id,
+              user: article.isAnonymous ? null : article.user,
+            } as Article;
+          }),
         totalPage: Math.ceil(findArticlesCount / 10),
       };
     } catch (error) {

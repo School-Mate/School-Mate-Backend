@@ -2,7 +2,7 @@ import { AxiosError } from 'axios';
 
 import { ReportDto } from '@/dtos/report.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { PrismaClient, User } from '@prisma/client';
+import { PrismaClient, ReportTargetType, User } from '@prisma/client';
 
 class ReportService {
   public user = new PrismaClient().user;
@@ -11,6 +11,7 @@ class ReportService {
   public report = new PrismaClient().report;
   public asked = new PrismaClient().asked;
   public reComment = new PrismaClient().reComment;
+  public reportBlindArticle = new PrismaClient().reportBlindArticle;
 
   private targetTypes = {
     user: {
@@ -75,6 +76,49 @@ class ReportService {
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
     }
+  }
+
+  public async getReport(user: User, reportId: string): Promise<any> {
+    const findReport = await this.report.findUnique({
+      where: {
+        id: reportId,
+      },
+    });
+
+    if (!findReport) throw new HttpException(404, '신고를 찾을 수 없습니다.');
+    if (user.id !== findReport.reportUserId) throw new HttpException(403, '권한이 없습니다.');
+
+    return findReport;
+  }
+
+  public async postReportBlind(user: User, reportId: string): Promise<any> {
+    const findReport = await this.report.findUnique({
+      where: {
+        id: reportId,
+      },
+    });
+
+    if (!findReport) throw new HttpException(404, '신고를 찾을 수 없습니다.');
+    if (user.id !== findReport.reportUserId) throw new HttpException(403, '권한이 없습니다.');
+
+    if (findReport.targetType === ReportTargetType.article) {
+      const isBlinded = await this.reportBlindArticle.findFirst({
+        where: {
+          articleId: Number(findReport.targetId),
+        },
+      });
+      if (isBlinded) throw new HttpException(400, '이미 블라인드된 게시글입니다.');
+      const bliendedArticle = await this.reportBlindArticle.create({
+        data: {
+          articleId: Number(findReport.targetId),
+          userId: user.id,
+        },
+      });
+
+      return bliendedArticle;
+    }
+
+    throw new HttpException(400, '올바르지 않은 신고입니다.');
   }
 }
 

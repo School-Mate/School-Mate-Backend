@@ -20,6 +20,34 @@ class ReportController {
       next(error);
     }
   };
+
+  public getReport = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const { reportId } = req.params;
+      const user = req.user; // 신고자
+      const report = await this.reportService.getReport(user, reportId);
+
+      ResponseWrapper(req, res, {
+        data: report,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public postBlind = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const { reportId } = req.params;
+      const user = req.user; // 신고자
+      const report = await this.reportService.postReportBlind(user, reportId);
+
+      ResponseWrapper(req, res, {
+        data: report,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default ReportController;
