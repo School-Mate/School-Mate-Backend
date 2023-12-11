@@ -327,6 +327,7 @@ model Advertise {
   title     String
   image     String
   link      String
+  views     Int      @default(0)
   startDate DateTime @default(now())
   endDate   DateTime
 }
