@@ -58,6 +58,19 @@ class AdController {
       next(error);
     }
   }
+
+  public increaseViews = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const adId = Number(req.params.adId);
+      const ad = await this.adService.increaseViews(adId);
+
+      ResponseWrapper(req, res, {
+        data: ad,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default AdController;

@@ -86,6 +86,26 @@ class AdService {
       throw new HttpException(500, error);
     }
   }
+
+  public async increaseViews(id: number) {
+    try {
+      const findAd = await this.advertise.findUnique({
+        where: {
+          id: id,
+        },
+      });
+      if (!findAd) throw new HttpException(409, '광고를 찾을 수 없습니다.');
+
+      const ad = await this.advertise.update({
+        where: { id: id },
+        data: { views: findAd.views + 1 },
+      });
+
+      return ad;
+    } catch (error) {
+      throw new HttpException(500, error);
+    }
+  }
 }
 
 export default AdService;
