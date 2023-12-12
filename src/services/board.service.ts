@@ -1310,6 +1310,9 @@ class BoardService {
   }> {
     try {
       const findHotArticles = await this.hotArticle.findMany({
+        where: {
+          schoolId: user.userSchoolId,
+        },
         include: {
           article: {
             include: {
