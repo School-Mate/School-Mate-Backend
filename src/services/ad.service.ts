@@ -38,8 +38,16 @@ class AdService {
       if (findAd) throw new HttpException(409, '중복된 이름의 광고가 존재합니다.');
       if (new Date() > data.endDate) throw new HttpException(409, '종료 날짜가 현재 날짜보다 이전입니다.');
 
+      const image = await this.prisma.image.findUnique({
+        where: {
+          id: data.image,
+        },
+      });
+
+      if (!image) throw new HttpException(409, '존재하지 않는 이미지입니다.');
+
       const ad = await this.advertise.create({
-        data: { ...data },
+        data: { ...data, image: image.key },
       });
 
       return ad;
