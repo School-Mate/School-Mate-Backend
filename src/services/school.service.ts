@@ -44,7 +44,7 @@ class SchoolService {
 
       const schoolResponseMiddle: ISchoolInfoResponse = schoolFetchMiddle.schoolInfo;
       const schoolResponseHigh: ISchoolInfoResponse = schoolFetchHigh.schoolInfo;
-      
+
       if (schoolResponseMiddle && schoolResponseHigh) {
         return [...schoolResponseMiddle[1].row, ...schoolResponseHigh[1].row];
       } else if (schoolResponseMiddle) {
@@ -251,7 +251,9 @@ class SchoolService {
           schoolName: findSchool.name ? findSchool.name : findSchool.defaultName,
           grade: verifyData.grade,
           class: verifyData.class,
-          dept: verifyData.dept,
+          ...(verifyData.dept && {
+            dept: verifyData.dept,
+          }),
         },
       });
 
@@ -270,9 +272,9 @@ class SchoolService {
   private semesterHandler(): number {
     const today = dayjs();
 
-    const semester1Start = dayjs(`${today.format("YYYY")}-03-01`);
-    const semester2Start = dayjs(`${today.format("YYYY")}-08-01`);
-    const semester2End = dayjs(`${today.format("YYYY")}-12-31`);
+    const semester1Start = dayjs(`${today.format('YYYY')}-03-01`);
+    const semester2Start = dayjs(`${today.format('YYYY')}-08-01`);
+    const semester2End = dayjs(`${today.format('YYYY')}-12-31`);
 
     if (today.isAfter(semester1Start) && today.isBefore(semester2Start)) {
       return 1;

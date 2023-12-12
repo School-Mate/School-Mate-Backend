@@ -98,13 +98,13 @@ model UserSchoolVerify {
 }
 
 model UserSchool {
-  userId   String @id
+  userId   String  @id
   schoolId String
-  dept     String
+  dept     String?
   grade    String
   class    String
-  school   School @relation(fields: [schoolId], references: [schoolId])
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school   School  @relation(fields: [schoolId], references: [schoolId])
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model BusStation {
