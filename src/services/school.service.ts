@@ -259,6 +259,7 @@ class SchoolService {
 
       return createVerifyImage;
     } catch (error) {
+      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else if (error instanceof AxiosError) {

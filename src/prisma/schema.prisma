@@ -92,7 +92,7 @@ model UserSchoolVerify {
   createdAt  DateTime @default(now())
   schoolName String
   userName   String
-  dept       String
+  dept       String?
   image      Image    @relation(fields: [imageId], references: [id], onDelete: Cascade)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
