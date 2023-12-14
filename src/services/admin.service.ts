@@ -106,31 +106,54 @@ class AdminService {
     if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
     if (findRequest.process !== Process.pending) throw new HttpException(409, '이미 처리된 요청입니다.');
 
-    await this.userSchoolVerify.update({
-      where: { id: findRequest.id },
-      data: {
-        message: message,
-        process: process,
-      },
-    });
-
     const schoolInfo = await this.schoolService.getSchoolInfoById(findRequest.schoolId);
     if (!schoolInfo) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
 
-    await this.userSchool.create({
-      data: {
-        userId: findRequest.userId,
-        schoolId: schoolInfo.schoolId,
-        dept: findRequest.dept,
-        class: findRequest.class,
-        grade: findRequest.grade,
+    const isUserSchool = await this.users.findUnique({
+      where: {
+        id: findRequest.userId,
+      },
+      include: {
+        userSchool: true,
       },
     });
+
+    if (isUserSchool) {
+      await this.userSchool.update({
+        where: {
+          userId: isUserSchool.id,
+        },
+        data: {
+          schoolId: schoolInfo.schoolId,
+          dept: findRequest.dept,
+          class: findRequest.class,
+          grade: findRequest.grade,
+        },
+      });
+    } else {
+      await this.userSchool.create({
+        data: {
+          userId: findRequest.userId,
+          schoolId: schoolInfo.schoolId,
+          dept: findRequest.dept,
+          class: findRequest.class,
+          grade: findRequest.grade,
+        },
+      });
+    }
 
     await this.users.update({
       where: { id: findRequest.userId },
       data: {
         userSchoolId: findRequest.schoolId,
+      },
+    });
+
+    await this.userSchoolVerify.update({
+      where: { id: findRequest.id },
+      data: {
+        message: message,
+        process: process,
       },
     });
 
@@ -277,7 +300,7 @@ class AdminService {
           include: {
             school: true,
           },
-        }
+        },
       },
       skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
       take: 100,
