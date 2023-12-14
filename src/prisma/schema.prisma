@@ -34,6 +34,7 @@ model User {
   userSchoolVerify   UserSchoolVerify[]
   pushDevice         PushDevice[]
   ReportBlindArticle ReportBlindArticle[]
+  ReportBlindUser    ReportBlindUser[]
 }
 
 model School {
@@ -347,6 +348,14 @@ model ReportBlindArticle {
   createdAt DateTime @default(now())
   article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ReportBlindUser {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  targetUserId String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum LikeType {

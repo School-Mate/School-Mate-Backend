@@ -12,6 +12,7 @@ class ReportService {
   public asked = new PrismaClient().asked;
   public reComment = new PrismaClient().reComment;
   public reportBlindArticle = new PrismaClient().reportBlindArticle;
+  public reportBlindUser = new PrismaClient().reportBlindUser;
 
   private targetTypes = {
     user: {
@@ -104,6 +105,7 @@ class ReportService {
     if (findReport.targetType === ReportTargetType.article) {
       const isBlinded = await this.reportBlindArticle.findFirst({
         where: {
+          userId: user.id,
           articleId: Number(findReport.targetId),
         },
       });
@@ -116,6 +118,24 @@ class ReportService {
       });
 
       return bliendedArticle;
+    } else if (findReport.targetType === ReportTargetType.user) {
+      const isBlinded = await this.reportBlindUser.findFirst({
+        where: {
+          targetUserId: findReport.targetId,
+          userId: user.id,
+        },
+      });
+
+      if (isBlinded) throw new HttpException(400, '이미 차단된 유저입니다.');
+
+      const bliendUser = await this.reportBlindUser.create({
+        data: {
+          targetUserId: findReport.targetId,
+          userId: user.id,
+        },
+      });
+
+      return bliendUser;
     }
 
     throw new HttpException(400, '올바르지 않은 신고입니다.');

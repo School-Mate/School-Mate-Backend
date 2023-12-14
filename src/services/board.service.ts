@@ -25,6 +25,7 @@ class BoardService {
   public hotArticle = new PrismaClient().hotArticle;
   public deletedArticle = new PrismaClient().deletedArticle;
   public blindArticle = new PrismaClient().reportBlindArticle;
+  public reportBlindUser = new PrismaClient().reportBlindUser;
   public adminService = new AdminService();
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
@@ -341,6 +342,16 @@ class BoardService {
               userId: user.id,
             },
           });
+
+          if (!article.isAnonymous) {
+            const isBlindedUser = await this.reportBlindUser.findFirst({
+              where: {
+                targetUserId: article.userId,
+                userId: user.id,
+              },
+            });
+            if (isBlindedUser) return null;
+          }
 
           if (bliendedArticle) return null;
 
