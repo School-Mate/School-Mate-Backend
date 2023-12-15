@@ -309,7 +309,7 @@ class BoardService {
     }
   }
 
-  public async getBoardPage(boardId: string, page: string, user: User): Promise<{ articles: Article[]; totalPage: number }> {
+  public async getBoardPage(boardId: string, page: string, user: User): Promise<{ contents: Article[]; totalPage: number; numberPage: number }> {
     try {
       const findArticles = await this.article.findMany({
         where: {
@@ -336,13 +336,6 @@ class BoardService {
 
       const articlesWithImage = await Promise.all(
         findArticles.map(async article => {
-          const bliendedArticle = await this.blindArticle.findFirst({
-            where: {
-              articleId: article.id,
-              userId: user.id,
-            },
-          });
-
           if (!article.isAnonymous) {
             const isBlindedUser = await this.reportBlindUser.findFirst({
               where: {
@@ -352,6 +345,12 @@ class BoardService {
             });
             if (isBlindedUser) return null;
           }
+          const bliendedArticle = await this.blindArticle.findFirst({
+            where: {
+              articleId: article.id,
+              userId: user.id,
+            },
+          });
 
           if (bliendedArticle) return null;
 
@@ -394,7 +393,7 @@ class BoardService {
       });
 
       return {
-        articles: articlesWithImage
+        contents: articlesWithImage
           .filter(article => article)
           .map(article => {
             return {
@@ -404,6 +403,7 @@ class BoardService {
             } as Article;
           }),
         totalPage: Math.ceil(findArticlesCount / 10),
+        numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
@@ -438,8 +438,9 @@ class BoardService {
     page: string,
     user: User,
   ): Promise<{
-    comments: Comment[];
+    contents: Comment[];
     totalPage: number;
+    numberPage: number;
   }> {
     try {
       const findComments = await this.comment.findMany({
@@ -534,12 +535,13 @@ class BoardService {
       });
 
       return {
-        comments: findCommentsExcludeUser.sort((a, b) => {
+        contents: findCommentsExcludeUser.sort((a, b) => {
           if (a.createdAt > b.createdAt) return 1;
           else if (a.createdAt < b.createdAt) return -1;
           else return 0;
         }),
         totalPage: Math.ceil(findCommentsCount / 10),
+        numberPage: page ? Number(page) : 1,
       };
     } catch (e) {
       if (e instanceof HttpException) {
@@ -1315,15 +1317,21 @@ class BoardService {
     }
   }
 
-  public async getHotArticles(user: User): Promise<{
-    articles: ArticleWithImage[];
+  public async getHotArticles(
+    user: User,
+    page: string,
+  ): Promise<{
+    contents: ArticleWithImage[];
     totalPage: number;
+    numberPage: number;
   }> {
     try {
       const findHotArticles = await this.hotArticle.findMany({
         where: {
           schoolId: user.userSchoolId,
         },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
         include: {
           article: {
             include: {
@@ -1346,9 +1354,34 @@ class BoardService {
         }),
       );
 
+      const bliendedArticles = await Promise.all(
+        filteredArticles.map(async filteredArticle => {
+          if (!filteredArticle.isAnonymous) {
+            const isBlindedUser = await this.reportBlindUser.findFirst({
+              where: {
+                targetUserId: filteredArticle.userId,
+                userId: user.id,
+              },
+            });
+            if (isBlindedUser) return null;
+          }
+          const bliendedArticle = await this.blindArticle.findFirst({
+            where: {
+              articleId: filteredArticle.id,
+              userId: user.id,
+            },
+          });
+
+          if (bliendedArticle) return null;
+
+          return filteredArticle;
+        }),
+      );
+
       return {
-        articles: filteredArticles,
+        contents: bliendedArticles.filter(bliendedArticle => bliendedArticle),
         totalPage: hotArticleTotalPage,
+        numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
       if (error instanceof HttpException) {

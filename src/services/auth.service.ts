@@ -363,18 +363,30 @@ class AuthService {
       where: {
         id: userId,
       },
-      include: {
-        pushDevice: true,
-      },
     });
 
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
-    if ((findUser.pushDevice || findUser.pushDevice.length != 0) && pushToken) {
-      const findPushDevice = findUser.pushDevice.find(device => device.token === pushToken);
-      if (!findPushDevice) {
+
+    if (pushToken) {
+      const pushDeviceData = await this.pushDevice.findFirst({
+        where: {
+          token: pushToken,
+        },
+      });
+
+      if (!pushDeviceData) {
         await this.pushDevice.create({
           data: {
             token: pushToken,
+            userId: findUser.id,
+          },
+        });
+      } else {
+        await this.pushDevice.update({
+          where: {
+            id: pushDeviceData.id,
+          },
+          data: {
             userId: findUser.id,
           },
         });

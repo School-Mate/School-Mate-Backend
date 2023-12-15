@@ -50,7 +50,7 @@ class BoardController {
   public getHotArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
-      const hotArticles = await this.boardService.getHotArticles(user);
+      const hotArticles = await this.boardService.getHotArticles(user, req.query.page as string);
 
       ResponseWrapper(req, res, {
         data: hotArticles,

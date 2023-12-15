@@ -17,42 +17,44 @@ class AskedService {
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
     try {
-      const schoolUsers = await this.user.findMany({
+      const askedUsers = await this.askedUser.findMany({
         where: {
-          userSchoolId: user.userSchoolId,
+          user: {
+            userSchoolId: user.userSchoolId,
+          },
+          receiveAnonymous: true,
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              profile: true,
+            },
+          },
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 10,
         orderBy: {
-          createdAt: 'desc',
+          user: {
+            createdAt: 'desc',
+          },
         },
       });
 
-      const askedUserList = await Promise.all(
-        schoolUsers.map(async schoolUser => {
-          const askedUser = await this.askedUser.findUnique({
-            where: {
-              userId: schoolUser.id,
-            },
-            include: {
-              user: {
-                select: {
-                  name: true,
-                  profile: true,
-                },
-              },
-            },
-          });
+      const totalCnt = await this.askedUser.count({
+        where: {
+          user: {
+            userSchoolId: user.userSchoolId,
+          },
+          receiveAnonymous: true,
+        },
+      });
 
-          if (!askedUser) {
-            return;
-          } else {
-            return askedUser;
-          }
-        }),
-      );
-
-      return askedUserList.filter(askedUser => askedUser);
+      return {
+        contents: askedUsers,
+        totalPage: Math.ceil(totalCnt / 10),
+        numberPage: page ? Number(page) : 1,
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -147,8 +149,9 @@ class AskedService {
       });
 
       return {
-        askeds: schoolUsers,
+        contents: schoolUsers,
         totalPage: Math.ceil(totalCnt / 10),
+        numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
       logger.error(error);
@@ -321,29 +324,7 @@ class AskedService {
         },
       });
 
-      const deniedCount = await this.asked.count({
-        where: {
-          askedUserId: user.id,
-          process: Process.denied,
-        },
-      });
-
-      const successCount = await this.asked.count({
-        where: {
-          askedUserId: user.id,
-          process: Process.success,
-        },
-      });
-
-      const pendingCount = await this.asked.count({
-        where: {
-          askedUserId: user.id,
-          process: Process.pending,
-        },
-      });
-
       return {
-        askeds: returnAskedList,
         user: {
           user: {
             profile: askedUser.image ? askedUser.image : null,
@@ -354,10 +335,9 @@ class AskedService {
           customId: askedUser.customId,
           statusMessage: askedUser.statusMessage,
         },
-        pages: Math.ceil(askedCount / 10),
-        deniedCount,
-        successCount,
-        pendingCount,
+        contents: returnAskedList,
+        totalPage: Math.ceil(askedCount / 10),
+        numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -484,7 +464,7 @@ class AskedService {
       });
 
       return {
-        askeds: filteredAsked,
+        contents: filteredAsked,
         user: {
           user: {
             profile: findAskedUser.image ? findAskedUser.image : null,
@@ -495,7 +475,8 @@ class AskedService {
           userId: findAskedUser.user.id,
           customId: findAskedUser.customId,
         },
-        pages: Math.ceil(askedCount / 10),
+        totalPage: Math.ceil(askedCount / 10),
+        numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
       if (error instanceof HttpException) {
