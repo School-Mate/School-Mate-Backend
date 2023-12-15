@@ -402,7 +402,7 @@ class BoardService {
               user: article.isAnonymous ? null : article.user,
             } as Article;
           }),
-        totalPage: Math.ceil(findArticlesCount / 10),
+        totalPage: findArticlesCount === 0 ? 1 : Math.ceil(findArticlesCount / 10),
         numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
@@ -540,7 +540,7 @@ class BoardService {
           else if (a.createdAt < b.createdAt) return -1;
           else return 0;
         }),
-        totalPage: Math.ceil(findCommentsCount / 10),
+        totalPage: findCommentsCount === 0 ? 1 : Math.ceil(findCommentsCount / 10),
         numberPage: page ? Number(page) : 1,
       };
     } catch (e) {
@@ -1345,7 +1345,7 @@ class BoardService {
       });
 
       const hotArticleTotal = await this.hotArticle.count();
-      const hotArticleTotalPage = Math.ceil(hotArticleTotal / 10);
+      const hotArticleTotalPage = hotArticleTotal === 0 ? 1 : Math.ceil(hotArticleTotal / 10);
 
       const filteredArticles = await Promise.all(
         findHotArticles.map(async hotArticle => {

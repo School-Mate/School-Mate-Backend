@@ -26,6 +26,10 @@ export class AskedCreateDto {
 
   @IsString({ message: '아이디를 입력해주세요.' })
   public id: string;
+  @IsBoolean({
+    message: '다른 학교 학생의 질문을 받을지 여부를 선택해주세요',
+  })
+  public receiveOtherSchool: boolean;
 }
 
 export class AskedUpdateDto {
@@ -40,6 +44,12 @@ export class AskedUpdateDto {
   @IsOptional()
   @IsString({ message: '아이디를 입력해주세요.' })
   public id: string;
+
+  @IsOptional()
+  @IsBoolean({
+    message: '다른 학교 학생의 질문을 받을지 여부를 선택해주세요',
+  })
+  public receiveOtherSchool: boolean;
 }
 
 export class AskedReceiveDto {

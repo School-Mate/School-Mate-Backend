@@ -6,6 +6,7 @@ import { deleteImage } from '@/utils/multer';
 import { AskedUser, Image, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 import AdminService from './admin.service';
+import { isBoolean } from 'class-validator';
 
 class AskedService {
   public asked = new PrismaClient().asked;
@@ -52,7 +53,7 @@ class AskedService {
 
       return {
         contents: askedUsers,
-        totalPage: Math.ceil(totalCnt / 10),
+        totalPage: totalCnt === 0 ? 1 : Math.ceil(totalCnt / 10),
         numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
@@ -150,7 +151,7 @@ class AskedService {
 
       return {
         contents: schoolUsers,
-        totalPage: Math.ceil(totalCnt / 10),
+        totalPage: totalCnt === 0 ? 1 : Math.ceil(totalCnt / 10),
         numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
@@ -334,9 +335,10 @@ class AskedService {
           userId: askedUser.userId,
           customId: askedUser.customId,
           statusMessage: askedUser.statusMessage,
+          receiveOtherSchool: askedUser.receiveOtherSchool,
         },
         contents: returnAskedList,
-        totalPage: Math.ceil(askedCount / 10),
+        totalPage: askedCount === 0 ? 1 : Math.ceil(askedCount / 10),
         numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
@@ -376,7 +378,7 @@ class AskedService {
         data: {
           userId: user.id,
           receiveAnonymous: true,
-          receiveOtherSchool: false,
+          receiveOtherSchool: askedUser.receiveOtherSchool,
           tags: [askedUser.tag1, askedUser.tag2],
           customId: askedUser.id,
           ...(image && { image: image.key }),
@@ -474,8 +476,9 @@ class AskedService {
           statusMessage: findAskedUser.statusMessage,
           userId: findAskedUser.user.id,
           customId: findAskedUser.customId,
+          receiveOtherSchool: findAskedUser.receiveOtherSchool,
         },
-        totalPage: Math.ceil(askedCount / 10),
+        totalPage: askedCount === 0 ? 1 : Math.ceil(askedCount / 10),
         numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
@@ -754,6 +757,17 @@ class AskedService {
           },
           data: {
             tags: [asked.tag1, asked.tag2],
+          },
+        });
+      }
+
+      if (typeof asked.receiveOtherSchool === 'boolean') {
+        await this.askedUser.update({
+          where: {
+            userId: user.id,
+          },
+          data: {
+            receiveOtherSchool: asked.receiveOtherSchool,
           },
         });
       }
