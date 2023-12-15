@@ -6,7 +6,6 @@ import { deleteImage } from '@/utils/multer';
 import { AskedUser, Image, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 import AdminService from './admin.service';
-import { isBoolean } from 'class-validator';
 
 class AskedService {
   public asked = new PrismaClient().asked;
