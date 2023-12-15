@@ -34,3 +34,14 @@ export type PushMessage = {
   // {"type": "resetstack", "url": "/asked"}
   resetstack: string;
 };
+
+export type SmsEvent = {
+  // 인증번호 전송
+  VERIFY_MESSAGE: {
+    '#{인증번호}': string;
+  };
+};
+
+export enum SMS_TEMPLATE_ID {
+  VERIFY_MESSAGE = 'KA01TP231214004440910C51aklhX1LW',
+}

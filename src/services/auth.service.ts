@@ -24,6 +24,7 @@ import { excludeUserPassword } from '@utils/util';
 import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto } from '@/dtos/users.dto';
 import SchoolService from './school.service';
 import { deleteImage } from '@/utils/multer';
+import AdminService from './admin.service';
 
 class AuthService {
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
@@ -35,6 +36,7 @@ class AuthService {
   public phoneVerifyRequest = new PrismaClient().phoneVerifyRequest;
   public schoolVerify = new PrismaClient().userSchoolVerify;
   public pushDevice = new PrismaClient().pushDevice;
+  public adminService = new AdminService();
 
   public async meSchool(userData: User): Promise<
     UserSchool & {
@@ -687,10 +689,8 @@ class AuthService {
     });
 
     try {
-      await this.messageService.sendOne({
-        to: phone,
-        from: MESSAGE_FROM,
-        text: `[SchoolMate] 인증번호는 ${verifyCode}입니다.`,
+      await this.adminService.sendMessage('VERIFY_MESSAGE', phone, {
+        '#{인증번호}': verifyCode,
       });
     } catch (error) {
       throw new HttpException(400, '메시지 전송에 실패했습니다.');

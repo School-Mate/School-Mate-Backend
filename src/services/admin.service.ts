@@ -1,16 +1,17 @@
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 
-import { DOMAIN, SECRET_KEY } from '@/config';
+import { DOMAIN, MESSAGE_FROM, SECRET_KEY, SOL_API_KEY, SOL_API_PFID, SOL_API_SECRET } from '@/config';
 import { AdminDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { DataStoredInToken, PushMessage, TokenData } from '@/interfaces/auth.interface';
+import { DataStoredInToken, PushMessage, SMS_TEMPLATE_ID, SmsEvent, TokenData } from '@/interfaces/auth.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
 import { Admin, Article, BoardRequest, PrismaClient, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
 import SchoolService from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
+import { SolapiMessageService } from 'solapi';
 
 class AdminService {
   public schoolService = new SchoolService();
@@ -27,6 +28,7 @@ class AdminService {
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
   public school = new PrismaClient().school;
   public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+  public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
   public async signUpService(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
@@ -254,6 +256,24 @@ class AdminService {
       return pushNotificationResult;
     } catch (error) {
       throw error;
+    }
+  };
+
+  public sendMessage = async <T extends keyof SmsEvent>(type: T, phone: string, data?: SmsEvent[T]): Promise<void> => {
+    try {
+      await this.messageService.sendOne({
+        to: phone,
+        from: MESSAGE_FROM,
+        kakaoOptions: {
+          pfId: SOL_API_PFID,
+          templateId: SMS_TEMPLATE_ID[type],
+          variables: data ? data : {},
+        },
+      });
+
+      return;
+    } catch (e) {
+      throw new HttpException(400, '인증번호 전송을 실패하였습니다');
     }
   };
 

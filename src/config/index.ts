@@ -26,4 +26,5 @@ export const {
   SOL_API_SECRET,
   NEIS_API_KEY,
   BUS_API_KEY,
+  SOL_API_PFID,
 } = process.env;
