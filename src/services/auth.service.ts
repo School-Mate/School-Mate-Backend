@@ -22,13 +22,15 @@ import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@utils/util';
 import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto } from '@/dtos/users.dto';
-import SchoolService from './school.service';
+import { SchoolService } from './school.service';
 import { deleteImage } from '@/utils/multer';
-import AdminService from './admin.service';
+import { AdminService } from './admin.service';
+import Container, { Service } from 'typedi';
 
-class AuthService {
+@Service()
+export class AuthService {
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
-  public schoolService = new SchoolService();
+  public schoolService = Container.get(SchoolService);
 
   public image = new PrismaClient().image;
   public socialLogin = new PrismaClient().socialLogin;
@@ -741,5 +743,3 @@ class AuthService {
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
   }
 }
-
-export default AuthService;

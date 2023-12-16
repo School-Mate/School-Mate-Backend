@@ -1,6 +1,5 @@
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
-
 import { DOMAIN, MESSAGE_FROM, SECRET_KEY, SOL_API_KEY, SOL_API_PFID, SOL_API_SECRET } from '@/config';
 import { AdminDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
@@ -8,12 +7,14 @@ import { DataStoredInToken, PushMessage, SMS_TEMPLATE_ID, SmsEvent, TokenData } 
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
 import { Admin, Article, BoardRequest, PrismaClient, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
-import SchoolService from './school.service';
+import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 import { SolapiMessageService } from 'solapi';
+import { Service } from 'typedi';
 
-class AdminService {
+@Service()
+export class AdminService {
   public schoolService = new SchoolService();
 
   public admin = new PrismaClient().admin;
@@ -374,5 +375,3 @@ class AdminService {
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
   }
 }
-
-export default AdminService;

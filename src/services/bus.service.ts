@@ -2,10 +2,12 @@ import { HttpException } from '@/exceptions/HttpException';
 import { BusStationInfo } from '@/interfaces/busapi.interface';
 import { busClient, kakaoClient } from '@/utils/client';
 import { AxiosError } from 'axios';
-import SchoolService from './school.service';
+import { SchoolService } from './school.service';
+import Container, { Service } from 'typedi';
 
-class BusService {
-  schoolService = new SchoolService();
+@Service()
+export class BusService {
+  public schoolService = Container.get(SchoolService);
 
   public async searchBusStation(long: string, lati: string): Promise<BusStationInfo[]> {
     try {
@@ -65,5 +67,3 @@ class BusService {
     }
   }
 }
-
-export default BusService;

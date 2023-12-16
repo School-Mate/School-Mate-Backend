@@ -3,9 +3,10 @@ import { RequestWithUser } from '@/interfaces/auth.interface';
 import ReportService from '@/services/report.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { NextFunction, Response } from 'express';
+import { Container } from 'typedi';
 
 class ReportController {
-  public reportService = new ReportService();
+  public reportService = Container.get(ReportService);
 
   public postReport = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {

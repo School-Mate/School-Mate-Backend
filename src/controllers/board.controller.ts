@@ -1,4 +1,4 @@
-import BoardService from '@/services/board.service';
+import { BoardService } from '@/services/board.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Response, NextFunction } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
@@ -6,9 +6,10 @@ import { RequestWithUser } from '@/interfaces/auth.interface';
 import { IArticleQuery } from '@/interfaces/board.interface';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
 import { LikeType } from '@prisma/client';
+import { Container } from 'typedi';
 
 class BoardController {
-  public boardService = new BoardService();
+  public boardService = Container.get(BoardService);
 
   public getBoards = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {

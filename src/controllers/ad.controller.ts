@@ -1,11 +1,12 @@
 import { AdDto } from '@/dtos/ad.dto';
 import { RequestWithUser } from '@/interfaces/auth.interface';
-import AdService from '@/services/ad.service'
+import { AdService } from '@/services/ad.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { NextFunction, Response } from 'express';
+import { Container } from 'typedi';
 
 class AdController {
-  public adService = new AdService();
+  public adService = Container.get(AdService);
 
   public getAd = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -17,7 +18,7 @@ class AdController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public createAd = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -30,7 +31,7 @@ class AdController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public updateAd = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -44,7 +45,7 @@ class AdController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public deleteAd = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -57,7 +58,7 @@ class AdController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 
   public increaseViews = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
@@ -70,7 +71,7 @@ class AdController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
 
 export default AdController;

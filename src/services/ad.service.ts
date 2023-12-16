@@ -1,8 +1,10 @@
 import { AdDto } from '@/dtos/ad.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { PrismaClient } from '@prisma/client';
+import { Service } from 'typedi';
 
-class AdService {
+@Service()
+export class AdService {
   public prisma = new PrismaClient();
   public advertise = new PrismaClient().advertise;
 
@@ -115,5 +117,3 @@ class AdService {
     }
   }
 }
-
-export default AdService;

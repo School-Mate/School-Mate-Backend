@@ -1,7 +1,6 @@
 import { NextFunction, Response } from 'express';
 import { User } from '@prisma/client';
 import { RequestWithUser } from '@interfaces/auth.interface';
-import AuthService from '@services/auth.service';
 import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI, DOMAIN } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
@@ -12,15 +11,16 @@ import {
   TokenDto,
   UpdateAskedCustomIdDto,
   UpdatePasswordDto,
-  UpdateProfileDto,
   VerifyPhoneCodeDto,
   VerifyPhoneMessageDto,
 } from '@/dtos/users.dto';
-import AskedService from '@/services/asked.service';
+import { AskedService } from '@/services/asked.service';
+import { AuthService } from '@services/auth.service';
+import { Container } from 'typedi';
 
 class AuthController {
-  public authService = new AuthService();
-  public askedService = new AskedService();
+  public authService = Container.get(AuthService);
+  public askedService = Container.get(AskedService);
 
   public me = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {

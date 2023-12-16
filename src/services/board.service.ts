@@ -3,12 +3,14 @@ import { Article, Board, Comment, PrismaClient, User, LikeType, BoardRequest, Re
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
-import SchoolService from './school.service';
+import { SchoolService } from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
-import AdminService from './admin.service';
+import { AdminService } from './admin.service';
+import Container, { Service } from 'typedi';
 
-class BoardService {
-  public schoolService = new SchoolService();
+@Service()
+export class BoardService {
+  public schoolService = Container.get(SchoolService);
   public article = new PrismaClient().article;
   public board = new PrismaClient().board;
   public boardRequest = new PrismaClient().boardRequest;
@@ -1443,5 +1445,3 @@ class BoardService {
     }
   }
 }
-
-export default BoardService;

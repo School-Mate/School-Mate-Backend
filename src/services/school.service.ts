@@ -1,15 +1,17 @@
 import { AxiosError } from 'axios';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
-dayjs.extend(isBetween);
-
 import { SchoolVerifyDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IClassInfoResponse, IMealInfoResponse, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient, kakaoClient } from '@/utils/client';
 import { PrismaClient, School, User, Process, Meal, UserSchoolVerify } from '@prisma/client';
+import { Service } from 'typedi';
 
-class SchoolService {
+dayjs.extend(isBetween);
+
+@Service()
+export class SchoolService {
   public image = new PrismaClient().image;
   public userSchoolVerify = new PrismaClient().userSchoolVerify;
   public school = new PrismaClient().school;
@@ -284,5 +286,3 @@ class SchoolService {
     }
   }
 }
-
-export default SchoolService;

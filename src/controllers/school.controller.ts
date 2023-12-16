@@ -1,13 +1,13 @@
 import { NextFunction, Response } from 'express';
-
 import { SchoolVerifyDto } from '@/dtos/school.dto';
 import { RequestWithUser } from '@/interfaces/auth.interface';
 import { RequestHandler } from '@/interfaces/routes.interface';
-import SchoolService from '@/services/school.service';
+import { SchoolService } from '@/services/school.service';
 import ResponseWrapper from '@/utils/responseWarpper';
+import { Container } from 'typedi';
 
 class SchoolController {
-  public schoolService = new SchoolService();
+  public schoolService = Container.get(SchoolService);
 
   public searchSchool = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {

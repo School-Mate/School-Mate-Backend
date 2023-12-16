@@ -1,11 +1,12 @@
 import { AskedCreateDto, AskedDto, AskedReceiveDto } from '@/dtos/asked.dto';
-import AskedService from '@/services/asked.service';
+import { AskedService } from '@/services/asked.service';
 import { RequestWithUser } from '@interfaces/auth.interface';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { NextFunction, Response } from 'express';
+import { Container } from 'typedi';
 
 class AskedController {
-  public askedService = new AskedService();
+  public askedService = Container.get(AskedService);
 
   public getAskedUser = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {

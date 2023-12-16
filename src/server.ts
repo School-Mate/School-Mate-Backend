@@ -9,6 +9,7 @@ import BoardRoute from './routes/board.route';
 import AskedRoute from './routes/asked.route';
 import ReportRoute from './routes/report.route';
 import AdRoute from './routes/ad.route';
+import 'reflect-metadata';
 
 validateEnv();
 

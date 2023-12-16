@@ -1,10 +1,11 @@
 import { RequestHandler } from '@/interfaces/routes.interface';
-import BusService from '@/services/bus.service';
+import { BusService } from '@/services/bus.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { NextFunction, Response } from 'express';
+import { Container } from 'typedi';
 
 class BusController {
-  public busService = new BusService();
+  public busService = Container.get(BusService);
 
   public searchBusStation = async (req: RequestHandler, res: Response, next: NextFunction) => {
     try {

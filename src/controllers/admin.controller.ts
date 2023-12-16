@@ -1,14 +1,15 @@
 import { AdminDto, GetVerifyRequestDto, AdminRequestDto } from '@/dtos/admin.dto';
-import AdminService from '@/services/admin.service';
+import { AdminService } from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin, ReportTargetType } from '@prisma/client';
 import { NextFunction, Response } from 'express';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import { RequestWithAdmin } from '@/interfaces/admin.interface';
 import { DOMAIN } from '@/config';
+import { Container } from 'typedi';
 
 class AdminController {
-  public adminService = new AdminService();
+  public adminService = Container.get(AdminService);
 
   public me = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -175,7 +176,7 @@ class AdminController {
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
 
 export default AdminController;

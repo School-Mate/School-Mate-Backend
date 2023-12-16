@@ -5,14 +5,16 @@ import { logger } from '@/utils/logger';
 import { deleteImage } from '@/utils/multer';
 import { AskedUser, Image, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
-import AdminService from './admin.service';
+import { AdminService } from './admin.service';
+import Container, { Service } from 'typedi';
 
-class AskedService {
+@Service()
+export class AskedService {
   public asked = new PrismaClient().asked;
   public askedUser = new PrismaClient().askedUser;
   public user = new PrismaClient().user;
   public image = new PrismaClient().image;
-  public adminService = new AdminService();
+  public adminService = Container.get(AdminService);
 
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -897,5 +899,3 @@ class AskedService {
     }
   }
 }
-
-export default AskedService;
