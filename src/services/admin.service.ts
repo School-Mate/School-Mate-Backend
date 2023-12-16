@@ -120,7 +120,7 @@ class AdminService {
       },
     });
 
-    if (isUserSchool) {
+    if (isUserSchool.userSchool) {
       await this.userSchool.update({
         where: {
           userId: isUserSchool.id,
