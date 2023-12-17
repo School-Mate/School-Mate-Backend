@@ -39,30 +39,47 @@ export class BoardService {
           schoolId: user.userSchoolId,
         },
       });
+      const defaultBoards = await this.defaultBoard.findMany();
 
       if (findBoards.length === 0) {
-        const createBoards = await this.defaultBoard.findMany();
         await this.board.createMany({
-          data: createBoards.map(board => {
+          data: defaultBoards.map(board => {
             return {
               name: board.name,
               description: board.description,
               schoolId: user.userSchoolId,
               default: true,
+              defaultBoardId: board.id,
             };
           }),
         });
+      } else {
+        const notHasDefaultBoard = findBoards
+          .filter(findBoard => !defaultBoards.map(defaultBoard => defaultBoard.id).includes(findBoard.defaultBoardId))
+          .filter(hasDefaultBoard => !defaultBoards.map(defaultBoard => defaultBoard.id).includes(hasDefaultBoard.id));
 
-        const findBoards = await this.board.findMany({
-          where: {
-            schoolId: user.userSchoolId,
-          },
-        });
-
-        return findBoards;
+        if (notHasDefaultBoard.length !== 0) {
+          await this.board.createMany({
+            data: notHasDefaultBoard.map(board => {
+              return {
+                name: board.name,
+                description: board.description,
+                schoolId: user.userSchoolId,
+                default: true,
+                defaultBoardId: board.id,
+              };
+            }),
+          });
+        }
       }
 
-      return findBoards;
+      const findUpdatedBoards = await this.board.findMany({
+        where: {
+          schoolId: user.userSchoolId,
+        },
+      });
+
+      return findUpdatedBoards;
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
