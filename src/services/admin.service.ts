@@ -11,11 +11,11 @@ import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 import { SolapiMessageService } from 'solapi';
-import { Service } from 'typedi';
+import Container, { Service } from 'typedi';
 
 @Service()
 export class AdminService {
-  public schoolService = new SchoolService();
+  public schoolService = Container.get(SchoolService);
 
   public admin = new PrismaClient().admin;
   public article = new PrismaClient().article;

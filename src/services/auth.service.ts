@@ -31,6 +31,7 @@ import Container, { Service } from 'typedi';
 export class AuthService {
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
   public schoolService = Container.get(SchoolService);
+  public adminService = Container.get(AdminService);
 
   public image = new PrismaClient().image;
   public socialLogin = new PrismaClient().socialLogin;
@@ -38,7 +39,6 @@ export class AuthService {
   public phoneVerifyRequest = new PrismaClient().phoneVerifyRequest;
   public schoolVerify = new PrismaClient().userSchoolVerify;
   public pushDevice = new PrismaClient().pushDevice;
-  public adminService = new AdminService();
 
   public async meSchool(userData: User): Promise<
     UserSchool & {

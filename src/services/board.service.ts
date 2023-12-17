@@ -11,6 +11,7 @@ import Container, { Service } from 'typedi';
 @Service()
 export class BoardService {
   public schoolService = Container.get(SchoolService);
+  public adminService = Container.get(AdminService);
   public article = new PrismaClient().article;
   public board = new PrismaClient().board;
   public boardRequest = new PrismaClient().boardRequest;
@@ -28,7 +29,6 @@ export class BoardService {
   public deletedArticle = new PrismaClient().deletedArticle;
   public blindArticle = new PrismaClient().reportBlindArticle;
   public reportBlindUser = new PrismaClient().reportBlindUser;
-  public adminService = new AdminService();
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
