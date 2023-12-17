@@ -14,6 +14,7 @@ import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 import { SolapiMessageService } from 'solapi';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import { logger } from '@/utils/logger';
 
 @Service()
 export class AdminService {
@@ -162,10 +163,24 @@ export class AdminService {
       },
     });
 
-    await this.sendPushNotification(findRequest.userId, '🎉 축하합니다!', `${schoolInfo.defaultName} 학생 인증이 완료되었어요!`, {
-      type: 'resetstack',
-      url: '/me',
-    });
+    try {
+      await this.sendPushNotification(findRequest.userId, '🎉 축하합니다!', `${schoolInfo.defaultName} 학생 인증이 완료되었어요!`, {
+        type: 'resetstack',
+        url: '/me',
+      });
+    } catch (error) {
+      logger.error(error);
+    }
+
+    try {
+      await this.sendMessage('VERIFY_SCHOOL_APPROVE', isUserSchool.phone, {
+        '#{접속링크}': '/me',
+        '#{학교이름}': schoolInfo.defaultName,
+        '#{학년}': findRequest.grade,
+      });
+    } catch (error) {
+      logger.error(error);
+    }
 
     return true;
   };
