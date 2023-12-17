@@ -5,6 +5,8 @@ import { SECRET_KEY } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, RequestWithUser, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@/utils/util';
+import Container from 'typedi';
+import { PrismaClientService } from '@/services/prisma.service';
 
 const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
@@ -15,7 +17,7 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
       const verificationResponse = (await verify(Authorization, secretKey)) as DataStoredInToken;
       const userId = verificationResponse.id;
 
-      const users = new PrismaClient().user;
+      const users = Container.get(PrismaClientService).user;
       const findUser = await users.findUnique({
         where: { id: userId },
         include: {

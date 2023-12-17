@@ -7,13 +7,14 @@ import { AskedUser, Image, PrismaClient, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';
+import { PrismaClientService } from './prisma.service';
 
 @Service()
 export class AskedService {
-  public asked = new PrismaClient().asked;
-  public askedUser = new PrismaClient().askedUser;
-  public user = new PrismaClient().user;
-  public image = new PrismaClient().image;
+  public asked = Container.get(PrismaClientService).asked;
+  public askedUser = Container.get(PrismaClientService).askedUser;
+  public user = Container.get(PrismaClientService).user;
+  public image = Container.get(PrismaClientService).image;
   public adminService = Container.get(AdminService);
 
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {

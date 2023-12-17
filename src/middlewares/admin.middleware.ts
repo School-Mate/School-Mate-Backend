@@ -2,10 +2,12 @@ import { SECRET_KEY } from '@/config';
 import { HttpException } from '@/exceptions/HttpException';
 import { RequestWithAdmin } from '@/interfaces/admin.interface';
 import { DataStoredInToken } from '@/interfaces/auth.interface';
+import { PrismaClientService } from '@/services/prisma.service';
 import { AdminRole, checkAdminFlag, excludeUserPassword } from '@/utils/util';
 import { Admin, PrismaClient } from '@prisma/client';
 import { Response, NextFunction, RequestHandler } from 'express';
 import { verify } from 'jsonwebtoken';
+import Container from 'typedi';
 
 const adminMiddleware = async (req: RequestWithAdmin, res: Response, next: NextFunction) => {
   try {
@@ -16,7 +18,7 @@ const adminMiddleware = async (req: RequestWithAdmin, res: Response, next: NextF
       const verificationResponse = (await verify(Authorization, secretKey)) as DataStoredInToken;
       const adminId = verificationResponse.id;
 
-      const admins = new PrismaClient().admin;
+      const admins = Container.get(PrismaClientService).admin;
       const findAdmin = await admins.findUnique({
         where: { id: adminId },
       });

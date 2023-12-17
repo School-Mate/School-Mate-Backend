@@ -1,13 +1,13 @@
 import { AdDto } from '@/dtos/ad.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { PrismaClient } from '@prisma/client';
-import { Service } from 'typedi';
+import Container, { Service } from 'typedi';
+import { PrismaClientService } from './prisma.service';
 
 @Service()
 export class AdService {
-  public prisma = new PrismaClient();
-  public advertise = new PrismaClient().advertise;
-
+  public prisma = Container.get(PrismaClientService);
+  public advertise = Container.get(PrismaClientService).advertise;
   public async getAd() {
     try {
       const currentDate = new Date();

@@ -6,17 +6,18 @@ import { HttpException } from '@/exceptions/HttpException';
 import { IClassInfoResponse, IMealInfoResponse, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient, kakaoClient } from '@/utils/client';
 import { PrismaClient, School, User, Process, Meal, UserSchoolVerify } from '@prisma/client';
-import { Service } from 'typedi';
+import Container, { Service } from 'typedi';
+import { PrismaClientService } from './prisma.service';
 
 dayjs.extend(isBetween);
 
 @Service()
 export class SchoolService {
-  public image = new PrismaClient().image;
-  public userSchoolVerify = new PrismaClient().userSchoolVerify;
-  public school = new PrismaClient().school;
-  public user = new PrismaClient().user;
-  public meal = new PrismaClient().meal;
+  public image = Container.get(PrismaClientService).image;
+  public userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  public school = Container.get(PrismaClientService).school;
+  public user = Container.get(PrismaClientService).user;
+  public meal = Container.get(PrismaClientService).meal;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {

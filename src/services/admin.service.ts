@@ -12,22 +12,23 @@ import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 import { SolapiMessageService } from 'solapi';
 import Container, { Service } from 'typedi';
+import { PrismaClientService } from './prisma.service';
 
 @Service()
 export class AdminService {
   public schoolService = Container.get(SchoolService);
 
-  public admin = new PrismaClient().admin;
-  public article = new PrismaClient().article;
-  public board = new PrismaClient().board;
-  public boardRequest = new PrismaClient().boardRequest;
-  public deletedArticle = new PrismaClient().deletedArticle;
-  public image = new PrismaClient().image;
-  public report = new PrismaClient().report;
-  public users = new PrismaClient().user;
-  public userSchool = new PrismaClient().userSchool;
-  public userSchoolVerify = new PrismaClient().userSchoolVerify;
-  public school = new PrismaClient().school;
+  public admin = Container.get(PrismaClientService).admin;
+  public article = Container.get(PrismaClientService).article;
+  public board = Container.get(PrismaClientService).board;
+  public boardRequest = Container.get(PrismaClientService).boardRequest;
+  public deletedArticle = Container.get(PrismaClientService).deletedArticle;
+  public image = Container.get(PrismaClientService).image;
+  public report = Container.get(PrismaClientService).report;
+  public users = Container.get(PrismaClientService).user;
+  public userSchool = Container.get(PrismaClientService).userSchool;
+  public userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  public school = Container.get(PrismaClientService).school;
   public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 

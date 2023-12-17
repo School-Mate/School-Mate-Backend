@@ -26,6 +26,7 @@ import { SchoolService } from './school.service';
 import { deleteImage } from '@/utils/multer';
 import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';
+import { PrismaClientService } from './prisma.service';
 
 @Service()
 export class AuthService {
@@ -33,12 +34,12 @@ export class AuthService {
   public schoolService = Container.get(SchoolService);
   public adminService = Container.get(AdminService);
 
-  public image = new PrismaClient().image;
-  public socialLogin = new PrismaClient().socialLogin;
-  public users = new PrismaClient().user;
-  public phoneVerifyRequest = new PrismaClient().phoneVerifyRequest;
-  public schoolVerify = new PrismaClient().userSchoolVerify;
-  public pushDevice = new PrismaClient().pushDevice;
+  public image = Container.get(PrismaClientService).image;
+  public socialLogin = Container.get(PrismaClientService).socialLogin;
+  public users = Container.get(PrismaClientService).user;
+  public phoneVerifyRequest = Container.get(PrismaClientService).phoneVerifyRequest;
+  public schoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  public pushDevice = Container.get(PrismaClientService).pushDevice;
 
   public async meSchool(userData: User): Promise<
     UserSchool & {

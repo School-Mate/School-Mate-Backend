@@ -7,7 +7,8 @@ import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET } f
 import type { RequestWithUser } from '@/interfaces/auth.interface';
 import dayjs from 'dayjs';
 import { storages } from './util';
-import { PrismaClient } from '@prisma/client';
+import Container from 'typedi';
+import { PrismaClientService } from '@/services/prisma.service';
 
 export const s3 = new S3({
   credentials: {
@@ -50,14 +51,14 @@ export const deleteImage = async (key: string) => {
     };
     await s3.deleteObject(params);
 
-    const imageData = await new PrismaClient().image.findFirst({
+    const imageData = await Container.get(PrismaClientService).image.findFirst({
       where: {
         key: key,
       },
     });
 
     if (imageData) {
-      await new PrismaClient().image.delete({
+      await Container.get(PrismaClientService).image.delete({
         where: {
           id: imageData.id,
         },

@@ -3,18 +3,19 @@ import { AxiosError } from 'axios';
 import { ReportDto } from '@/dtos/report.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { PrismaClient, ReportTargetType, User } from '@prisma/client';
-import { Service } from 'typedi';
+import Container, { Service } from 'typedi';
+import { PrismaClientService } from './prisma.service';
 
 @Service()
 class ReportService {
-  public user = new PrismaClient().user;
-  public article = new PrismaClient().article;
-  public comment = new PrismaClient().comment;
-  public report = new PrismaClient().report;
-  public asked = new PrismaClient().asked;
-  public reComment = new PrismaClient().reComment;
-  public reportBlindArticle = new PrismaClient().reportBlindArticle;
-  public reportBlindUser = new PrismaClient().reportBlindUser;
+  public user = Container.get(PrismaClientService).user;
+  public article = Container.get(PrismaClientService).article;
+  public comment = Container.get(PrismaClientService).comment;
+  public report = Container.get(PrismaClientService).report;
+  public asked = Container.get(PrismaClientService).asked;
+  public reComment = Container.get(PrismaClientService).reComment;
+  public reportBlindArticle = Container.get(PrismaClientService).reportBlindArticle;
+  public reportBlindUser = Container.get(PrismaClientService).reportBlindUser;
 
   private targetTypes = {
     user: {

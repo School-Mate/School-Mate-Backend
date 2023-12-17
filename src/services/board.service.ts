@@ -7,28 +7,29 @@ import { SchoolService } from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
 import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';
+import { PrismaClientService } from './prisma.service';
 
 @Service()
 export class BoardService {
   public schoolService = Container.get(SchoolService);
   public adminService = Container.get(AdminService);
-  public article = new PrismaClient().article;
-  public board = new PrismaClient().board;
-  public boardRequest = new PrismaClient().boardRequest;
-  public comment = new PrismaClient().comment;
-  public image = new PrismaClient().image;
-  public articleLike = new PrismaClient().articleLike;
-  public commentLike = new PrismaClient().commentLike;
-  public reCommentLike = new PrismaClient().reCommentLike;
-  public manager = new PrismaClient().boardManager;
-  public reComment = new PrismaClient().reComment;
-  public school = new PrismaClient().school;
-  public user = new PrismaClient().user;
-  public defaultBoard = new PrismaClient().defaultBoard;
-  public hotArticle = new PrismaClient().hotArticle;
-  public deletedArticle = new PrismaClient().deletedArticle;
-  public blindArticle = new PrismaClient().reportBlindArticle;
-  public reportBlindUser = new PrismaClient().reportBlindUser;
+  public article = Container.get(PrismaClientService).article;
+  public board = Container.get(PrismaClientService).board;
+  public boardRequest = Container.get(PrismaClientService).boardRequest;
+  public comment = Container.get(PrismaClientService).comment;
+  public image = Container.get(PrismaClientService).image;
+  public articleLike = Container.get(PrismaClientService).articleLike;
+  public commentLike = Container.get(PrismaClientService).commentLike;
+  public reCommentLike = Container.get(PrismaClientService).reCommentLike;
+  public manager = Container.get(PrismaClientService).boardManager;
+  public reComment = Container.get(PrismaClientService).reComment;
+  public school = Container.get(PrismaClientService).school;
+  public user = Container.get(PrismaClientService).user;
+  public defaultBoard = Container.get(PrismaClientService).defaultBoard;
+  public hotArticle = Container.get(PrismaClientService).hotArticle;
+  public deletedArticle = Container.get(PrismaClientService).deletedArticle;
+  public blindArticle = Container.get(PrismaClientService).reportBlindArticle;
+  public reportBlindUser = Container.get(PrismaClientService).reportBlindUser;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');

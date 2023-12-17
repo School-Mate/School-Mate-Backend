@@ -11,17 +11,21 @@ import { Routes } from './interfaces/routes.interface';
 import { logger, stream } from './utils/logger';
 import loggerMiddleware from './middlewares/logger.middleware';
 import errorMiddleware from './middlewares/error.middleware';
+import { PrismaClientService } from './services/prisma.service';
 
 class App {
   public app: express.Application;
   public env: string;
   public port: string | number;
+  public prismaClient: PrismaClientService;
 
   constructor(routes: Routes[]) {
     this.app = express();
     this.env = NODE_ENV || 'development';
     this.port = PORT || 3000;
+    this.prismaClient = new PrismaClientService();
 
+    this.initializeDatabase();
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
     this.initializeErrorHandling();
@@ -50,6 +54,10 @@ class App {
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
     this.app.use(loggerMiddleware);
+  }
+
+  private initializeDatabase() {
+    this.prismaClient.initializePrisma();
   }
 
   private initializeRoutes(routes: Routes[]) {
