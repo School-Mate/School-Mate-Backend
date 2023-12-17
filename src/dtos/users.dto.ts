@@ -52,6 +52,20 @@ export class VerifyPhoneMessageDto {
   public phone: string;
 }
 
+export class ChangePasswordDto {
+  @IsString({ message: '비밀번호를 입력해주세요.' })
+  public password: string;
+
+  @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
+  public phone: string;
+
+  @IsString({ message: '인증 코드를 입력해주세요.' })
+  public code: string;
+
+  @IsString({ message: '인증 토큰를 입력해주세요.' })
+  public token: string;
+}
+
 export class VerifyPhoneCodeDto {
   @Matches(/^[0-9]{10,11}$/, { message: '전화번호 형식이 아닙니다.' })
   public phone: string;

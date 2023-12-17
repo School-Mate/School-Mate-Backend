@@ -6,6 +6,7 @@ import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import {
   ChangeEmailDto,
+  ChangePasswordDto,
   CreateUserDto,
   LoginUserDto,
   TokenDto,
@@ -267,6 +268,28 @@ class AuthController {
     try {
       const { phone, code, token } = req.body as VerifyPhoneCodeDto;
       const verify = await this.authService.verifyPhoneCode(phone, code, token);
+
+      ResponseWrapper(req, res, { data: verify });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public findPasswordSendSms = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { phone } = req.body as VerifyPhoneMessageDto;
+      const verify = await this.authService.findPasswordSendSms(phone);
+
+      ResponseWrapper(req, res, { data: verify });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public findPasswordUpdatePass = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { password, phone, code, token } = req.body as ChangePasswordDto;
+      const verify = await this.authService.findPasswordUpdatePassword(phone, password, code, token);
 
       ResponseWrapper(req, res, { data: verify });
     } catch (error) {

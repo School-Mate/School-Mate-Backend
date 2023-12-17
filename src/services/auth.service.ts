@@ -682,7 +682,53 @@ export class AuthService {
       if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
     }
 
-    const verifyCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const verifyCode = Math.floor(100000 + Math.random() * 9000).toString();
+
+    const verifyPhone = await this.phoneVerifyRequest.create({
+      data: {
+        phone,
+        code: verifyCode,
+      },
+    });
+
+    try {
+      await this.adminService.sendMessage('VERIFY_MESSAGE', phone, {
+        '#{인증번호}': verifyCode,
+      });
+    } catch (error) {
+      throw new HttpException(400, '메시지 전송에 실패했습니다.');
+    }
+
+    return verifyPhone.id;
+  }
+
+  public async findPasswordUpdatePassword(phone: string, password: string, code: string, token: string): Promise<boolean> {
+    const checkPhone = await this.verifyPhoneCode(phone, code, token);
+    if (!checkPhone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.users.update({
+      where: {
+        phone: phone,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    return true;
+  }
+
+  public async findPasswordSendSms(phone: string): Promise<string> {
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: phone,
+      },
+    });
+    if (!findUser) throw new HttpException(400, '가입되지 않은 전화번호입니다.');
+
+    const verifyCode = Math.floor(100000 + Math.random() * 9000).toString();
 
     const verifyPhone = await this.phoneVerifyRequest.create({
       data: {
