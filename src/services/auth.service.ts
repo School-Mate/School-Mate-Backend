@@ -4,7 +4,7 @@ import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
 import bcrypt from 'bcrypt';
 
-import { Image, PrismaClient, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
+import { Image, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -13,7 +13,6 @@ import {
   KAKAO_CLIENT_KEY,
   KAKAO_CLIENT_SECRET,
   KAKAO_REDIRECT_URI,
-  MESSAGE_FROM,
   SECRET_KEY,
   SOL_API_KEY,
   SOL_API_SECRET,
