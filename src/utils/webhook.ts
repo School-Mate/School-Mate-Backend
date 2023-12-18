@@ -4,6 +4,7 @@ import { BoardRequest, Report, UserSchoolVerify } from "@prisma/client";
 import fetch from 'node-fetch';
 import { discordCodeBlock, userHyperlink } from "./util";
 import { logger } from "./logger";
+import { ArticleWithBoard } from "@/interfaces/board.interface";
 
 export const sendWebhook = async (data: Webhook) => {
     try{
@@ -178,6 +179,34 @@ const buildParams = (data: Webhook) => {
                             text: `ID: ${req4.id}`
                         },
                         color: args.color,
+                    }
+                ]
+            }
+        case WebhookType.ArticleDelete:
+            const article: ArticleWithBoard = data.data;
+            return {
+                content: `[ARTICLE/DELETE] ${article.id}`,
+                embeds: [
+                    {
+                        title: '[ARTICLE/DELETE]',
+                        description: `게시판: ${article.board.name} | 조회수: ${article.views} | 작성자: ${userHyperlink(article.userId, article.user.name)}`,
+                        fields: [
+                            {
+                                name: '제목',
+                                value: discordCodeBlock(article.title),
+                                inline: false,
+                            },
+                            {
+                                name: '내용',
+                                value: discordCodeBlock(article.content),
+                                inline: false,
+                            },
+                        ],
+                        timestamp: new Date(),
+                        footer: {
+                            text: `ID: ${article.id}`
+                        },
+                        color: 0xff0000,
                     }
                 ]
             }

@@ -335,7 +335,13 @@ export class AdminService {
     const findBoard = await this.board.findUnique({ where: { id: Number(boardId) } });
     if (!findBoard) throw new HttpException(409, '해당 게시판을 찾을 수 없습니다.');
 
-    const findArticle = await this.article.findUnique({ where: { id: Number(articleId) } });
+    const findArticle = await this.article.findUnique({ 
+      where: { id: Number(articleId) },
+      include: {
+        user: true,
+        board: true,
+      },
+    });
     if (!findArticle) throw new HttpException(409, '해당 게시글을 찾을 수 없습니다.');
 
     try {
@@ -357,6 +363,11 @@ export class AdminService {
     } catch (error) {
       throw error;
     }
+
+    await sendWebhook({
+      type: WebhookType.ArticleDelete,
+      data: findArticle,
+    })
     return true;
   };
 
