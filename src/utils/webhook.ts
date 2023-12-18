@@ -93,7 +93,8 @@ const buildParams = (data: Webhook) => {
                         timestamp: report.createdAt,
                         footer: {
                             text: `ID: ${report.id}`
-                        }
+                        },
+                        color: 0xff0000,
                     }
                 ]
             }
