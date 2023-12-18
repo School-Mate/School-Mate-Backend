@@ -1,8 +1,7 @@
 import { AxiosError } from 'axios';
-
 import { ReportDto } from '@/dtos/report.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { PrismaClient, ReportTargetType, User } from '@prisma/client';
+import { ReportTargetType, User } from '@prisma/client';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';

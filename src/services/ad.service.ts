@@ -1,6 +1,5 @@
 import { AdDto } from '@/dtos/ad.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { PrismaClient } from '@prisma/client';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 

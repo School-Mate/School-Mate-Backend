@@ -4,7 +4,7 @@ import axios, { AxiosError } from 'axios';
 import { SolapiMessageService } from 'solapi';
 import bcrypt from 'bcrypt';
 
-import { Image, PrismaClient, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
+import { Image, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
 import {
   DOMAIN,
   GOOGLE_CLIENT_KEY,
@@ -13,7 +13,6 @@ import {
   KAKAO_CLIENT_KEY,
   KAKAO_CLIENT_SECRET,
   KAKAO_REDIRECT_URI,
-  MESSAGE_FROM,
   SECRET_KEY,
   SOL_API_KEY,
   SOL_API_SECRET,
@@ -352,6 +351,7 @@ export class AuthService {
   ): Promise<{
     accessToken: string;
     refreshToken: string;
+    verfiyed: boolean;
   }> {
     let verificationResponse: DataStoredInToken;
     try {
@@ -404,12 +404,14 @@ export class AuthService {
     return {
       accessToken: tokenData.token,
       refreshToken: refreshTokenData.token,
+      verfiyed: findUser.userSchoolId ? true : false,
     };
   }
 
   public async appRefreshToken(refreshToken: string): Promise<{
     accessToken: string;
     refreshToken: string;
+    verfiyed: boolean;
   }> {
     let verificationResponse: DataStoredInToken;
     try {
@@ -436,6 +438,7 @@ export class AuthService {
     return {
       accessToken: tokenData.token,
       refreshToken: refreshTokenData.token,
+      verfiyed: findUser.userSchoolId ? true : false,
     };
   }
 
@@ -682,7 +685,53 @@ export class AuthService {
       if (findUser) throw new HttpException(409, '이미 가입된 전화번호입니다.');
     }
 
-    const verifyCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const verifyCode = Math.floor(100000 + Math.random() * 9000).toString();
+
+    const verifyPhone = await this.phoneVerifyRequest.create({
+      data: {
+        phone,
+        code: verifyCode,
+      },
+    });
+
+    try {
+      await this.adminService.sendMessage('VERIFY_MESSAGE', phone, {
+        '#{인증번호}': verifyCode,
+      });
+    } catch (error) {
+      throw new HttpException(400, '메시지 전송에 실패했습니다.');
+    }
+
+    return verifyPhone.id;
+  }
+
+  public async findPasswordUpdatePassword(phone: string, password: string, code: string, token: string): Promise<boolean> {
+    const checkPhone = await this.verifyPhoneCode(phone, code, token);
+    if (!checkPhone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.users.update({
+      where: {
+        phone: phone,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+
+    return true;
+  }
+
+  public async findPasswordSendSms(phone: string): Promise<string> {
+    const findUser = await this.users.findUnique({
+      where: {
+        phone: phone,
+      },
+    });
+    if (!findUser) throw new HttpException(400, '가입되지 않은 전화번호입니다.');
+
+    const verifyCode = Math.floor(100000 + Math.random() * 9000).toString();
 
     const verifyPhone = await this.phoneVerifyRequest.create({
       data: {

@@ -4,7 +4,7 @@ import { RequestWithAdmin } from '@/interfaces/admin.interface';
 import { DataStoredInToken } from '@/interfaces/auth.interface';
 import { PrismaClientService } from '@/services/prisma.service';
 import { AdminRole, checkAdminFlag, excludeUserPassword } from '@/utils/util';
-import { Admin, PrismaClient } from '@prisma/client';
+import { Admin } from '@prisma/client';
 import { Response, NextFunction, RequestHandler } from 'express';
 import { verify } from 'jsonwebtoken';
 import Container from 'typedi';

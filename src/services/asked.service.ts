@@ -3,7 +3,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { logger } from '@/utils/logger';
 import { deleteImage } from '@/utils/multer';
-import { AskedUser, Image, PrismaClient, Process, User } from '@prisma/client';
+import { AskedUser, Image, Process, User } from '@prisma/client';
 import { AxiosError } from 'axios';
 import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';

@@ -3,10 +3,11 @@ import { sign } from 'jsonwebtoken';
 import { DOMAIN, MESSAGE_FROM, SECRET_KEY, SOL_API_KEY, SOL_API_PFID, SOL_API_SECRET } from '@/config';
 import { AdminDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
-import { DataStoredInToken, PushMessage, SMS_TEMPLATE_ID, SmsEvent, TokenData } from '@/interfaces/auth.interface';
+import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
+import { PushMessage, SMS_TEMPLATE_ID, SmsEvent } from '@/interfaces/admin.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, Article, BoardRequest, PrismaClient, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
 import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -15,6 +16,7 @@ import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
 import { WebhookType } from '@/types';
+import { logger } from '@/utils/logger';
 
 @Service()
 export class AdminService {
@@ -183,10 +185,24 @@ export class AdminService {
       },
     });
 
-    await this.sendPushNotification(findRequest.userId, '🎉 축하합니다!', `${schoolInfo.defaultName} 학생 인증이 완료되었어요!`, {
-      type: 'resetstack',
-      url: '/me',
-    });
+    try {
+      await this.sendPushNotification(findRequest.userId, '🎉 축하합니다!', `${schoolInfo.defaultName} 학생 인증이 완료되었어요!`, {
+        type: 'resetstack',
+        url: '/me',
+      });
+    } catch (error) {
+      logger.error(error);
+    }
+
+    try {
+      await this.sendMessage('VERIFY_SCHOOL_APPROVE', isUserSchool.phone, {
+        '#{접속링크}': '/me',
+        '#{학교이름}': schoolInfo.defaultName,
+        '#{학년}': findRequest.grade + '학년',
+      });
+    } catch (error) {
+      logger.error(error);
+    }
 
     await sendWebhook({
       type: WebhookType.VerifyAccept,

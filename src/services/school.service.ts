@@ -5,7 +5,7 @@ import { SchoolVerifyDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IClassInfoResponse, IMealInfoResponse, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient, kakaoClient } from '@/utils/client';
-import { PrismaClient, School, User, Process, Meal, UserSchoolVerify } from '@prisma/client';
+import { School, User, Process, Meal, UserSchoolVerify } from '@prisma/client';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';

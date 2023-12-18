@@ -6,6 +6,7 @@ import validationMiddleware from '@middlewares/validation.middleware';
 import { imageUpload } from '@/utils/multer';
 import {
   ChangeEmailDto,
+  ChangePasswordDto,
   CreateUserDto,
   LoginUserDto,
   TokenDto,
@@ -41,7 +42,9 @@ class AuthRoute implements Routes {
     this.router.post(`${this.path}/signup`, validationMiddleware(CreateUserDto, 'body'), this.authController.signUp);
     this.router.post(`${this.path}/apptoken`, validationMiddleware(TokenDto, 'body'), this.authController.appToken);
     this.router.post(`${this.path}/apprefreshtoken`, validationMiddleware(TokenDto, 'body'), this.authController.appRefreshToken);
-    this.router.post(`${this.path}/changepass`, validationMiddleware(UpdatePasswordDto, 'body'), this.authController.updatePassword);
+    this.router.post(`${this.path}/changepass`, validationMiddleware(UpdatePasswordDto, 'body'), authMiddleware, this.authController.updatePassword);
+    this.router.post(`${this.path}/findpass/sendsms`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.findPasswordSendSms);
+    this.router.post(`${this.path}/findpass/updatepass`, validationMiddleware(ChangePasswordDto, 'body'), this.authController.findPasswordUpdatePass);
     this.router.post(`${this.path}/verify/phone`, validationMiddleware(VerifyPhoneCodeDto, 'body'), this.authController.verifyPhoneCode);
     this.router.post(`${this.path}/verify/phonemessage`, validationMiddleware(VerifyPhoneMessageDto, 'body'), this.authController.sendVerifyMessage);
     this.router.post(
