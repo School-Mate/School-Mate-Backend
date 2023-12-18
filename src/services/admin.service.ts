@@ -113,6 +113,21 @@ export class AdminService {
     const schoolInfo = await this.schoolService.getSchoolInfoById(findRequest.schoolId);
     if (!schoolInfo) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
 
+    if (process === Process.denied) {
+      const updateVerify = await this.userSchoolVerify.update({
+        where: { id: findRequest.id },
+        data: {
+          message: message,
+          process: process,
+        },
+      });
+
+      await this.sendPushNotification(findRequest.userId, '😢 인증이 거절되었어요!', `${schoolInfo.defaultName} 학생 인증이 거절되었습니다.`, {
+        type: 'resetstack',
+        url: '/me',
+      });
+      return false;
+    }
     const isUserSchool = await this.users.findUnique({
       where: {
         id: findRequest.userId,
