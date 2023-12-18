@@ -1,8 +1,8 @@
-import { HttpException } from "@/exceptions/HttpException";
 import { Webhook } from "@/interfaces/webhook.interface";
 import { WebhookType } from "@/types";
 import { UserSchoolVerify } from "@prisma/client";
 import fetch from 'node-fetch';
+import { logger } from "./logger";
 
 export const sendWebhook = async (data: Webhook) => {
     try{
@@ -16,7 +16,7 @@ export const sendWebhook = async (data: Webhook) => {
             body: JSON.stringify(params),
         })
     } catch (error) {
-        throw new HttpException(500, error);
+        logger.error(error);
     }
 }
 
