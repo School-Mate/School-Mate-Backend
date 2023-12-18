@@ -113,14 +113,14 @@ class ReportService {
         },
       });
       if (isBlinded) throw new HttpException(400, '이미 블라인드된 게시글입니다.');
-      const bliendedArticle = await this.reportBlindArticle.create({
+      const blindedArticle = await this.reportBlindArticle.create({
         data: {
           articleId: Number(findReport.targetId),
           userId: user.id,
         },
       });
 
-      return bliendedArticle;
+      return blindedArticle;
     } else if (findReport.targetType === ReportTargetType.user) {
       const isBlinded = await this.reportBlindUser.findFirst({
         where: {
@@ -131,14 +131,14 @@ class ReportService {
 
       if (isBlinded) throw new HttpException(400, '이미 차단된 유저입니다.');
 
-      const bliendUser = await this.reportBlindUser.create({
+      const blindUser = await this.reportBlindUser.create({
         data: {
           targetUserId: findReport.targetId,
           userId: user.id,
         },
       });
 
-      return bliendUser;
+      return blindUser;
     }
 
     throw new HttpException(400, '올바르지 않은 신고입니다.');
