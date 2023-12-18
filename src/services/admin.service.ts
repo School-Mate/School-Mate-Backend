@@ -14,6 +14,8 @@ import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 import { SolapiMessageService } from 'solapi';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import { sendWebhook } from '@/utils/webhook';
+import { WebhookType } from '@/types';
 import { logger } from '@/utils/logger';
 
 @Service()
@@ -115,6 +117,26 @@ export class AdminService {
     const schoolInfo = await this.schoolService.getSchoolInfoById(findRequest.schoolId);
     if (!schoolInfo) throw new HttpException(409, '해당 학교를 찾을 수 없습니다.');
 
+    if (process === Process.denied) {
+      const updateVerify = await this.userSchoolVerify.update({
+        where: { id: findRequest.id },
+        data: {
+          message: message,
+          process: process,
+        },
+      });
+
+      await this.sendPushNotification(findRequest.userId, '😢 인증이 거절되었어요!', `${schoolInfo.defaultName} 학생 인증이 거절되었습니다.`, {
+        type: 'resetstack',
+        url: '/me',
+      });
+
+      await sendWebhook({
+        type: WebhookType.VerifyReject,
+        data: updateVerify,
+      });
+      return false;
+    }
     const isUserSchool = await this.users.findUnique({
       where: {
         id: findRequest.userId,
@@ -182,6 +204,10 @@ export class AdminService {
       logger.error(error);
     }
 
+    await sendWebhook({
+      type: WebhookType.VerifyAccept,
+      data: findRequest,
+    })
     return true;
   };
 
@@ -220,6 +246,11 @@ export class AdminService {
         },
       });
     }
+
+    await sendWebhook({
+      type: WebhookType.BoardComplete,
+      data: updateRequest,
+    })
     return updateRequest;
   };
 
@@ -243,6 +274,11 @@ export class AdminService {
         process: Process.success,
       },
     });
+
+    await sendWebhook({
+      type: WebhookType.ReportComplete,
+      data: updateReport,
+    })
     return updateReport;
   };
 
@@ -299,7 +335,13 @@ export class AdminService {
     const findBoard = await this.board.findUnique({ where: { id: Number(boardId) } });
     if (!findBoard) throw new HttpException(409, '해당 게시판을 찾을 수 없습니다.');
 
-    const findArticle = await this.article.findUnique({ where: { id: Number(articleId) } });
+    const findArticle = await this.article.findUnique({ 
+      where: { id: Number(articleId) },
+      include: {
+        user: true,
+        board: true,
+      },
+    });
     if (!findArticle) throw new HttpException(409, '해당 게시글을 찾을 수 없습니다.');
 
     try {
@@ -321,6 +363,11 @@ export class AdminService {
     } catch (error) {
       throw error;
     }
+
+    await sendWebhook({
+      type: WebhookType.ArticleDelete,
+      data: findArticle,
+    })
     return true;
   };
 

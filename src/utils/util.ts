@@ -58,6 +58,14 @@ export const excludeAdminPassword = <Admin, Key extends keyof Admin>(
   };
 };
 
+export function userHyperlink(userId: string, userName?: string): string {
+  return `([${userName || userId}](https://admin.schoolmate.kr/user/${userId}))`;
+}
+
+export function discordCodeBlock(content: string, ext?: string): string {
+  return `\`\`\`${ext || ''}\n${content.replace(/```/g, '')}\`\`\``;
+}
+
 export function checkAdminFlag(base: number, required: number | keyof typeof AdminRole): boolean {
   return checkFlag(base, typeof required === 'number' ? required : AdminRole[required]);
 }

@@ -34,6 +34,17 @@ export interface ArticleWithImage extends Article {
   };
 }
 
+export interface ArticleWithBoard extends Article {
+  board: {
+    id: string;
+    name: string;
+  };
+  user: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface Image {
   key: string;
 }
