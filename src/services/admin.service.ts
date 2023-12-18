@@ -176,7 +176,7 @@ export class AdminService {
       await this.sendMessage('VERIFY_SCHOOL_APPROVE', isUserSchool.phone, {
         '#{접속링크}': '/me',
         '#{학교이름}': schoolInfo.defaultName,
-        '#{학년}': findRequest.grade,
+        '#{학년}': findRequest.grade + '학년',
       });
     } catch (error) {
       logger.error(error);

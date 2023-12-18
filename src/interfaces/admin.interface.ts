@@ -30,9 +30,17 @@ export type SmsEvent = {
     '#{학년}': string;
     '#{접속링크}': string;
   };
+  VERIFY_SCHOOL_REJECT: {
+    '#{학교이름}': string;
+    '#{학년}': string;
+    '#{사유}': string;
+    // schoolmate.kr/verfiy로 넣어서 요청
+    '#{접속링크}': string;
+  };
 };
 
 export enum SMS_TEMPLATE_ID {
   VERIFY_MESSAGE = 'KA01TP231214004440910C51aklhX1LW',
   VERIFY_SCHOOL_APPROVE = 'KA01TP231215192423127nM0HrXrwLTM',
+  VERIFY_SCHOOL_REJECT = 'KA01TP231218082231400xxXcvPcLK0x',
 }
