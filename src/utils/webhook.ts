@@ -1,6 +1,6 @@
 import { Webhook } from "@/interfaces/webhook.interface";
 import { WebhookType } from "@/types";
-import { UserSchoolVerify } from "@prisma/client";
+import { Report, UserSchoolVerify } from "@prisma/client";
 import fetch from 'node-fetch';
 import { discordCodeBlock, userHyperlink } from "./util";
 import { logger } from "./logger";
@@ -76,6 +76,26 @@ const buildParams = (data: Webhook) => {
                     }
                 ]
             }
-        
+        case WebhookType.ReportCreate:
+            const report: Report = data.data;
+            return {
+                content: `[REPORT/CREATE] ${report.id}`,
+                embeds: [
+                    {
+                        title: '[REPORT/CREATE]',
+                        description: `ID: ${report.id}\n신고자: ${userHyperlink(report.reportUserId, report.reportUserName)}\n신고 대상: ${report.targetId} **(${report.targetType})**`,
+                        fields: [
+                            {
+                                name: '신고 내용',
+                                value: discordCodeBlock(report.message),
+                            }
+                        ],
+                        timestamp: report.createdAt,
+                        footer: {
+                            text: `ID: ${report.id}`
+                        }
+                    }
+                ]
+            }
     }
 }
