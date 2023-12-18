@@ -275,7 +275,7 @@ export class BoardService {
         },
       });
 
-      const commnetCounts = await this.comment.count({
+      const commentCounts = await this.comment.count({
         where: {
           articleId: findArticle.id,
         },
@@ -290,7 +290,7 @@ export class BoardService {
       return {
         ...findArticle,
         likeCounts: likeCounts,
-        commentCounts: commnetCounts + reCommentCounts,
+        commentCounts: commentCounts + reCommentCounts,
         comments: await this.getComments(articleId, '1', user),
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
@@ -351,14 +351,14 @@ export class BoardService {
             });
             if (isBlindedUser) return null;
           }
-          const bliendedArticle = await this.blindArticle.findFirst({
+          const blindedArticle = await this.blindArticle.findFirst({
             where: {
               articleId: article.id,
               userId: user.id,
             },
           });
 
-          if (bliendedArticle) return null;
+          if (blindedArticle) return null;
 
           if (article.images.length == 0) {
             return {
@@ -665,7 +665,7 @@ export class BoardService {
   public async getReComment(
     user: User,
     commentId: string,
-    recommnetId: string,
+    recommentId: string,
   ): Promise<
     ReComment & {
       isMe: boolean;
@@ -676,7 +676,7 @@ export class BoardService {
     try {
       const findReComment = await this.reComment.findUnique({
         where: {
-          id: Number(recommnetId),
+          id: Number(recommentId),
         },
         include: {
           user: {
@@ -1365,7 +1365,7 @@ export class BoardService {
         }),
       );
 
-      const bliendedArticles = await Promise.all(
+      const blindedArticles = await Promise.all(
         filteredArticles.map(async filteredArticle => {
           if (!filteredArticle.isAnonymous) {
             const isBlindedUser = await this.reportBlindUser.findFirst({
@@ -1376,21 +1376,21 @@ export class BoardService {
             });
             if (isBlindedUser) return null;
           }
-          const bliendedArticle = await this.blindArticle.findFirst({
+          const blindedArticle = await this.blindArticle.findFirst({
             where: {
               articleId: filteredArticle.id,
               userId: user.id,
             },
           });
 
-          if (bliendedArticle) return null;
+          if (blindedArticle) return null;
 
           return filteredArticle;
         }),
       );
 
       return {
-        contents: bliendedArticles.filter(bliendedArticle => bliendedArticle),
+        contents: blindedArticles.filter(blindedArticle => blindedArticle),
         totalPage: hotArticleTotalPage,
         numberPage: page ? Number(page) : 1,
       };
