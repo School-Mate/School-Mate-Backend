@@ -1,6 +1,6 @@
 import { Webhook } from "@/interfaces/webhook.interface";
 import { WebhookType } from "@/types";
-import { Report, UserSchoolVerify } from "@prisma/client";
+import { BoardRequest, Report, UserSchoolVerify } from "@prisma/client";
 import fetch from 'node-fetch';
 import { discordCodeBlock, userHyperlink } from "./util";
 import { logger } from "./logger";
@@ -114,6 +114,39 @@ const buildParams = (data: Webhook) => {
                     text: `ID: ${report1.id}`
                 },
                 color: 0x00ff00,
+            }
+        case WebhookType.BoardRequest:
+            const req3: BoardRequest = data.data;
+            return {
+                content: `[BOARD/REQUEST] ${req3.id}`,
+                embeds: [
+                    {
+                        title: '[BOARD/REQUEST]',
+                        description: `ID: ${req3.id}\n요청 정보: ${req3.schoolName} ${userHyperlink(req3.userId)}`,
+                        fields: [
+                            {
+                                name: '게시판 이름',
+                                value: discordCodeBlock(`+ ${req3.name}`, 'md'),
+                                inline: true,
+                            },
+                            {
+                                name: '게시판 설명',
+                                value: discordCodeBlock(`+ ${req3.description}`, 'md'),
+                                inline: true,
+                            },
+                            {
+                                name: '개설 목적',
+                                value: discordCodeBlock(req3.message),
+                                inline: false,
+                            },
+                        ],
+                        timestamp: new Date(),
+                        footer: {
+                            text: `ID: ${req3.id}`
+                        },
+                        color: 0x00ff00,
+                    }
+                ]
             }
     }
 }

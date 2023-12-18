@@ -8,6 +8,8 @@ import { SendBoardRequestDto } from '@/dtos/board.dto';
 import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import { sendWebhook } from '@/utils/webhook';
+import { WebhookType } from '@/types';
 
 @Service()
 export class BoardService {
@@ -431,6 +433,11 @@ export class BoardService {
         },
       });
 
+
+      await sendWebhook({
+        type: WebhookType.BoardRequest,
+        data: boardRequestData,
+      })
       return boardRequestData;
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');

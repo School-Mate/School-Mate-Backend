@@ -4,4 +4,5 @@ export enum WebhookType {
     VerifyReject = 2,
     ReportCreate = 3,
     ReportComplete = 4,
+    BoardRequest = 5,
 }
