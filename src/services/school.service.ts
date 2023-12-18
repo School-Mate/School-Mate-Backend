@@ -8,6 +8,8 @@ import { neisClient, kakaoClient } from '@/utils/client';
 import { PrismaClient, School, User, Process, Meal, UserSchoolVerify } from '@prisma/client';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import { sendWebhook } from '@/utils/webhook';
+import { WebhookType } from '@/types';
 
 dayjs.extend(isBetween);
 
@@ -260,6 +262,10 @@ export class SchoolService {
         },
       });
 
+      await sendWebhook({
+        type: WebhookType.VerifyRequest,
+        data: createVerifyImage,
+      })
       return createVerifyImage;
     } catch (error) {
       console.log(error);

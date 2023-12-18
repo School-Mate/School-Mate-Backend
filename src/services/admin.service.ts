@@ -13,6 +13,8 @@ import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 import { SolapiMessageService } from 'solapi';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import { sendWebhook } from '@/utils/webhook';
+import { WebhookType } from '@/types';
 
 @Service()
 export class AdminService {
@@ -126,6 +128,11 @@ export class AdminService {
         type: 'resetstack',
         url: '/me',
       });
+
+      await sendWebhook({
+        type: WebhookType.VerifyReject,
+        data: updateVerify,
+      });
       return false;
     }
     const isUserSchool = await this.users.findUnique({
@@ -181,6 +188,10 @@ export class AdminService {
       url: '/me',
     });
 
+    await sendWebhook({
+      type: WebhookType.VerifyAccept,
+      data: findRequest,
+    })
     return true;
   };
 
