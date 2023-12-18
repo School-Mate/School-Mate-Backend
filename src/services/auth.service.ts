@@ -351,6 +351,7 @@ export class AuthService {
   ): Promise<{
     accessToken: string;
     refreshToken: string;
+    verfiyed: boolean;
   }> {
     let verificationResponse: DataStoredInToken;
     try {
@@ -403,12 +404,14 @@ export class AuthService {
     return {
       accessToken: tokenData.token,
       refreshToken: refreshTokenData.token,
+      verfiyed: findUser.userSchoolId ? true : false,
     };
   }
 
   public async appRefreshToken(refreshToken: string): Promise<{
     accessToken: string;
     refreshToken: string;
+    verfiyed: boolean;
   }> {
     let verificationResponse: DataStoredInToken;
     try {
@@ -435,6 +438,7 @@ export class AuthService {
     return {
       accessToken: tokenData.token,
       refreshToken: refreshTokenData.token,
+      verfiyed: findUser.userSchoolId ? true : false,
     };
   }
 
