@@ -167,6 +167,11 @@ const buildParams = (data: Webhook) => {
                                 value: discordCodeBlock(`${args.sign} ${req4.description}`, 'md'),
                                 inline: true,
                             },
+                            {
+                                name: '메세지',
+                                value: discordCodeBlock(req4.message),
+                                inline: false,
+                            }
                         ],
                         timestamp: new Date(),
                         footer: {
