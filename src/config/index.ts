@@ -27,4 +27,5 @@ export const {
   NEIS_API_KEY,
   BUS_API_KEY,
   SOL_API_PFID,
+  DISCORD_WEBHOOK_URL,
 } = process.env;
