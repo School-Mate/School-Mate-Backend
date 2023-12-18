@@ -59,7 +59,7 @@ export const excludeAdminPassword = <Admin, Key extends keyof Admin>(
 };
 
 export function userHyperlink(userId: string, userName?: string): string {
-  return `${userName || ''} ([${userId}](https://admin.schoolmate.kr/user/${userId}))`;
+  return `([${userName || userId}](https://admin.schoolmate.kr/user/${userId}))`;
 }
 
 export function discordCodeBlock(content: string, ext?: string): string {
