@@ -5,6 +5,8 @@ import { HttpException } from '@/exceptions/HttpException';
 import { PrismaClient, ReportTargetType, User } from '@prisma/client';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import { sendWebhook } from '@/utils/webhook';
+import { WebhookType } from '@/types';
 
 @Service()
 class ReportService {
@@ -70,6 +72,10 @@ class ReportService {
         },
       });
 
+      await sendWebhook({
+        type: WebhookType.ReportCreate,
+        data: createReport,
+      })
       return createReport;
     } catch (error) {
       if (error instanceof HttpException) {
