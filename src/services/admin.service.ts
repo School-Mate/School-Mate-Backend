@@ -253,6 +253,11 @@ export class AdminService {
         process: Process.success,
       },
     });
+
+    await sendWebhook({
+      type: WebhookType.ReportComplete,
+      data: updateReport,
+    })
     return updateReport;
   };
 

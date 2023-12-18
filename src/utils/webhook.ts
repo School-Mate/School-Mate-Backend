@@ -97,5 +97,22 @@ const buildParams = (data: Webhook) => {
                     }
                 ]
             }
+        case WebhookType.ReportComplete:
+            const report1: Report = data.data;
+            return {
+                content: `[REPORT/COMPLETE] ${report1.id}`,
+                description: `ID: ${report1.id}\n신고자: ${userHyperlink(report1.reportUserId, report1.reportUserName)}\n신고 대상: ${report1.targetId} **(${report1.targetType})**`,
+                fields: [
+                    {
+                        name: '신고 내용',
+                        value: discordCodeBlock(report1.message),
+                    }
+                ],
+                timestamp: new Date(),
+                footer: {
+                    text: `ID: ${report1.id}`
+                },
+                color: 0x00ff00,
+            }
     }
 }
