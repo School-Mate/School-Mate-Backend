@@ -230,6 +230,11 @@ export class AdminService {
         },
       });
     }
+
+    await sendWebhook({
+      type: WebhookType.BoardComplete,
+      data: updateRequest,
+    })
     return updateRequest;
   };
 

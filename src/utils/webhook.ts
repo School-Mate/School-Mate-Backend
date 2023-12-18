@@ -1,6 +1,6 @@
 import { Webhook } from "@/interfaces/webhook.interface";
 import { WebhookType } from "@/types";
-import { BoardRequest, Report, UserSchoolVerify } from "@prisma/client";
+import { BoardRequest, BoardRequestProcess, Report, UserSchoolVerify } from "@prisma/client";
 import fetch from 'node-fetch';
 import { discordCodeBlock, userHyperlink } from "./util";
 import { logger } from "./logger";
@@ -140,6 +140,39 @@ const buildParams = (data: Webhook) => {
                             text: `ID: ${req3.id}`
                         },
                         color: 0x00ff00,
+                    }
+                ]
+            }
+        case WebhookType.BoardComplete:
+            const req4: BoardRequest = data.data;
+            const args = {
+                title: 'ACCEPTED' ? req4.process === 'success' : 'REJECT',
+                color: 0x00ff00 ? req4.process === 'success' : 0xff0000,
+                sign: '+' ? req4.process === 'success' : '-',
+            }
+            return {
+                content: `[BOARD/${args.title}] ${req4.id}`,
+                embeds: [
+                    {
+                        title: `[BOARD/${args.title}]`,
+                        description: `ID: ${req4.id}\n요청 정보: ${req4.schoolName} ${userHyperlink(req4.userId)}`,
+                        fields: [
+                            {
+                                name: '게시판 이름',
+                                value: discordCodeBlock(`${args.sign} ${req4.name}`, 'md'),
+                                inline: true,
+                            },
+                            {
+                                name: '게시판 설명',
+                                value: discordCodeBlock(`${args.sign} ${req4.description}`, 'md'),
+                                inline: true,
+                            },
+                        ],
+                        timestamp: new Date(),
+                        footer: {
+                            text: `ID: ${req4.id}`
+                        },
+                        color: args.color,
                     }
                 ]
             }
