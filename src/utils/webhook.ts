@@ -1,6 +1,6 @@
 import { Webhook } from "@/interfaces/webhook.interface";
 import { WebhookType } from "@/types";
-import { BoardRequest, BoardRequestProcess, Report, UserSchoolVerify } from "@prisma/client";
+import { BoardRequest, Report, UserSchoolVerify } from "@prisma/client";
 import fetch from 'node-fetch';
 import { discordCodeBlock, userHyperlink } from "./util";
 import { logger } from "./logger";
@@ -45,7 +45,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: '[VERIFY/ACCEPT]',
-                        description: `ID: ${req1.id}\n유저 정보: ${userHyperlink(req.userId, req.userName)}\n요청 정보: ${req1.schoolName} ${req1.grade}-${req1.class} (${req1.dept || '일반학과'})`,
+                        description: `ID: ${req1.id}\n유저 정보: ${userHyperlink(req1.userId, req1.userName)}\n요청 정보: ${req1.schoolName} ${req1.grade}-${req1.class} (${req1.dept || '일반학과'})`,
                         timestamp: new Date(),
                         footer: {
                             text: `ID: ${req1.id}`
@@ -61,7 +61,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: '[VERIFY/REJECT]',
-                        description: `ID: ${req2.id}\n유저 정보: ${userHyperlink(req.userId, req.userName)}\n요청 정보: ${req2.schoolName} ${req2.grade}-${req2.class} (${req2.dept || '일반학과'})`,
+                        description: `ID: ${req2.id}\n유저 정보: ${userHyperlink(req2.userId, req2.userName)}\n요청 정보: ${req2.schoolName} ${req2.grade}-${req2.class} (${req2.dept || '일반학과'})`,
                         fields: [
                             {
                                 name: '사유',
