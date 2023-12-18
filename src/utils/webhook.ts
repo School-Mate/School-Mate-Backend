@@ -30,7 +30,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: '[VERIFY/REQUEST]',
-                        description: `ID: ${req.id}\n유저 정보: ${userHyperlink(req.userId, req.userName)}\n요청 정보: ${req.schoolName} ${req.grade}-${req.class} (${req.dept || '일반학과'})`,
+                        description: `유저 정보: ${userHyperlink(req.userId, req.userName)}\n요청 정보: ${req.schoolName} ${req.grade}-${req.class} (${req.dept || '일반학과'})`,
                         timestamp: req.createdAt,
                         footer: {
                             text: `ID: ${req.id}`
@@ -45,7 +45,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: '[VERIFY/ACCEPT]',
-                        description: `ID: ${req1.id}\n유저 정보: ${userHyperlink(req1.userId, req1.userName)}\n요청 정보: ${req1.schoolName} ${req1.grade}-${req1.class} (${req1.dept || '일반학과'})`,
+                        description: `유저 정보: ${userHyperlink(req1.userId, req1.userName)}\n요청 정보: ${req1.schoolName} ${req1.grade}-${req1.class} (${req1.dept || '일반학과'})`,
                         timestamp: new Date(),
                         footer: {
                             text: `ID: ${req1.id}`
@@ -61,7 +61,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: '[VERIFY/REJECT]',
-                        description: `ID: ${req2.id}\n유저 정보: ${userHyperlink(req2.userId, req2.userName)}\n요청 정보: ${req2.schoolName} ${req2.grade}-${req2.class} (${req2.dept || '일반학과'})`,
+                        description: `유저 정보: ${userHyperlink(req2.userId, req2.userName)}\n요청 정보: ${req2.schoolName} ${req2.grade}-${req2.class} (${req2.dept || '일반학과'})`,
                         fields: [
                             {
                                 name: '사유',
@@ -83,7 +83,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: '[REPORT/CREATE]',
-                        description: `ID: ${report.id}\n신고자: ${userHyperlink(report.reportUserId, report.reportUserName)}\n신고 대상: ${report.targetId} **(${report.targetType})**`,
+                        description: `신고자: ${userHyperlink(report.reportUserId, report.reportUserName)}\n신고 대상: ${report.targetId} **(${report.targetType})**`,
                         fields: [
                             {
                                 name: '신고 내용',
@@ -102,7 +102,7 @@ const buildParams = (data: Webhook) => {
             const report1: Report = data.data;
             return {
                 content: `[REPORT/COMPLETE] ${report1.id}`,
-                description: `ID: ${report1.id}\n신고자: ${userHyperlink(report1.reportUserId, report1.reportUserName)}\n신고 대상: ${report1.targetId} **(${report1.targetType})**`,
+                description: `신고자: ${userHyperlink(report1.reportUserId, report1.reportUserName)}\n신고 대상: ${report1.targetId} **(${report1.targetType})**`,
                 fields: [
                     {
                         name: '신고 내용',
@@ -122,7 +122,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: '[BOARD/REQUEST]',
-                        description: `ID: ${req3.id}\n요청 정보: ${req3.schoolName} ${userHyperlink(req3.userId)}`,
+                        description: `요청 정보: ${req3.schoolName} ${userHyperlink(req3.userId)}`,
                         fields: [
                             {
                                 name: '게시판 이름',
@@ -155,7 +155,7 @@ const buildParams = (data: Webhook) => {
                 embeds: [
                     {
                         title: `[BOARD/${args.title}]`,
-                        description: `ID: ${req4.id}\n요청 정보: ${req4.schoolName} ${userHyperlink(req4.userId)}`,
+                        description: `요청 정보: ${req4.schoolName} ${userHyperlink(req4.userId)}`,
                         fields: [
                             {
                                 name: '게시판 이름',
