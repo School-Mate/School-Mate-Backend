@@ -35,6 +35,8 @@ model User {
   pushDevice         PushDevice[]
   ReportBlindArticle ReportBlindArticle[]
   ReportBlindUser    ReportBlindUser[]
+
+  @@index([createdAt])
 }
 
 model School {
@@ -165,6 +167,8 @@ model Asked {
   isAnonymous  Boolean
   askedUser    AskedUser @relation(fields: [askedUserId], references: [userId], onDelete: Cascade)
   questionUser User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }
 
 model Admin {
@@ -215,6 +219,8 @@ model Article {
   articleLike        ArticleLike[]
   hotArticle         HotArticle[]
   ReportBlindArticle ReportBlindArticle[]
+
+  @@index([createdAt])
 }
 
 model DefaultBoard {

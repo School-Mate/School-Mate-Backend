@@ -1,5 +1,14 @@
 import AdminController from '@/controllers/admin.controller';
-import { AdminDto, CompleteReportDto, GetBoardRequestDto, GetReportRequestDto, GetVerifyRequestDto, AdminRequestDto, GetAllDto, SchoolNameDto } from '@/dtos/admin.dto';
+import {
+  AdminDto,
+  CompleteReportDto,
+  GetBoardRequestDto,
+  GetReportRequestDto,
+  GetVerifyRequestDto,
+  AdminRequestDto,
+  GetAllDto,
+  SchoolNameDto,
+} from '@/dtos/admin.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import adminMiddleware, { adminFlagMiddleware } from '@/middlewares/admin.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
@@ -17,19 +26,21 @@ class AdminRoute implements Routes {
   private initializeRoutes() {
     this.router.get(`${this.path}/me`, adminMiddleware, this.adminController.me);
     this.router.get(`${this.path}/logout`, adminMiddleware, this.adminController.logOut);
-    this.router.get(`${this.path}/user/all`,
+    this.router.get(`${this.path}/analytics`, adminMiddleware, this.adminController.getAnalytics);
+    this.router.get(
+      `${this.path}/user/all`,
       adminMiddleware,
       adminFlagMiddleware('USER_MANAGE'),
       validationMiddleware(GetAllDto, 'query'),
-      this.adminController.getAllUsers
+      this.adminController.getAllUsers,
     );
     this.router.get(`${this.path}/user/:userId`, adminMiddleware, adminFlagMiddleware('USER_MANAGE'), this.adminController.getUserInfo);
     this.router.get(
-      `${this.path}/article/all`, 
-      adminMiddleware, 
-      adminFlagMiddleware('BOARD_MANAGE'), 
-      validationMiddleware(GetAllDto, 'query'), 
-      this.adminController.getAllArticles
+      `${this.path}/article/all`,
+      adminMiddleware,
+      adminFlagMiddleware('BOARD_MANAGE'),
+      validationMiddleware(GetAllDto, 'query'),
+      this.adminController.getAllArticles,
     );
     this.router.get(
       `${this.path}/school/all`,
@@ -37,7 +48,7 @@ class AdminRoute implements Routes {
       adminFlagMiddleware('USER_SCHOOL_REVIEWER'),
       validationMiddleware(GetAllDto, 'query'),
       this.adminController.getAllSchools,
-    )
+    );
     this.router.get(
       `${this.path}/verify`,
       adminMiddleware,
@@ -53,7 +64,7 @@ class AdminRoute implements Routes {
       this.adminController.reports,
     );
     this.router.get(
-      `${this.path}/board`,
+      `${this.path}/boardrequest`,
       adminMiddleware,
       validationMiddleware(GetBoardRequestDto, 'query'),
       adminFlagMiddleware('BOARD_MANAGE'),
@@ -75,7 +86,7 @@ class AdminRoute implements Routes {
       this.adminController.postVerifyRequest,
     );
     this.router.post(
-      `${this.path}/board`,
+      `${this.path}/boardrequest`,
       adminMiddleware,
       validationMiddleware(AdminRequestDto, 'body'),
       adminFlagMiddleware('BOARD_MANAGE'),
@@ -89,11 +100,11 @@ class AdminRoute implements Routes {
       this.adminController.completeReport,
     );
     this.router.post(
-      `${this.path}/:schoolId/name`,
+      `${this.path}/school/:schoolId/name`,
       adminMiddleware,
       validationMiddleware(SchoolNameDto, 'body'),
       this.adminController.setSchoolName,
-    )
+    );
     this.router.delete(
       `${this.path}/board/:boardId/article/:articleId`,
       adminMiddleware,

@@ -7,7 +7,7 @@ import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { PushMessage, SMS_TEMPLATE_ID, SmsEvent } from '@/interfaces/admin.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, Prisma, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
 import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -17,11 +17,12 @@ import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
 import { WebhookType } from '@/types';
 import { logger } from '@/utils/logger';
+import dayjs from 'dayjs';
 
 @Service()
 export class AdminService {
   public schoolService = Container.get(SchoolService);
-
+  public prismaClient = Container.get(PrismaClientService);
   public admin = Container.get(PrismaClientService).admin;
   public article = Container.get(PrismaClientService).article;
   public board = Container.get(PrismaClientService).board;
@@ -32,6 +33,7 @@ export class AdminService {
   public users = Container.get(PrismaClientService).user;
   public userSchool = Container.get(PrismaClientService).userSchool;
   public userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  public asked = Container.get(PrismaClientService).asked;
   public school = Container.get(PrismaClientService).school;
   public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
@@ -51,6 +53,85 @@ export class AdminService {
 
     const passwordRemovedData = excludeAdminPassword(createAdminData, ['password']);
     return passwordRemovedData as Admin;
+  }
+
+  public async analyticsService(): Promise<{
+    user: any;
+    article: any;
+    asked: any;
+  }> {
+    const weekOfUserLastAndThisWeekPersent = await this.prismaClient.$queryRaw`
+      WITH week_counts AS (
+        SELECT
+          COUNT(*)::int AS total_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '7 days' AND "createdAt" < CURRENT_DATE)::int AS current_week_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE - INTERVAL '7 days')::int AS previous_week_count
+        FROM "User"
+        WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE
+      )
+
+      SELECT
+        total_count,
+        current_week_count,
+        previous_week_count,
+        COALESCE((current_week_count - previous_week_count) * 100.0 / NULLIF(COALESCE(previous_week_count, 0), 0), 100) AS growth_rate
+      FROM week_counts;
+    `;
+
+    const weekOfArticleLastAndThisWeekPersent = await this.prismaClient.$queryRaw`
+      WITH week_counts AS (
+        SELECT
+          COUNT(*)::int AS total_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '7 days' AND "createdAt" < CURRENT_DATE)::int AS current_week_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE - INTERVAL '7 days')::int AS previous_week_count
+        FROM "Article"
+        WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE
+      )
+
+      SELECT
+        total_count,
+        current_week_count,
+        previous_week_count,
+        COALESCE((current_week_count - previous_week_count) * 100.0 / NULLIF(COALESCE(previous_week_count, 0), 0), 100) AS growth_rate
+      FROM week_counts;
+    `;
+
+    const weekOfAskedLastAndThisWeekPersent = await this.prismaClient.$queryRaw`
+      WITH week_counts AS (
+        SELECT
+          COUNT(*)::int AS total_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '7 days' AND "createdAt" < CURRENT_DATE)::int AS current_week_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE - INTERVAL '7 days')::int AS previous_week_count
+        FROM "Asked"
+        WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE
+      )
+
+      SELECT
+        total_count,
+        current_week_count,
+        previous_week_count,
+        COALESCE((current_week_count - previous_week_count) * 100.0 / NULLIF(COALESCE(previous_week_count, 0), 0), 100) AS growth_rate
+      FROM week_counts;
+    `;
+
+    const totalUserCount = await this.users.count();
+    const totalArticleCount = await this.article.count();
+    const totalAskedCount = await this.asked.count();
+
+    return {
+      asked: {
+        total: totalAskedCount,
+        last2week: weekOfAskedLastAndThisWeekPersent[0],
+      },
+      article: {
+        total: totalArticleCount,
+        last2week: weekOfArticleLastAndThisWeekPersent[0],
+      },
+      user: {
+        total: totalUserCount,
+        last2week: weekOfUserLastAndThisWeekPersent[0],
+      },
+    };
   }
 
   public async loginService(adminData: AdminDto): Promise<{ cookie: string; findAdmin: Admin }> {
@@ -207,7 +288,7 @@ export class AdminService {
     await sendWebhook({
       type: WebhookType.VerifyAccept,
       data: findRequest,
-    })
+    });
     return true;
   };
 
@@ -217,7 +298,23 @@ export class AdminService {
         process: processMap[process],
       },
     });
-    return requests;
+
+    const boardRequestsWithUser = await Promise.all(
+      requests.map(async request => {
+        const user = await this.users.findUnique({
+          where: { id: request.userId },
+          select: {
+            name: true,
+            id: true,
+          },
+        });
+        return {
+          ...request,
+          user: user,
+        };
+      }),
+    );
+    return boardRequestsWithUser;
   };
 
   public postBoardRequest = async (requestId: string, message: string, process: Process): Promise<BoardRequest> => {
@@ -250,7 +347,7 @@ export class AdminService {
     await sendWebhook({
       type: WebhookType.BoardComplete,
       data: updateRequest,
-    })
+    });
     return updateRequest;
   };
 
@@ -278,7 +375,7 @@ export class AdminService {
     await sendWebhook({
       type: WebhookType.ReportComplete,
       data: updateReport,
-    })
+    });
     return updateReport;
   };
 
@@ -335,7 +432,7 @@ export class AdminService {
     const findBoard = await this.board.findUnique({ where: { id: Number(boardId) } });
     if (!findBoard) throw new HttpException(409, '해당 게시판을 찾을 수 없습니다.');
 
-    const findArticle = await this.article.findUnique({ 
+    const findArticle = await this.article.findUnique({
       where: { id: Number(articleId) },
       include: {
         user: true,
@@ -367,7 +464,7 @@ export class AdminService {
     await sendWebhook({
       type: WebhookType.ArticleDelete,
       data: findArticle,
-    })
+    });
     return true;
   };
 
@@ -405,12 +502,38 @@ export class AdminService {
     return articles;
   }
 
-  public async getAllSchools(page: string): Promise<Array<School>> {
-    const schools = await this.school.findMany({
-      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
-      take: 100,
-    });
-    return schools;
+  public async getAllSchools(
+    page: string,
+    keyword: string,
+  ): Promise<{
+    contents: Array<School>;
+    totalPage: number;
+  }> {
+    // schools list with relation user count pagination query
+    const schoolsWithUser = (await this.prismaClient.$queryRaw`
+      SELECT
+        "School".*,
+        COUNT("UserSchool"."userId") AS "userCount"
+      FROM "School"
+      LEFT JOIN "UserSchool" ON "UserSchool"."schoolId" = "School"."schoolId"
+      WHERE "School"."name" LIKE ${keyword ? `%${keyword}%` : '%%'} OR "School"."defaultName" LIKE ${keyword ? `%${keyword}%` : '%%'}
+      GROUP BY "School"."schoolId"
+      ORDER BY "School"."schoolId" DESC
+      OFFSET ${isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25}
+      LIMIT 25
+    `) as Array<School & { userCount: number }>;
+
+    const totalSchools = await this.school.count();
+
+    return {
+      contents: schoolsWithUser.map(school => {
+        return {
+          ...school,
+          userCount: Number(school.userCount),
+        };
+      }),
+      totalPage: Math.ceil(totalSchools / 25),
+    };
   }
 
   public async setSchoolName(schoolId: string, name: string): Promise<School> {

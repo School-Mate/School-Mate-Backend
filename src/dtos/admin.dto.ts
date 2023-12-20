@@ -59,10 +59,11 @@ export class CompleteReportDto {
   public reportId: string;
 }
 
-
 export class GetAllDto {
   @IsOptional()
   public page: number;
+  @IsOptional()
+  public keyword: string;
 }
 
 export class SchoolNameDto {

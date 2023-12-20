@@ -58,6 +58,18 @@ class AdminController {
     }
   };
 
+  public getAnalytics = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const analyticsDatas = await this.adminService.analyticsService();
+
+      ResponseWrapper(req, res, {
+        data: analyticsDatas,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public deleteImage = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
@@ -162,7 +174,7 @@ class AdminController {
 
   public getAllSchools = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const getAllSchools = await this.adminService.getAllSchools(req.query.page as string);
+      const getAllSchools = await this.adminService.getAllSchools(req.query.page as string, req.query.keyword as string);
       ResponseWrapper(req, res, { data: getAllSchools });
     } catch (error) {
       next(error);
