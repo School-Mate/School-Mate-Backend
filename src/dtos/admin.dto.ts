@@ -10,9 +10,9 @@ export class AdminDto {
 }
 
 export class GetVerifyRequestDto {
-  @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'denied', 'success'], { message: 'pending, denied, success 중 하나를 입력해주세요.' })
-  public process: Process;
+  @IsOptional()
+  @IsString({ message: '페이지를 입력해주세요.' })
+  public page: string;
 }
 
 export class AdminRequestDto {
@@ -28,9 +28,9 @@ export class AdminRequestDto {
 }
 
 export class GetBoardRequestDto {
-  @IsString({ message: '처리 상태를 입력해주세요.' })
-  @IsIn(['pending', 'denied', 'success'], { message: 'pending, denied, success 중 하나를 입력해주세요.' })
-  public process: Process;
+  @IsOptional()
+  @IsString({ message: '페이지를 입력해주세요.' })
+  public page: string;
 }
 
 export class PostBoardRequestDto {

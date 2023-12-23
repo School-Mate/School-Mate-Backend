@@ -82,7 +82,7 @@ class AdminController {
 
   public verifyRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const verifyRequests = await this.adminService.getVerifyRequests(req.query.process as GetVerifyRequestDto['process']);
+      const verifyRequests = await this.adminService.getVerifyRequests(req.query.page as string);
       ResponseWrapper(req, res, { data: verifyRequests });
     } catch (error) {
       next(error);
@@ -101,7 +101,7 @@ class AdminController {
 
   public boardRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const boardRequests = await this.adminService.getBoardRequests(req.params.process);
+      const boardRequests = await this.adminService.getBoardRequests(req.query.page as string);
       ResponseWrapper(req, res, { data: boardRequests });
     } catch (error) {
       next(error);
@@ -156,7 +156,7 @@ class AdminController {
 
   public getAllUsers = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const getAllUsers = await this.adminService.getAllUsers(req.query.page as string);
+      const getAllUsers = await this.adminService.getAllUsers(req.query.page as string, req.query.keyword as string);
       ResponseWrapper(req, res, { data: getAllUsers });
     } catch (error) {
       next(error);

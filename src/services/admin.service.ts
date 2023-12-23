@@ -175,23 +175,37 @@ export class AdminService {
     return true;
   };
 
-  public getVerifyRequests = async (process: Process): Promise<Array<UserSchoolVerify>> => {
+  public getVerifyRequests = async (
+    page: string,
+  ): Promise<{
+    contents: Array<UserSchoolVerify & { user: Pick<User, 'name' | 'id'> }>;
+    totalPage: number;
+  }> => {
     const requests = await this.userSchoolVerify.findMany({
-      where: {
-        process: process,
-      },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
       include: {
-        user: true,
+        user: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
         image: true,
       },
     });
 
-    return requests;
+    const totalRequests = await this.userSchoolVerify.count();
+
+    return {
+      contents: requests,
+      totalPage: Math.ceil(totalRequests / 25),
+    };
   };
 
   public postVerifyRequest = async (requestId: string, message: string, process: Process): Promise<boolean> => {
     if (process === Process.pending) throw new HttpException(409, '올바른 상태를 입력해주세요.');
-    const findRequest = await this.userSchoolVerify.findUnique({ where: { id: requestId } });
+    const findRequest = await this.userSchoolVerify.findUnique({ where: { id: requestId }, include: { user: true } });
     if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
     if (findRequest.process !== Process.pending) throw new HttpException(409, '이미 처리된 요청입니다.');
 
@@ -209,13 +223,25 @@ export class AdminService {
 
       await this.sendPushNotification(findRequest.userId, '😢 인증이 거절되었어요!', `${schoolInfo.defaultName} 학생 인증이 거절되었습니다.`, {
         type: 'resetstack',
-        url: '/me',
+        url: '/verify',
       });
 
       await sendWebhook({
         type: WebhookType.VerifyReject,
         data: updateVerify,
       });
+
+      try {
+        await this.sendMessage('VERIFY_SCHOOL_REJECT', findRequest.user.phone, {
+          '#{접속링크}': 'schoolmate.kr/verfiy',
+          '#{학교이름}': findRequest.schoolName,
+          '#{학년}': findRequest.grade + '학년',
+          '#{사유}': message,
+        });
+      } catch (error) {
+        logger.error(error);
+      }
+
       return false;
     }
     const isUserSchool = await this.users.findUnique({
@@ -292,12 +318,18 @@ export class AdminService {
     return true;
   };
 
-  public getBoardRequests = async (process: string): Promise<Array<BoardRequest>> => {
+  public getBoardRequests = async (
+    page: string,
+  ): Promise<{
+    contents: Array<BoardRequest & { user: Pick<User, 'name' | 'id'> }>;
+    totalPage: number;
+  }> => {
     const requests = await this.boardRequest.findMany({
-      where: {
-        process: processMap[process],
-      },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
     });
+
+    const totalRequests = await this.boardRequest.count();
 
     const boardRequestsWithUser = await Promise.all(
       requests.map(async request => {
@@ -314,7 +346,10 @@ export class AdminService {
         };
       }),
     );
-    return boardRequestsWithUser;
+    return {
+      contents: boardRequestsWithUser,
+      totalPage: Math.ceil(totalRequests / 25),
+    };
   };
 
   public postBoardRequest = async (requestId: string, message: string, process: Process): Promise<BoardRequest> => {
@@ -468,26 +503,132 @@ export class AdminService {
     return true;
   };
 
-  public getUserInfo = async (userId: string): Promise<User> => {
-    const findUser = await this.users.findUnique({ where: { id: userId } });
-    if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
-
-    return findUser;
-  };
-
-  public async getAllUsers(page: string): Promise<Array<User>> {
-    const users = await this.users.findMany({
-      include: {
+  public getUserInfo = async (userId: string): Promise<any> => {
+    const findUser = await this.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        createdAt: true,
+        profile: true,
+        isVerified: true,
+        userBlock: true,
         userSchool: {
           include: {
             school: true,
           },
         },
+        askedUser: true,
+        _count: {
+          select: {
+            article: true,
+            comment: true,
+            reComment: true,
+            commentLike: true,
+            reCommentLike: true,
+            articleLike: true,
+            asked: true,
+          },
+        },
       },
-      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
-      take: 100,
     });
-    return users;
+    if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+
+    return findUser;
+  };
+
+  public async getAllUsers(
+    page: string,
+    keyword: string,
+  ): Promise<{
+    contents: Array<any>;
+    totalPage: number;
+  }> {
+    const users = await this.users.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: keyword,
+            },
+          },
+          {
+            phone: {
+              contains: keyword,
+            },
+          },
+          {
+            userSchool: {
+              school: {
+                OR: [
+                  {
+                    name: {
+                      contains: keyword,
+                    },
+                  },
+                  {
+                    defaultName: {
+                      contains: keyword,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        userSchool: {
+          include: {
+            school: true,
+          },
+        },
+        id: true,
+        name: true,
+        phone: true,
+        createdAt: true,
+        email: true,
+        isVerified: true,
+      },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
+    });
+
+    const totalUsers = await this.users.count({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: keyword,
+            },
+          },
+          {
+            phone: {
+              contains: keyword,
+            },
+          },
+          {
+            userSchool: {
+              school: {
+                name: {
+                  contains: keyword,
+                },
+                defaultName: {
+                  contains: keyword,
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    return {
+      contents: users,
+      totalPage: Math.ceil(totalUsers / 25),
+    };
   }
 
   public async getAllArticles(page: string): Promise<Array<Article>> {

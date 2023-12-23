@@ -28,13 +28,13 @@ class AdminRoute implements Routes {
     this.router.get(`${this.path}/logout`, adminMiddleware, this.adminController.logOut);
     this.router.get(`${this.path}/analytics`, adminMiddleware, this.adminController.getAnalytics);
     this.router.get(
-      `${this.path}/user/all`,
+      `${this.path}/users`,
       adminMiddleware,
       adminFlagMiddleware('USER_MANAGE'),
       validationMiddleware(GetAllDto, 'query'),
       this.adminController.getAllUsers,
     );
-    this.router.get(`${this.path}/user/:userId`, adminMiddleware, adminFlagMiddleware('USER_MANAGE'), this.adminController.getUserInfo);
+    this.router.get(`${this.path}/users/:userId`, adminMiddleware, adminFlagMiddleware('USER_MANAGE'), this.adminController.getUserInfo);
     this.router.get(
       `${this.path}/article/all`,
       adminMiddleware,
