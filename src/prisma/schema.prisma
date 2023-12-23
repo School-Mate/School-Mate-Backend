@@ -33,8 +33,9 @@ model User {
   userSchool         UserSchool?
   userSchoolVerify   UserSchoolVerify[]
   pushDevice         PushDevice[]
-  ReportBlindArticle ReportBlindArticle[]
-  ReportBlindUser    ReportBlindUser[]
+  reportBlindArticle ReportBlindArticle[]
+  reportBlindUser    ReportBlindUser[]
+  userBlock          UserBlock[]
 
   @@index([createdAt])
 }
@@ -172,10 +173,11 @@ model Asked {
 }
 
 model Admin {
-  id       String @id @default(uuid())
-  loginId  String @unique
-  password String
-  flags    Int
+  id        String      @id @default(uuid())
+  loginId   String      @unique
+  password  String
+  flags     Int
+  userBlock UserBlock[]
 }
 
 model Board {
@@ -223,6 +225,19 @@ model Article {
   @@index([createdAt])
 }
 
+model UserBlock {
+  id                 String   @id @default(uuid())
+  userId             String
+  targetId           String
+  reason             String
+  startDate          DateTime @default(now())
+  endDate            DateTime
+  createdAt          DateTime @default(now())
+  transactionAdminId String
+  transactionAdmin   Admin    @relation(fields: [transactionAdminId], references: [id], onDelete: Cascade)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model DefaultBoard {
   id          Int    @id @default(autoincrement())
   name        String
@@ -251,6 +266,7 @@ model BoardRequest {
   schoolId    String
   schoolName  String
   process     BoardRequestProcess @default(pending)
+  createdAt   DateTime            @default(now())
   message     String?
 }
 
