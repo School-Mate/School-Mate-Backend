@@ -387,14 +387,30 @@ export class AdminService {
     return updateRequest;
   };
 
-  public getReports = async (process: string, targetType: ReportTargetType): Promise<Array<Report>> => {
+  public getReports = async (process: string, targetType: ReportTargetType, page: string): Promise<{
+    contents: Array<Report>;
+    totalPage: number;
+  }> => {
     const requests = await this.report.findMany({
       where: {
         process: processMap[process],
         targetType: targetType,
       },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
     });
-    return requests;
+    
+    const totalRequests = await this.report.count({
+      where: {
+        process: processMap[process],
+        targetType: targetType,
+      },
+    });
+
+    return {
+      contents: requests,
+      totalPage: Math.ceil(totalRequests / 25),
+    };
   };
 
   public completeReport = async (reportId: string): Promise<Report> => {
