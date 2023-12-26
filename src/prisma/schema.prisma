@@ -308,6 +308,7 @@ model Report {
   targetType     ReportTargetType
   message        String
   targetId       String
+  targetUserId   String
   reportUserName String
   process        ReportProcess    @default(pending)
 }
