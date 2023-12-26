@@ -1,4 +1,4 @@
-import { AdminDto, GetVerifyRequestDto, AdminRequestDto, UserBlockDto } from '@/dtos/admin.dto';
+import { AdminDto, AdminRequestDto, UserBlockDto } from '@/dtos/admin.dto';
 import { AdminService } from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin, ReportTargetType } from '@prisma/client';
