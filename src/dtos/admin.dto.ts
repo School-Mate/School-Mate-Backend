@@ -1,5 +1,5 @@
 import { Process } from '@prisma/client';
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsIn, IsOptional, IsString } from 'class-validator';
 
 export class AdminDto {
   @IsString({ message: '아이디를 입력해주세요.' })
@@ -69,4 +69,18 @@ export class GetAllDto {
 export class SchoolNameDto {
   @IsString({ message: '학교 이름을 입력해주세요.' })
   public name: string;
+}
+
+export class UserBlockDto {
+  @IsString({ message: '유저 아이디를 입력해주세요.' })
+  public userId: string;
+
+  @IsString({ message: '차단 사유 id를 입력해주세요.' })
+  public targetId: string;
+
+  @IsString({ message: '차단 사유를 입력해주세요.' })
+  public reason: string;
+
+  @IsDate({ message: '차단 만료일을 입력해주세요.' })
+  public endDate: Date;
 }

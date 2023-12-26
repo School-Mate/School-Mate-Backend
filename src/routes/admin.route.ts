@@ -8,6 +8,7 @@ import {
   AdminRequestDto,
   GetAllDto,
   SchoolNameDto,
+  UserBlockDto,
 } from '@/dtos/admin.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import adminMiddleware, { adminFlagMiddleware } from '@/middlewares/admin.middleware';
@@ -105,6 +106,12 @@ class AdminRoute implements Routes {
       validationMiddleware(SchoolNameDto, 'body'),
       this.adminController.setSchoolName,
     );
+    this.router.post(
+      `${this.path}/block`,
+      adminMiddleware,
+      validationMiddleware(UserBlockDto, 'body'),
+      this.adminController.blockUser,
+    )
     this.router.delete(
       `${this.path}/board/:boardId/article/:articleId`,
       adminMiddleware,

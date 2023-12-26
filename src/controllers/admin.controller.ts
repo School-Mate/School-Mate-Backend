@@ -1,4 +1,4 @@
-import { AdminDto, GetVerifyRequestDto, AdminRequestDto } from '@/dtos/admin.dto';
+import { AdminDto, GetVerifyRequestDto, AdminRequestDto, UserBlockDto } from '@/dtos/admin.dto';
 import { AdminService } from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin, ReportTargetType } from '@prisma/client';
@@ -189,6 +189,15 @@ class AdminController {
       next(error);
     }
   };
+
+  public blockUser = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const blockUser = await this.adminService.blockUser(req.admin as Admin, req.body as UserBlockDto);
+      ResponseWrapper(req, res, { data: blockUser });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default AdminController;

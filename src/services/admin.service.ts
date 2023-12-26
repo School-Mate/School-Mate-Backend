@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import { DOMAIN, MESSAGE_FROM, SECRET_KEY, SOL_API_KEY, SOL_API_PFID, SOL_API_SECRET } from '@/config';
-import { AdminDto } from '@/dtos/admin.dto';
+import { AdminDto, UserBlockDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { PushMessage, SMS_TEMPLATE_ID, SmsEvent } from '@/interfaces/admin.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, Article, BoardRequest, Prisma, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, Prisma, Process, Report, ReportTargetType, School, User, UserBlock, UserSchoolVerify } from '@prisma/client';
 import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -33,6 +33,7 @@ export class AdminService {
   public users = Container.get(PrismaClientService).user;
   public userSchool = Container.get(PrismaClientService).userSchool;
   public userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  public userBlock = Container.get(PrismaClientService).userBlock;
   public asked = Container.get(PrismaClientService).asked;
   public school = Container.get(PrismaClientService).school;
   public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
@@ -689,6 +690,26 @@ export class AdminService {
     });
 
     return updateSchool;
+  }
+
+  public async blockUser(admin: Admin, data: UserBlockDto): Promise<UserBlock> {
+    const findUser = await this.users.findUnique({ where: { id: data.userId } });
+    if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+
+    const findUserBlock = await this.userBlock.findFirst({ where: { userId: data.userId, targetId: data.targetId } });
+    if (findUserBlock) throw new HttpException(409, '이미 차단된 유저입니다.');
+
+    const createUserBlock = await this.userBlock.create({
+      data: {
+        userId: data.userId,
+        targetId: data.targetId,
+        reason: data.reason,
+        endDate: data.endDate,
+        transactionAdminId: admin.id,
+      },
+    });
+
+    return createUserBlock;
   }
 
   public createToken(admin: Admin): TokenData {
