@@ -50,6 +50,7 @@ export class GetReportRequestDto {
   @IsIn(['pending', 'success', 'denied'], { message: 'pending, success, denied 중 하나를 입력해주세요.' })
   public process: Process;
 
+  @IsOptional()
   @IsString({ message: '신고 타입을 입력해주세요.' })
   public targetType: string;
 

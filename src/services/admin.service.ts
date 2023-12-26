@@ -390,10 +390,10 @@ export class AdminService {
     contents: Array<Report>;
     totalPage: number;
   }> => {
-    const requests = await this.report.findMany({
+    const reports = await this.report.findMany({
       where: {
         process: processMap[process],
-        targetType: targetType,
+        ...(targetType && { targetType: targetType }),
       },
       skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
       take: 25,
@@ -402,12 +402,12 @@ export class AdminService {
     const totalRequests = await this.report.count({
       where: {
         process: processMap[process],
-        targetType: targetType,
+        ...(targetType && { targetType: targetType }),
       },
     });
 
     return {
-      contents: requests,
+      contents: reports,
       totalPage: Math.ceil(totalRequests / 25),
     };
   };
