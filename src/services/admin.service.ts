@@ -7,7 +7,7 @@ import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { PushMessage, SMS_TEMPLATE_ID, SmsEvent } from '@/interfaces/admin.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, Article, BoardRequest, Prisma, Process, Report, ReportTargetType, School, User, UserBlock, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserBlock, UserSchoolVerify } from '@prisma/client';
 import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -17,7 +17,6 @@ import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
 import { WebhookType } from '@/types';
 import { logger } from '@/utils/logger';
-import dayjs from 'dayjs';
 
 @Service()
 export class AdminService {
