@@ -120,7 +120,7 @@ class AdminController {
 
   public reports = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const reports = await this.adminService.getReports(req.params.process, req.params.targetType as ReportTargetType);
+      const reports = await this.adminService.getReports(req.params.process, req.params.targetType as ReportTargetType, req.params.page);
       ResponseWrapper(req, res, { data: reports });
     } catch (error) {
       next(error);

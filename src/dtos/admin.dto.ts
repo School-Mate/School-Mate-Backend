@@ -52,6 +52,10 @@ export class GetReportRequestDto {
 
   @IsString({ message: '신고 타입을 입력해주세요.' })
   public targetType: string;
+
+  @IsOptional()
+  @IsString({ message: '페이지를 입력해주세요.' })
+  public page: string;
 }
 
 export class CompleteReportDto {
