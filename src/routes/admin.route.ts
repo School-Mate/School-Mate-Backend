@@ -37,13 +37,6 @@ class AdminRoute implements Routes {
     );
     this.router.get(`${this.path}/users/:userId`, adminMiddleware, adminFlagMiddleware('USER_MANAGE'), this.adminController.getUserInfo);
     this.router.get(
-      `${this.path}/article/all`,
-      adminMiddleware,
-      adminFlagMiddleware('BOARD_MANAGE'),
-      validationMiddleware(GetAllDto, 'query'),
-      this.adminController.getAllArticles,
-    );
-    this.router.get(
       `${this.path}/school/all`,
       adminMiddleware,
       adminFlagMiddleware('USER_SCHOOL_REVIEWER'),
@@ -63,6 +56,31 @@ class AdminRoute implements Routes {
       validationMiddleware(GetReportRequestDto, 'query'),
       adminFlagMiddleware('USER_REPORT_REVIEWER'),
       this.adminController.reports,
+    );
+    this.router.get(
+      `${this.path}/article`,
+      adminMiddleware,
+      adminFlagMiddleware('BOARD_MANAGE'),
+      validationMiddleware(GetAllDto, 'query'),
+      this.adminController.getAllArticles,
+    );
+    // todo: 게시판 목록 조회
+    // this.router.get(
+    //   `${this.path}/board`,
+    //   adminMiddleware,
+    //   adminFlagMiddleware('BOARD_MANAGE'),
+    // );
+    // todo: 게시판별 게시글 조회
+    // this.router.get(
+    //   `${this.path}/board/:boardId/article`,
+    //   adminMiddleware,
+    //   adminFlagMiddleware('USER_MANAGE'),
+    // );
+    this.router.get(
+      `${this.path}/board/:boardId/article/:articleId`,
+      adminMiddleware,
+      adminFlagMiddleware('BOARD_MANAGE'),
+      this.adminController.getArticle,
     );
     this.router.get(
       `${this.path}/boardrequest`,
@@ -94,9 +112,9 @@ class AdminRoute implements Routes {
       this.adminController.postBoardRequest,
     );
     this.router.post(
-      `${this.path}/report`,
+      `${this.path}/report/:reportId`,
       adminMiddleware,
-      validationMiddleware(CompleteReportDto, 'query'),
+      validationMiddleware(CompleteReportDto, 'body'),
       adminFlagMiddleware('USER_REPORT_REVIEWER'),
       this.adminController.completeReport,
     );
@@ -106,12 +124,6 @@ class AdminRoute implements Routes {
       validationMiddleware(SchoolNameDto, 'body'),
       this.adminController.setSchoolName,
     );
-    this.router.post(
-      `${this.path}/block`,
-      adminMiddleware,
-      validationMiddleware(UserBlockDto, 'body'),
-      this.adminController.blockUser,
-    )
     this.router.delete(
       `${this.path}/board/:boardId/article/:articleId`,
       adminMiddleware,

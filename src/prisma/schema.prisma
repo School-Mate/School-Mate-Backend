@@ -226,16 +226,17 @@ model Article {
 }
 
 model UserBlock {
-  id                 String   @id @default(uuid())
+  id                 String           @id @default(uuid())
   userId             String
   targetId           String
+  targetType         ReportTargetType
   reason             String
-  startDate          DateTime @default(now())
+  startDate          DateTime         @default(now())
   endDate            DateTime
-  createdAt          DateTime @default(now())
+  createdAt          DateTime         @default(now())
   transactionAdminId String
-  transactionAdmin   Admin    @relation(fields: [transactionAdminId], references: [id], onDelete: Cascade)
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionAdmin   Admin            @relation(fields: [transactionAdminId], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DefaultBoard {
@@ -256,6 +257,29 @@ model DeletedArticle {
   createdAt   DateTime
   deletedAt   DateTime @default(now())
   boardId     Int
+}
+
+model DeletedComment {
+  id          Int      @id
+  userId      String
+  content     String
+  isAnonymous Boolean
+  isDeleted   Boolean
+  createdAt   DateTime
+  updatedAt   DateTime
+  articleId   Int
+}
+
+model DeletedReComment {
+  id          Int      @id
+  articleId   Int
+  userId      String
+  content     String
+  isAnonymous Boolean
+  isDeleted   Boolean
+  createdAt   DateTime
+  updatedAt   DateTime
+  commentId   Int?
 }
 
 model BoardRequest {

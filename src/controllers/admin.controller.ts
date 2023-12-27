@@ -1,4 +1,4 @@
-import { AdminDto, AdminRequestDto, UserBlockDto } from '@/dtos/admin.dto';
+import { AdminDto, AdminRequestDto, CompleteReportDto } from '@/dtos/admin.dto';
 import { AdminService } from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin, ReportTargetType } from '@prisma/client';
@@ -108,6 +108,24 @@ class AdminController {
     }
   };
 
+  public getArticle = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const article = await this.adminService.getArticle(req.params.boardId, req.params.articleId);
+      ResponseWrapper(req, res, { data: article });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getBoardArticle = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const boardRequests = await this.adminService.getBoardRequests(req.query.page as string);
+      ResponseWrapper(req, res, { data: boardRequests });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public postBoardRequest = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
       const data = req.body as AdminRequestDto;
@@ -138,7 +156,9 @@ class AdminController {
 
   public completeReport = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const completeReport = await this.adminService.completeReport(req.params.reportId);
+      const reportData = req.body as CompleteReportDto;
+      const admin = req.admin;
+      const completeReport = await this.adminService.completeReport(req.params.reportId, reportData, admin);
       ResponseWrapper(req, res, { data: completeReport });
     } catch (error) {
       next(error);
@@ -189,15 +209,6 @@ class AdminController {
       next(error);
     }
   };
-
-  public blockUser = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const blockUser = await this.adminService.blockUser(req.admin as Admin, req.body as UserBlockDto);
-      ResponseWrapper(req, res, { data: blockUser });
-    } catch (error) {
-      next(error);
-    }
-  }
 }
 
 export default AdminController;

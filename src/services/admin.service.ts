@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import { DOMAIN, MESSAGE_FROM, SECRET_KEY, SOL_API_KEY, SOL_API_PFID, SOL_API_SECRET } from '@/config';
-import { AdminDto, UserBlockDto } from '@/dtos/admin.dto';
+import { AdminDto, CompleteReportDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { PushMessage, SMS_TEMPLATE_ID, SmsEvent } from '@/interfaces/admin.interface';
@@ -17,6 +17,7 @@ import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
 import { WebhookType } from '@/types';
 import { logger } from '@/utils/logger';
+import dayjs from 'dayjs';
 
 @Service()
 export class AdminService {
@@ -27,6 +28,8 @@ export class AdminService {
   public board = Container.get(PrismaClientService).board;
   public boardRequest = Container.get(PrismaClientService).boardRequest;
   public deletedArticle = Container.get(PrismaClientService).deletedArticle;
+  public deletedComment = Container.get(PrismaClientService).deletedComment;
+  public deletedReComment = Container.get(PrismaClientService).deletedReComment;
   public image = Container.get(PrismaClientService).image;
   public report = Container.get(PrismaClientService).report;
   public users = Container.get(PrismaClientService).user;
@@ -35,6 +38,8 @@ export class AdminService {
   public userBlock = Container.get(PrismaClientService).userBlock;
   public asked = Container.get(PrismaClientService).asked;
   public school = Container.get(PrismaClientService).school;
+  public comment = Container.get(PrismaClientService).comment;
+  public recomment = Container.get(PrismaClientService).reComment;
   public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
@@ -193,6 +198,9 @@ export class AdminService {
         },
         image: true,
       },
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     const totalRequests = await this.userSchoolVerify.count();
@@ -318,6 +326,24 @@ export class AdminService {
     return true;
   };
 
+  public getArticle = async (boardId: string, articleId: string): Promise<Article> => {
+    const findArticle = await this.article.findUnique({
+      where: { id: Number(articleId) },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        board: true,
+      },
+    });
+    if (!findArticle) throw new HttpException(409, '해당 게시글을 찾을 수 없습니다.');
+
+    return findArticle;
+  };
+
   public getBoardRequests = async (
     page: string,
   ): Promise<{
@@ -386,7 +412,11 @@ export class AdminService {
     return updateRequest;
   };
 
-  public getReports = async (process: string, targetType: ReportTargetType, page: string): Promise<{
+  public getReports = async (
+    process: string,
+    targetType: ReportTargetType,
+    page: string,
+  ): Promise<{
     contents: Array<Report>;
     totalPage: number;
   }> => {
@@ -397,8 +427,72 @@ export class AdminService {
       },
       skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
       take: 25,
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
-    
+
+    const reportWithDetail = await Promise.all(
+      reports.map(async report => {
+        const reportUser = await this.users.findUnique({
+          where: { id: report.reportUserId },
+          select: {
+            name: true,
+            id: true,
+          },
+        });
+        const targetUser = await this.users.findUnique({
+          where: { id: report.targetUserId },
+          select: {
+            name: true,
+            id: true,
+          },
+        });
+
+        if (report.targetType === ReportTargetType.article) {
+          const article = await this.article.findUnique({
+            where: { id: Number(report.targetId) },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: article ? article : null,
+          };
+        } else if (report.targetType === ReportTargetType.comment) {
+          const comment = await this.comment.findUnique({
+            where: { id: Number(report.targetId) },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: comment ? comment : null,
+          };
+        } else if (report.targetType === ReportTargetType.recomment) {
+          const reComment = await this.recomment.findUnique({
+            where: { id: Number(report.targetId) },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: reComment ? reComment : null,
+          };
+        } else if (report.targetType === ReportTargetType.user) {
+          const user = await this.users.findUnique({
+            where: { id: report.targetId },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: user ? user : null,
+          };
+        }
+      }),
+    );
+
     const totalRequests = await this.report.count({
       where: {
         process: processMap[process],
@@ -407,19 +501,106 @@ export class AdminService {
     });
 
     return {
-      contents: reports,
+      contents: reportWithDetail as any,
       totalPage: Math.ceil(totalRequests / 25),
     };
   };
 
-  public completeReport = async (reportId: string): Promise<Report> => {
-    const findReport = await this.report.findFirst({ where: { id: reportId } });
+  public completeReport = async (reportId: string, data: CompleteReportDto, admin: Admin): Promise<Report> => {
+    const findReport = await this.report.findUnique({ where: { id: reportId } });
     if (!findReport) throw new HttpException(409, '해당 신고를 찾을 수 없습니다.');
 
-    const updateReport = await this.report.update({
-      where: { id: findReport.id },
+    const targetUser = await this.users.findUnique({ where: { id: findReport.targetUserId } });
+    if (!targetUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+
+    if (data.blockPeriod) {
+      const target = await this.userBlock.findFirst({
+        where: {
+          userId: findReport.targetUserId,
+          targetId: findReport.targetId,
+          targetType: findReport.targetType,
+        },
+      });
+      if (target) {
+        await this.report.updateMany({
+          where: {
+            targetId: findReport.targetId,
+            targetType: findReport.targetType,
+          },
+          data: {
+            process: Process.success,
+            message: data.reason,
+          },
+        });
+        throw new HttpException(409, '동일한 신고에 대한 제재가 이미 존재합니다.');
+      }
+
+      if (findReport.targetType === ReportTargetType.article) {
+        const article = await this.article.findUnique({
+          where: { id: Number(findReport.targetId) },
+        });
+        if (article) {
+          await this.deletedArticle.create({
+            data: article,
+          });
+          await this.article.delete({ where: { id: Number(findReport.targetId) } });
+        }
+      } else if (findReport.targetType === ReportTargetType.comment) {
+        const comment = await this.comment.findUnique({
+          where: { id: Number(findReport.targetId) },
+        });
+
+        if (comment) {
+          await this.deletedComment.create({
+            data: comment,
+          });
+          await this.comment.delete({ where: { id: Number(findReport.targetId) } });
+        }
+      } else if (findReport.targetType === ReportTargetType.recomment) {
+        const reComment = await this.recomment.findUnique({
+          where: { id: Number(findReport.targetId) },
+        });
+        if (reComment) {
+          await this.deletedReComment.create({
+            data: reComment,
+          });
+          await this.recomment.delete({ where: { id: Number(findReport.targetId) } });
+        }
+      }
+
+      const hasUserBlock = await this.userBlock.findFirst({
+        where: {
+          userId: findReport.targetUserId,
+          endDate: {
+            gt: new Date(),
+          },
+        },
+        orderBy: {
+          endDate: 'asc',
+        },
+      });
+
+      await this.userBlock.create({
+        data: {
+          userId: findReport.targetUserId,
+          targetId: findReport.targetId,
+          targetType: findReport.targetType,
+          reason: data.reason,
+          startDate: hasUserBlock ? hasUserBlock.endDate : new Date(),
+          endDate: dayjs(hasUserBlock.endDate).add(data.blockPeriod, 'day').toDate(),
+          transactionAdminId: admin.id,
+        },
+      });
+    }
+
+    const updateReport = await this.report.updateMany({
+      where: {
+        targetId: findReport.targetId,
+        targetType: findReport.targetType,
+      },
       data: {
         process: Process.success,
+        message: data.reason,
       },
     });
 
@@ -427,7 +608,8 @@ export class AdminService {
       type: WebhookType.ReportComplete,
       data: updateReport,
     });
-    return updateReport;
+
+    return findReport;
   };
 
   public sendPushNotification = async <T extends keyof PushMessage>(
@@ -705,26 +887,6 @@ export class AdminService {
     });
 
     return updateSchool;
-  }
-
-  public async blockUser(admin: Admin, data: UserBlockDto): Promise<UserBlock> {
-    const findUser = await this.users.findUnique({ where: { id: data.userId } });
-    if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
-
-    const findUserBlock = await this.userBlock.findFirst({ where: { userId: data.userId, targetId: data.targetId } });
-    if (findUserBlock) throw new HttpException(409, '이미 차단된 유저입니다.');
-
-    const createUserBlock = await this.userBlock.create({
-      data: {
-        userId: data.userId,
-        targetId: data.targetId,
-        reason: data.reason,
-        endDate: data.endDate,
-        transactionAdminId: admin.id,
-      },
-    });
-
-    return createUserBlock;
   }
 
   public createToken(admin: Admin): TokenData {
