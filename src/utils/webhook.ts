@@ -11,8 +11,10 @@ export const sendWebhook = async (data: Webhook) => {
   try {
     const params = buildParams(data);
 
-    await axios.post(DISCORD_WEBHOOK_URL, {
-      data: params,
+    await axios.post(DISCORD_WEBHOOK_URL, params, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
   } catch (error) {
     logger.error(error);
