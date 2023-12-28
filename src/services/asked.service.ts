@@ -170,33 +170,73 @@ export class AskedService {
 
       const totalCnt = await this.askedUser.count({
         where: {
-          AND: [
+          OR: [
             {
-              OR: [
+              AND: [
                 {
-                  customId: {
-                    contains: keyword,
-                  },
-                },
-                {
-                  tags: {
-                    has: keyword,
-                  },
+                  OR: [
+                    {
+                      customId: {
+                        contains: keyword,
+                      },
+                    },
+                    {
+                      tags: {
+                        has: keyword,
+                      },
+                    },
+                    {
+                      user: {
+                        name: {
+                          contains: keyword,
+                        },
+                      },
+                    },
+                  ],
                 },
                 {
                   user: {
-                    name: {
-                      contains: keyword,
-                    },
+                    userSchoolId: user.userSchoolId,
                   },
+                  receiveAnonymous: true,
                 },
               ],
             },
             {
-              user: {
-                userSchoolId: user.userSchoolId,
-              },
-              receiveAnonymous: true,
+              AND: [
+                {
+                  OR: [
+                    {
+                      customId: {
+                        contains: keyword,
+                      },
+                    },
+                    {
+                      tags: {
+                        has: keyword,
+                      },
+                    },
+                    {
+                      user: {
+                        name: {
+                          contains: keyword,
+                        },
+                      },
+                    },
+                  ],
+                },
+                {
+                  receiveAnonymous: true,
+                  receiveOtherSchool: true,
+                  user: {
+                    userSchool: {
+                      school: {
+                        atptCode: user.userSchool.school.atptCode,
+                      },
+                    },
+                  },
+                },
+              ],
             },
           ],
         },
@@ -370,6 +410,7 @@ export class AskedService {
           name: asked.isAnonymous ? '익명' : asked.questionUser.name,
           profile: asked.isAnonymous ? null : asked.questionUser.profile,
         },
+        isOtherSchool: askedUser.user.userSchoolId !== asked.questionUser.userSchoolId ? true : false,
       }));
 
       const askedCount = await this.asked.count({
@@ -559,6 +600,7 @@ export class AskedService {
             select: {
               name: true,
               profile: true,
+              userSchoolId: true,
             },
           },
           askedUser: {
@@ -568,6 +610,7 @@ export class AskedService {
                 select: {
                   name: true,
                   profile: true,
+                  userSchoolId: true,
                 },
               },
             },
@@ -583,6 +626,7 @@ export class AskedService {
           profile: findAskedInfo.isAnonymous ? null : findAskedInfo.questionUser.profile,
         },
         askedUserId: findAskedInfo.askedUserId,
+        isOtherSchool: findAskedInfo.askedUser.user.userSchoolId !== findAskedInfo.questionUser.userSchoolId ? true : false,
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -734,7 +778,7 @@ export class AskedService {
 
       if (!findAskedInfo) throw new HttpException(404, '찾을 수 없는 유저입니다.');
 
-      if (findAskedInfo.receiveOtherSchool) {
+      if (!findAskedInfo.receiveOtherSchool) {
         if (findAskedInfo.user.userSchoolId !== user.userSchoolId) throw new HttpException(403, '다른학교 학생의 질문을 받지 않습니다.');
       }
 
