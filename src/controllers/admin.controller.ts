@@ -1,4 +1,4 @@
-import { AdminDto, GetVerifyRequestDto, AdminRequestDto } from '@/dtos/admin.dto';
+import { AdminDto, AdminRequestDto, CompleteReportDto } from '@/dtos/admin.dto';
 import { AdminService } from '@/services/admin.service';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { Admin, ReportTargetType } from '@prisma/client';
@@ -58,6 +58,18 @@ class AdminController {
     }
   };
 
+  public getAnalytics = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const analyticsDatas = await this.adminService.analyticsService();
+
+      ResponseWrapper(req, res, {
+        data: analyticsDatas,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public deleteImage = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { id } = req.params;
@@ -70,7 +82,7 @@ class AdminController {
 
   public verifyRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const verifyRequests = await this.adminService.getVerifyRequests(req.query.process as GetVerifyRequestDto['process']);
+      const verifyRequests = await this.adminService.getVerifyRequests(req.query.page as string);
       ResponseWrapper(req, res, { data: verifyRequests });
     } catch (error) {
       next(error);
@@ -89,7 +101,25 @@ class AdminController {
 
   public boardRequests = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const boardRequests = await this.adminService.getBoardRequests(req.params.process);
+      const boardRequests = await this.adminService.getBoardRequests(req.query.page as string);
+      ResponseWrapper(req, res, { data: boardRequests });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getArticle = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const article = await this.adminService.getArticle(req.params.boardId, req.params.articleId);
+      ResponseWrapper(req, res, { data: article });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getBoardArticle = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const boardRequests = await this.adminService.getBoardRequests(req.query.page as string);
       ResponseWrapper(req, res, { data: boardRequests });
     } catch (error) {
       next(error);
@@ -108,7 +138,7 @@ class AdminController {
 
   public reports = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const reports = await this.adminService.getReports(req.params.process, req.params.targetType as ReportTargetType);
+      const reports = await this.adminService.getReports(req.params.process, req.params.targetType as ReportTargetType, req.params.page);
       ResponseWrapper(req, res, { data: reports });
     } catch (error) {
       next(error);
@@ -126,7 +156,9 @@ class AdminController {
 
   public completeReport = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const completeReport = await this.adminService.completeReport(req.params.reportId);
+      const reportData = req.body as CompleteReportDto;
+      const admin = req.admin;
+      const completeReport = await this.adminService.completeReport(req.params.reportId, reportData, admin);
       ResponseWrapper(req, res, { data: completeReport });
     } catch (error) {
       next(error);
@@ -144,7 +176,7 @@ class AdminController {
 
   public getAllUsers = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const getAllUsers = await this.adminService.getAllUsers(req.query.page as string);
+      const getAllUsers = await this.adminService.getAllUsers(req.query.page as string, req.query.keyword as string);
       ResponseWrapper(req, res, { data: getAllUsers });
     } catch (error) {
       next(error);
@@ -162,7 +194,7 @@ class AdminController {
 
   public getAllSchools = async (req: RequestWithAdmin, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const getAllSchools = await this.adminService.getAllSchools(req.query.page as string);
+      const getAllSchools = await this.adminService.getAllSchools(req.query.page as string, req.query.keyword as string);
       ResponseWrapper(req, res, { data: getAllSchools });
     } catch (error) {
       next(error);

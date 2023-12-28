@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import { DOMAIN, MESSAGE_FROM, SECRET_KEY, SOL_API_KEY, SOL_API_PFID, SOL_API_SECRET } from '@/config';
-import { AdminDto } from '@/dtos/admin.dto';
+import { AdminDto, CompleteReportDto } from '@/dtos/admin.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { PushMessage, SMS_TEMPLATE_ID, SmsEvent } from '@/interfaces/admin.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserBlock, UserSchoolVerify } from '@prisma/client';
 import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -17,22 +17,29 @@ import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
 import { WebhookType } from '@/types';
 import { logger } from '@/utils/logger';
+import dayjs from 'dayjs';
 
 @Service()
 export class AdminService {
   public schoolService = Container.get(SchoolService);
-
+  public prismaClient = Container.get(PrismaClientService);
   public admin = Container.get(PrismaClientService).admin;
   public article = Container.get(PrismaClientService).article;
   public board = Container.get(PrismaClientService).board;
   public boardRequest = Container.get(PrismaClientService).boardRequest;
   public deletedArticle = Container.get(PrismaClientService).deletedArticle;
+  public deletedComment = Container.get(PrismaClientService).deletedComment;
+  public deletedReComment = Container.get(PrismaClientService).deletedReComment;
   public image = Container.get(PrismaClientService).image;
   public report = Container.get(PrismaClientService).report;
   public users = Container.get(PrismaClientService).user;
   public userSchool = Container.get(PrismaClientService).userSchool;
   public userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  public userBlock = Container.get(PrismaClientService).userBlock;
+  public asked = Container.get(PrismaClientService).asked;
   public school = Container.get(PrismaClientService).school;
+  public comment = Container.get(PrismaClientService).comment;
+  public recomment = Container.get(PrismaClientService).reComment;
   public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
@@ -51,6 +58,85 @@ export class AdminService {
 
     const passwordRemovedData = excludeAdminPassword(createAdminData, ['password']);
     return passwordRemovedData as Admin;
+  }
+
+  public async analyticsService(): Promise<{
+    user: any;
+    article: any;
+    asked: any;
+  }> {
+    const weekOfUserLastAndThisWeekPersent = await this.prismaClient.$queryRaw`
+      WITH week_counts AS (
+        SELECT
+          COUNT(*)::int AS total_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '7 days' AND "createdAt" < CURRENT_DATE)::int AS current_week_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE - INTERVAL '7 days')::int AS previous_week_count
+        FROM "User"
+        WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE
+      )
+
+      SELECT
+        total_count,
+        current_week_count,
+        previous_week_count,
+        COALESCE((current_week_count - previous_week_count) * 100.0 / NULLIF(COALESCE(previous_week_count, 0), 0), 100) AS growth_rate
+      FROM week_counts;
+    `;
+
+    const weekOfArticleLastAndThisWeekPersent = await this.prismaClient.$queryRaw`
+      WITH week_counts AS (
+        SELECT
+          COUNT(*)::int AS total_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '7 days' AND "createdAt" < CURRENT_DATE)::int AS current_week_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE - INTERVAL '7 days')::int AS previous_week_count
+        FROM "Article"
+        WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE
+      )
+
+      SELECT
+        total_count,
+        current_week_count,
+        previous_week_count,
+        COALESCE((current_week_count - previous_week_count) * 100.0 / NULLIF(COALESCE(previous_week_count, 0), 0), 100) AS growth_rate
+      FROM week_counts;
+    `;
+
+    const weekOfAskedLastAndThisWeekPersent = await this.prismaClient.$queryRaw`
+      WITH week_counts AS (
+        SELECT
+          COUNT(*)::int AS total_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '7 days' AND "createdAt" < CURRENT_DATE)::int AS current_week_count,
+          COUNT(*) FILTER(WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE - INTERVAL '7 days')::int AS previous_week_count
+        FROM "Asked"
+        WHERE "createdAt" >= CURRENT_DATE - INTERVAL '14 days' AND "createdAt" < CURRENT_DATE
+      )
+
+      SELECT
+        total_count,
+        current_week_count,
+        previous_week_count,
+        COALESCE((current_week_count - previous_week_count) * 100.0 / NULLIF(COALESCE(previous_week_count, 0), 0), 100) AS growth_rate
+      FROM week_counts;
+    `;
+
+    const totalUserCount = await this.users.count();
+    const totalArticleCount = await this.article.count();
+    const totalAskedCount = await this.asked.count();
+
+    return {
+      asked: {
+        total: totalAskedCount,
+        last2week: weekOfAskedLastAndThisWeekPersent[0],
+      },
+      article: {
+        total: totalArticleCount,
+        last2week: weekOfArticleLastAndThisWeekPersent[0],
+      },
+      user: {
+        total: totalUserCount,
+        last2week: weekOfUserLastAndThisWeekPersent[0],
+      },
+    };
   }
 
   public async loginService(adminData: AdminDto): Promise<{ cookie: string; findAdmin: Admin }> {
@@ -94,23 +180,40 @@ export class AdminService {
     return true;
   };
 
-  public getVerifyRequests = async (process: Process): Promise<Array<UserSchoolVerify>> => {
+  public getVerifyRequests = async (
+    page: string,
+  ): Promise<{
+    contents: Array<UserSchoolVerify & { user: Pick<User, 'name' | 'id'> }>;
+    totalPage: number;
+  }> => {
     const requests = await this.userSchoolVerify.findMany({
-      where: {
-        process: process,
-      },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
       include: {
-        user: true,
+        user: {
+          select: {
+            name: true,
+            id: true,
+          },
+        },
         image: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
-    return requests;
+    const totalRequests = await this.userSchoolVerify.count();
+
+    return {
+      contents: requests,
+      totalPage: Math.ceil(totalRequests / 25),
+    };
   };
 
   public postVerifyRequest = async (requestId: string, message: string, process: Process): Promise<boolean> => {
     if (process === Process.pending) throw new HttpException(409, '올바른 상태를 입력해주세요.');
-    const findRequest = await this.userSchoolVerify.findUnique({ where: { id: requestId } });
+    const findRequest = await this.userSchoolVerify.findUnique({ where: { id: requestId }, include: { user: true } });
     if (!findRequest) throw new HttpException(409, '해당 요청을 찾을 수 없습니다.');
     if (findRequest.process !== Process.pending) throw new HttpException(409, '이미 처리된 요청입니다.');
 
@@ -128,13 +231,25 @@ export class AdminService {
 
       await this.sendPushNotification(findRequest.userId, '😢 인증이 거절되었어요!', `${schoolInfo.defaultName} 학생 인증이 거절되었습니다.`, {
         type: 'resetstack',
-        url: '/me',
+        url: '/verify',
       });
 
       await sendWebhook({
         type: WebhookType.VerifyReject,
         data: updateVerify,
       });
+
+      try {
+        await this.sendMessage('VERIFY_SCHOOL_REJECT', findRequest.user.phone, {
+          '#{접속링크}': 'schoolmate.kr/verfiy',
+          '#{학교이름}': findRequest.schoolName,
+          '#{학년}': findRequest.grade + '학년',
+          '#{사유}': message,
+        });
+      } catch (error) {
+        logger.error(error);
+      }
+
       return false;
     }
     const isUserSchool = await this.users.findUnique({
@@ -207,17 +322,60 @@ export class AdminService {
     await sendWebhook({
       type: WebhookType.VerifyAccept,
       data: findRequest,
-    })
+    });
     return true;
   };
 
-  public getBoardRequests = async (process: string): Promise<Array<BoardRequest>> => {
-    const requests = await this.boardRequest.findMany({
-      where: {
-        process: processMap[process],
+  public getArticle = async (boardId: string, articleId: string): Promise<Article> => {
+    const findArticle = await this.article.findUnique({
+      where: { id: Number(articleId) },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        board: true,
       },
     });
-    return requests;
+    if (!findArticle) throw new HttpException(409, '해당 게시글을 찾을 수 없습니다.');
+
+    return findArticle;
+  };
+
+  public getBoardRequests = async (
+    page: string,
+  ): Promise<{
+    contents: Array<BoardRequest & { user: Pick<User, 'name' | 'id'> }>;
+    totalPage: number;
+  }> => {
+    const requests = await this.boardRequest.findMany({
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
+    });
+
+    const totalRequests = await this.boardRequest.count();
+
+    const boardRequestsWithUser = await Promise.all(
+      requests.map(async request => {
+        const user = await this.users.findUnique({
+          where: { id: request.userId },
+          select: {
+            name: true,
+            id: true,
+          },
+        });
+        return {
+          ...request,
+          user: user,
+        };
+      }),
+    );
+    return {
+      contents: boardRequestsWithUser,
+      totalPage: Math.ceil(totalRequests / 25),
+    };
   };
 
   public postBoardRequest = async (requestId: string, message: string, process: Process): Promise<BoardRequest> => {
@@ -250,36 +408,208 @@ export class AdminService {
     await sendWebhook({
       type: WebhookType.BoardComplete,
       data: updateRequest,
-    })
+    });
     return updateRequest;
   };
 
-  public getReports = async (process: string, targetType: ReportTargetType): Promise<Array<Report>> => {
-    const requests = await this.report.findMany({
+  public getReports = async (
+    process: string,
+    targetType: ReportTargetType,
+    page: string,
+  ): Promise<{
+    contents: Array<Report>;
+    totalPage: number;
+  }> => {
+    const reports = await this.report.findMany({
       where: {
         process: processMap[process],
-        targetType: targetType,
+        ...(targetType && { targetType: targetType }),
+      },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
+      orderBy: {
+        createdAt: 'desc',
       },
     });
-    return requests;
+
+    const reportWithDetail = await Promise.all(
+      reports.map(async report => {
+        const reportUser = await this.users.findUnique({
+          where: { id: report.reportUserId },
+          select: {
+            name: true,
+            id: true,
+          },
+        });
+        const targetUser = await this.users.findUnique({
+          where: { id: report.targetUserId },
+          select: {
+            name: true,
+            id: true,
+          },
+        });
+
+        if (report.targetType === ReportTargetType.article) {
+          const article = await this.article.findUnique({
+            where: { id: Number(report.targetId) },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: article ? article : null,
+          };
+        } else if (report.targetType === ReportTargetType.comment) {
+          const comment = await this.comment.findUnique({
+            where: { id: Number(report.targetId) },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: comment ? comment : null,
+          };
+        } else if (report.targetType === ReportTargetType.recomment) {
+          const reComment = await this.recomment.findUnique({
+            where: { id: Number(report.targetId) },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: reComment ? reComment : null,
+          };
+        } else if (report.targetType === ReportTargetType.user) {
+          const user = await this.users.findUnique({
+            where: { id: report.targetId },
+          });
+          return {
+            ...report,
+            reportUser: reportUser ? reportUser : null,
+            targetUser: targetUser ? targetUser : null,
+            target: user ? user : null,
+          };
+        }
+      }),
+    );
+
+    const totalRequests = await this.report.count({
+      where: {
+        process: processMap[process],
+        ...(targetType && { targetType: targetType }),
+      },
+    });
+
+    return {
+      contents: reportWithDetail as any,
+      totalPage: Math.ceil(totalRequests / 25),
+    };
   };
 
-  public completeReport = async (reportId: string): Promise<Report> => {
-    const findReport = await this.report.findFirst({ where: { id: reportId } });
+  public completeReport = async (reportId: string, data: CompleteReportDto, admin: Admin): Promise<Report> => {
+    const findReport = await this.report.findUnique({ where: { id: reportId } });
     if (!findReport) throw new HttpException(409, '해당 신고를 찾을 수 없습니다.');
 
-    const updateReport = await this.report.update({
-      where: { id: findReport.id },
+    const targetUser = await this.users.findUnique({ where: { id: findReport.targetUserId } });
+    if (!targetUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+
+    if (data.blockPeriod) {
+      const target = await this.userBlock.findFirst({
+        where: {
+          userId: findReport.targetUserId,
+          targetId: findReport.targetId,
+          targetType: findReport.targetType,
+        },
+      });
+      if (target) {
+        await this.report.updateMany({
+          where: {
+            targetId: findReport.targetId,
+            targetType: findReport.targetType,
+          },
+          data: {
+            process: Process.success,
+            message: data.reason,
+          },
+        });
+        throw new HttpException(409, '동일한 신고에 대한 제재가 이미 존재합니다.');
+      }
+
+      if (findReport.targetType === ReportTargetType.article) {
+        const article = await this.article.findUnique({
+          where: { id: Number(findReport.targetId) },
+        });
+        if (article) {
+          await this.deletedArticle.create({
+            data: article,
+          });
+          await this.article.delete({ where: { id: Number(findReport.targetId) } });
+        }
+      } else if (findReport.targetType === ReportTargetType.comment) {
+        const comment = await this.comment.findUnique({
+          where: { id: Number(findReport.targetId) },
+        });
+
+        if (comment) {
+          await this.deletedComment.create({
+            data: comment,
+          });
+          await this.comment.delete({ where: { id: Number(findReport.targetId) } });
+        }
+      } else if (findReport.targetType === ReportTargetType.recomment) {
+        const reComment = await this.recomment.findUnique({
+          where: { id: Number(findReport.targetId) },
+        });
+        if (reComment) {
+          await this.deletedReComment.create({
+            data: reComment,
+          });
+          await this.recomment.delete({ where: { id: Number(findReport.targetId) } });
+        }
+      }
+
+      const hasUserBlock = await this.userBlock.findFirst({
+        where: {
+          userId: findReport.targetUserId,
+          endDate: {
+            gt: new Date(),
+          },
+        },
+        orderBy: {
+          endDate: 'asc',
+        },
+      });
+
+      await this.userBlock.create({
+        data: {
+          userId: findReport.targetUserId,
+          targetId: findReport.targetId,
+          targetType: findReport.targetType,
+          reason: data.reason,
+          startDate: hasUserBlock ? hasUserBlock.endDate : new Date(),
+          endDate: dayjs(hasUserBlock.endDate).add(data.blockPeriod, 'day').toDate(),
+          transactionAdminId: admin.id,
+        },
+      });
+    }
+
+    const updateReport = await this.report.updateMany({
+      where: {
+        targetId: findReport.targetId,
+        targetType: findReport.targetType,
+      },
       data: {
         process: Process.success,
+        message: data.reason,
       },
     });
 
     await sendWebhook({
       type: WebhookType.ReportComplete,
       data: updateReport,
-    })
-    return updateReport;
+    });
+
+    return findReport;
   };
 
   public sendPushNotification = async <T extends keyof PushMessage>(
@@ -335,7 +665,7 @@ export class AdminService {
     const findBoard = await this.board.findUnique({ where: { id: Number(boardId) } });
     if (!findBoard) throw new HttpException(409, '해당 게시판을 찾을 수 없습니다.');
 
-    const findArticle = await this.article.findUnique({ 
+    const findArticle = await this.article.findUnique({
       where: { id: Number(articleId) },
       include: {
         user: true,
@@ -367,30 +697,136 @@ export class AdminService {
     await sendWebhook({
       type: WebhookType.ArticleDelete,
       data: findArticle,
-    })
+    });
     return true;
   };
 
-  public getUserInfo = async (userId: string): Promise<User> => {
-    const findUser = await this.users.findUnique({ where: { id: userId } });
-    if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
-
-    return findUser;
-  };
-
-  public async getAllUsers(page: string): Promise<Array<User>> {
-    const users = await this.users.findMany({
-      include: {
+  public getUserInfo = async (userId: string): Promise<any> => {
+    const findUser = await this.users.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        createdAt: true,
+        profile: true,
+        isVerified: true,
+        userBlock: true,
         userSchool: {
           include: {
             school: true,
           },
         },
+        askedUser: true,
+        _count: {
+          select: {
+            article: true,
+            comment: true,
+            reComment: true,
+            commentLike: true,
+            reCommentLike: true,
+            articleLike: true,
+            asked: true,
+          },
+        },
       },
-      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
-      take: 100,
     });
-    return users;
+    if (!findUser) throw new HttpException(409, '해당 유저를 찾을 수 없습니다.');
+
+    return findUser;
+  };
+
+  public async getAllUsers(
+    page: string,
+    keyword: string,
+  ): Promise<{
+    contents: Array<any>;
+    totalPage: number;
+  }> {
+    const users = await this.users.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: keyword,
+            },
+          },
+          {
+            phone: {
+              contains: keyword,
+            },
+          },
+          {
+            userSchool: {
+              school: {
+                OR: [
+                  {
+                    name: {
+                      contains: keyword,
+                    },
+                  },
+                  {
+                    defaultName: {
+                      contains: keyword,
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      select: {
+        userSchool: {
+          include: {
+            school: true,
+          },
+        },
+        id: true,
+        name: true,
+        phone: true,
+        createdAt: true,
+        email: true,
+        isVerified: true,
+      },
+      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
+      take: 25,
+    });
+
+    const totalUsers = await this.users.count({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: keyword,
+            },
+          },
+          {
+            phone: {
+              contains: keyword,
+            },
+          },
+          {
+            userSchool: {
+              school: {
+                name: {
+                  contains: keyword,
+                },
+                defaultName: {
+                  contains: keyword,
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
+    return {
+      contents: users,
+      totalPage: Math.ceil(totalUsers / 25),
+    };
   }
 
   public async getAllArticles(page: string): Promise<Array<Article>> {
@@ -405,12 +841,38 @@ export class AdminService {
     return articles;
   }
 
-  public async getAllSchools(page: string): Promise<Array<School>> {
-    const schools = await this.school.findMany({
-      skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 100,
-      take: 100,
-    });
-    return schools;
+  public async getAllSchools(
+    page: string,
+    keyword: string,
+  ): Promise<{
+    contents: Array<School>;
+    totalPage: number;
+  }> {
+    // schools list with relation user count pagination query
+    const schoolsWithUser = (await this.prismaClient.$queryRaw`
+      SELECT
+        "School".*,
+        COUNT("UserSchool"."userId") AS "userCount"
+      FROM "School"
+      LEFT JOIN "UserSchool" ON "UserSchool"."schoolId" = "School"."schoolId"
+      WHERE "School"."name" LIKE ${keyword ? `%${keyword}%` : '%%'} OR "School"."defaultName" LIKE ${keyword ? `%${keyword}%` : '%%'}
+      GROUP BY "School"."schoolId"
+      ORDER BY "School"."schoolId" DESC
+      OFFSET ${isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25}
+      LIMIT 25
+    `) as Array<School & { userCount: number }>;
+
+    const totalSchools = await this.school.count();
+
+    return {
+      contents: schoolsWithUser.map(school => {
+        return {
+          ...school,
+          userCount: Number(school.userCount),
+        };
+      }),
+      totalPage: Math.ceil(totalSchools / 25),
+    };
   }
 
   public async setSchoolName(schoolId: string, name: string): Promise<School> {

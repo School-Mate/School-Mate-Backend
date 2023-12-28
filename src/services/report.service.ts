@@ -54,6 +54,24 @@ class ReportService {
         },
       });
       if (!findTarget) throw new HttpException(404, notFoundMessage);
+      let targetUserId: string;
+      switch (data.targetType) {
+        case 'user':
+          targetUserId = targetId as string;
+          break;
+        case 'article':
+          targetUserId = findTarget.userId;
+          break;
+        case 'asked':
+          targetUserId = findTarget.userId;
+          break;
+        case 'comment':
+          targetUserId = findTarget.userId;
+          break;
+        case 'recomment':
+          targetUserId = findTarget.userId;
+          break;
+      }
 
       const findUser = await this.user.findUnique({
         where: {
@@ -63,6 +81,7 @@ class ReportService {
 
       const createReport = await this.report.create({
         data: {
+          targetUserId: targetUserId,
           targetId: data.targetId,
           reportUserId: user.id,
           reportUserName: findUser.name,

@@ -33,8 +33,11 @@ model User {
   userSchool         UserSchool?
   userSchoolVerify   UserSchoolVerify[]
   pushDevice         PushDevice[]
-  ReportBlindArticle ReportBlindArticle[]
-  ReportBlindUser    ReportBlindUser[]
+  reportBlindArticle ReportBlindArticle[]
+  reportBlindUser    ReportBlindUser[]
+  userBlock          UserBlock[]
+
+  @@index([createdAt])
 }
 
 model School {
@@ -165,13 +168,16 @@ model Asked {
   isAnonymous  Boolean
   askedUser    AskedUser @relation(fields: [askedUserId], references: [userId], onDelete: Cascade)
   questionUser User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
 }
 
 model Admin {
-  id       String @id @default(uuid())
-  loginId  String @unique
-  password String
-  flags    Int
+  id        String      @id @default(uuid())
+  loginId   String      @unique
+  password  String
+  flags     Int
+  userBlock UserBlock[]
 }
 
 model Board {
@@ -215,6 +221,22 @@ model Article {
   articleLike        ArticleLike[]
   hotArticle         HotArticle[]
   ReportBlindArticle ReportBlindArticle[]
+
+  @@index([createdAt])
+}
+
+model UserBlock {
+  id                 String           @id @default(uuid())
+  userId             String
+  targetId           String
+  targetType         ReportTargetType
+  reason             String
+  startDate          DateTime         @default(now())
+  endDate            DateTime
+  createdAt          DateTime         @default(now())
+  transactionAdminId String
+  transactionAdmin   Admin            @relation(fields: [transactionAdminId], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DefaultBoard {
@@ -237,6 +259,29 @@ model DeletedArticle {
   boardId     Int
 }
 
+model DeletedComment {
+  id          Int      @id
+  userId      String
+  content     String
+  isAnonymous Boolean
+  isDeleted   Boolean
+  createdAt   DateTime
+  updatedAt   DateTime
+  articleId   Int
+}
+
+model DeletedReComment {
+  id          Int      @id
+  articleId   Int
+  userId      String
+  content     String
+  isAnonymous Boolean
+  isDeleted   Boolean
+  createdAt   DateTime
+  updatedAt   DateTime
+  commentId   Int?
+}
+
 model BoardRequest {
   id          String              @id @default(uuid())
   name        String
@@ -245,6 +290,7 @@ model BoardRequest {
   schoolId    String
   schoolName  String
   process     BoardRequestProcess @default(pending)
+  createdAt   DateTime            @default(now())
   message     String?
 }
 
@@ -286,6 +332,7 @@ model Report {
   targetType     ReportTargetType
   message        String
   targetId       String
+  targetUserId   String
   reportUserName String
   process        ReportProcess    @default(pending)
 }
