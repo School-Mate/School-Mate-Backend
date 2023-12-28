@@ -21,7 +21,11 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
         where: { id: userId },
         include: {
           socialLogin: true,
-          userSchool: true,
+          userSchool: {
+            include: {
+              school: true,
+            },
+          },
         },
       });
 

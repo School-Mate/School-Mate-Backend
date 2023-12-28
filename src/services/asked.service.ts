@@ -72,33 +72,73 @@ export class AskedService {
     try {
       const schoolUsers = await this.askedUser.findMany({
         where: {
-          AND: [
+          OR: [
             {
-              OR: [
+              AND: [
                 {
-                  customId: {
-                    contains: keyword,
-                  },
-                },
-                {
-                  tags: {
-                    has: keyword,
-                  },
+                  OR: [
+                    {
+                      customId: {
+                        contains: keyword,
+                      },
+                    },
+                    {
+                      tags: {
+                        has: keyword,
+                      },
+                    },
+                    {
+                      user: {
+                        name: {
+                          contains: keyword,
+                        },
+                      },
+                    },
+                  ],
                 },
                 {
                   user: {
-                    name: {
-                      contains: keyword,
-                    },
+                    userSchoolId: user.userSchoolId,
                   },
+                  receiveAnonymous: true,
                 },
               ],
             },
             {
-              user: {
-                userSchoolId: user.userSchoolId,
-              },
-              receiveAnonymous: true,
+              AND: [
+                {
+                  OR: [
+                    {
+                      customId: {
+                        contains: keyword,
+                      },
+                    },
+                    {
+                      tags: {
+                        has: keyword,
+                      },
+                    },
+                    {
+                      user: {
+                        name: {
+                          contains: keyword,
+                        },
+                      },
+                    },
+                  ],
+                },
+                {
+                  receiveAnonymous: true,
+                  receiveOtherSchool: true,
+                  user: {
+                    userSchool: {
+                      school: {
+                        atptCode: user.userSchool.school.atptCode,
+                      },
+                    },
+                  },
+                },
+              ],
             },
           ],
         },
@@ -107,6 +147,17 @@ export class AskedService {
             select: {
               name: true,
               profile: true,
+              userSchool: {
+                select: {
+                  school: {
+                    select: {
+                      name: true,
+                      schoolId: true,
+                      defaultName: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
