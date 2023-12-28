@@ -68,13 +68,21 @@ class ReportService {
           reportUserName: findUser.name,
           targetType: data.targetType,
           message: data.message,
+          targetUserId:
+            data.targetType === 'article' || data.targetType === 'comment' || data.targetType === 'recomment'
+              ? findTarget.userId
+              : data.targetType === 'asked'
+              ? findTarget.askedUserId
+              : data.targetType === 'user'
+              ? findTarget.id
+              : '',
         },
       });
 
       await sendWebhook({
         type: WebhookType.ReportCreate,
         data: createReport,
-      })
+      });
       return createReport;
     } catch (error) {
       if (error instanceof HttpException) {
