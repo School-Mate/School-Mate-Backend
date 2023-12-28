@@ -63,7 +63,7 @@ class ReportService {
           targetUserId = findTarget.userId;
           break;
         case 'asked':
-          targetUserId = findTarget.userId;
+          targetUserId = findTarget.askedUserId;
           break;
         case 'comment':
           targetUserId = findTarget.userId;
@@ -87,14 +87,6 @@ class ReportService {
           reportUserName: findUser.name,
           targetType: data.targetType,
           message: data.message,
-          targetUserId:
-            data.targetType === 'article' || data.targetType === 'comment' || data.targetType === 'recomment'
-              ? findTarget.userId
-              : data.targetType === 'asked'
-              ? findTarget.askedUserId
-              : data.targetType === 'user'
-              ? findTarget.id
-              : '',
         },
       });
 

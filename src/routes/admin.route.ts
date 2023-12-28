@@ -8,7 +8,6 @@ import {
   AdminRequestDto,
   GetAllDto,
   SchoolNameDto,
-  UserBlockDto,
 } from '@/dtos/admin.dto';
 import { Routes } from '@/interfaces/routes.interface';
 import adminMiddleware, { adminFlagMiddleware } from '@/middlewares/admin.middleware';
