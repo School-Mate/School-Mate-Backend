@@ -367,7 +367,10 @@ export class AskedService {
 
       const findAskedUser = await this.askedUser.findFirst({
         where: {
-          customId: askedUser.id,
+          customId: {
+            contains: askedUser.id,
+            mode: 'insensitive',
+          },
         },
       });
 
