@@ -6,12 +6,14 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 
-import { CREDENTIALS, LOG_FORMAT, NODE_ENV, ORIGIN, PORT } from './config';
+import { CREDENTIALS, LOG_FORMAT, NODE_ENV, ORIGIN, PORT, SENTRY_DSN } from './config';
 import { Routes } from './interfaces/routes.interface';
 import { logger, stream } from './utils/logger';
 import loggerMiddleware from './middlewares/logger.middleware';
 import errorMiddleware from './middlewares/error.middleware';
 import { PrismaClientService } from './services/prisma.service';
+import * as Sentry from '@sentry/node';
+import { ProfilingIntegration } from '@sentry/profiling-node';
 
 class App {
   public app: express.Application;
@@ -25,6 +27,7 @@ class App {
     this.port = PORT || 3000;
     this.prismaClient = new PrismaClientService();
 
+    this.initializeSentry();
     this.initializeDatabase();
     this.initializeMiddlewares();
     this.initializeRoutes(routes);
@@ -54,6 +57,29 @@ class App {
     this.app.use(express.urlencoded({ extended: true }));
     this.app.use(cookieParser());
     this.app.use(loggerMiddleware);
+    this.app.use(Sentry.Handlers.requestHandler());
+    this.app.use(Sentry.Handlers.tracingHandler());
+  }
+
+  private initializeSentry() {
+    Sentry.init({
+      dsn: SENTRY_DSN,
+      environment: this.env,
+      integrations: [
+        // enable HTTP calls tracing
+        new Sentry.Integrations.Http({ tracing: true }),
+        // enable Express.js middleware tracing
+        new Sentry.Integrations.Express({ app: this.app }),
+        new ProfilingIntegration(),
+      ],
+      // Performance Monitoring
+      tracesSampleRate: 1.0, //  Capture 100% of the transactions
+      // Set sampling rate for profiling - this is relative to tracesSampleRate
+      profilesSampleRate: 1.0,
+      // Enable debug mode to log event processing
+      debug: this.env === 'development',
+      enabled: this.env === 'production',
+    });
   }
 
   private initializeDatabase() {
@@ -67,6 +93,7 @@ class App {
   }
 
   private initializeErrorHandling() {
+    this.app.use(Sentry.Handlers.errorHandler());
     this.app.use(errorMiddleware);
   }
 }

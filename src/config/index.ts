@@ -28,4 +28,5 @@ export const {
   BUS_API_KEY,
   SOL_API_PFID,
   DISCORD_WEBHOOK_URL,
+  SENTRY_DSN,
 } = process.env;
