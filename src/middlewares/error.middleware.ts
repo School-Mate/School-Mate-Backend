@@ -10,9 +10,11 @@ const errorMiddleware = (error: HttpException, req: RequestWithUser, res: Respon
     const message: string = error.message || 'Something went wrong';
 
     logger.error(
-      `[${req.method}] ${req.path} >> StatusCode:: ${status}, Message:: ${message}, Request ID:: ${req.requestId}, IP:: ${req.ip}, UserAgent:: ${
-        req.headers['user-agent']
-      } User :: ${req.user ? `${req.user.name} (${req.user.id})` : 'Not Logged In'}, Details:: ${JSON.stringify(error)}}`,
+      `[${req.method}] ${req.path} >> StatusCode:: ${status}, Message:: ${message}, Request ID:: ${req.requestId}, IP:: ${
+        req.headers['X-Real-IP'] ? req.headers['X-Real-IP'] : req.ip
+      }, UserAgent:: ${req.headers['user-agent']} User :: ${
+        req.user ? `${req.user.name} (${req.user.id})` : 'Not Logged In'
+      }, Details:: ${JSON.stringify(error)}}`,
     );
     ResponseWrapper(req, res, { message, status });
   } catch (error) {

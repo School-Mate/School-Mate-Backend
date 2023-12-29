@@ -14,6 +14,7 @@ import errorMiddleware from './middlewares/error.middleware';
 import { PrismaClientService } from './services/prisma.service';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
+import { limiter } from './middlewares/ratelimit.middleware';
 
 class App {
   public app: express.Application;
@@ -48,6 +49,7 @@ class App {
   }
 
   private initializeMiddlewares() {
+    this.app.use(limiter);
     this.app.use(morgan(LOG_FORMAT, { stream }));
     this.app.use(cors({ origin: ORIGIN.split(' '), credentials: CREDENTIALS }));
     this.app.use(hpp());
