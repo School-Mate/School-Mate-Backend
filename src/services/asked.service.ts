@@ -67,6 +67,43 @@ export class AskedService {
     }
   };
 
+  public meAskedQuestions = async (user: UserWithSchool, page: string): Promise<any> => {
+    const askedQuestions = await this.asked.findMany({
+      where: {
+        userId: user.id,
+      },
+      skip: page ? (Number(page) - 1) * 10 : 0,
+      take: 10,
+      include: {
+        askedUser: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                profile: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+    });
+
+    const askedCount = await this.asked.count({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    return {
+      contents: askedQuestions,
+      totalPage: askedCount === 0 ? 1 : Math.ceil(askedCount / 10),
+      numberPage: page ? Number(page) : 1,
+    };
+  };
+
   public getAskedSearch = async (user: UserWithSchool, page: string, keyword: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
     try {

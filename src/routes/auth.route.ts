@@ -31,6 +31,7 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/me`, authMiddleware, this.authController.me);
     this.router.get(`${this.path}/me/school`, authMiddleware, this.authController.meSchool);
     this.router.get(`${this.path}/me/asked`, authMiddleware, this.authController.meAsked);
+    this.router.get(`${this.path}/me/askedquestions`, authMiddleware, this.authController.meAskedQuestions);
     this.router.get(`${this.path}/me/schoolverify`, authMiddleware, this.authController.meSchoolVerify);
     this.router.get(`${this.path}/logout`, authMiddleware, this.authController.logOut);
     this.router.get(`${this.path}/kakao`, this.authController.kakaoLogin);
