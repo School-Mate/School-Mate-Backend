@@ -83,6 +83,7 @@ class AuthRoute implements Routes {
       validationMiddleware(UpdateNicknameDto, 'body'),
       this.authController.updateNickname,
     );
+    this.router.delete(`/auth/me/disconnectaccount/instagram`, authMiddleware, this.authController.disconnectInstagramAccount);
     this.router.delete(`/image/:imageId`, authMiddleware, this.authController.deleteImage);
     this.router.delete(`${this.path}/me/profile`, authMiddleware, this.authController.updateProfile);
     this.router.delete(`${this.path}/me`, validationMiddleware(VerifyPhoneCodeDto, 'body'), authMiddleware, this.authController.deleteUser);

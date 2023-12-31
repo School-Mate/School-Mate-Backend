@@ -230,7 +230,7 @@ export class AuthService {
             accountId: String(user_id),
             accessToken: access_token,
             name: userData.username,
-            followerCount: userDetail.data.user.edge_followed_by.count,
+            followerCount: userDetail.data?.user.edge_followed_by.count || 0,
           },
         });
 
@@ -260,7 +260,7 @@ export class AuthService {
                 },
               },
               data: {
-                score: userDetail.data.user.edge_followed_by.count,
+                score: userDetail.data?.user.edge_followed_by.count || 0,
               },
             });
           }
@@ -272,19 +272,63 @@ export class AuthService {
             accountId: String(user_id),
             name: userData.username,
             accessToken: access_token,
-            followerCount: userDetail.data.user.edge_followed_by.count,
+            followerCount: userDetail.data?.user.edge_followed_by.count,
             userId: user.id,
           },
         });
       }
 
       return {
-        followersCount: userDetail.data.user.edge_followed_by.count,
+        followersCount: userDetail.data?.user.edge_followed_by.count,
       };
     } catch (error) {
       console.log(error);
       throw new Error(error);
     }
+  }
+
+  public async disconnectInstagramAccount(userData: User): Promise<boolean> {
+    const connectionAccount = await this.connectionAccount.findFirst({
+      where: {
+        userId: userData.id,
+        provider: 'instagram',
+      },
+    });
+
+    if (!connectionAccount) throw new HttpException(400, '연동된 계정이 없습니다.');
+
+    await this.connectionAccount.delete({
+      where: {
+        id: connectionAccount.id,
+      },
+    });
+
+    const joinFightList = await this.fight.findMany({
+      where: {
+        needTo: {
+          has: 'instagram',
+        },
+      },
+      select: {
+        fightRankingUser: {
+          where: {
+            userId: userData.id,
+          },
+        },
+      },
+    });
+
+    if (joinFightList.length > 0) {
+      await this.fightRankingUser.deleteMany({
+        where: {
+          id: {
+            in: joinFightList.map(fight => fight.fightRankingUser.map(user => user.id)).flat(),
+          },
+        },
+      });
+    }
+
+    return true;
   }
 
   public async meConnectAccount(userData: User): Promise<any> {

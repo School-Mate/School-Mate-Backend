@@ -209,6 +209,16 @@ class AuthController {
     }
   };
 
+  public disconnectInstagramAccount = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const disconnect = await this.authService.disconnectInstagramAccount(user);
+      ResponseWrapper(req, res, { data: disconnect });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public googleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { code } = req.query;
