@@ -10,6 +10,9 @@ import {
   GOOGLE_CLIENT_KEY,
   GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI,
+  INSTAGRAM_CLIENT_KEY,
+  INSTAGRAM_CLIENT_SECRET,
+  INSTAGRAM_REDIRECT_URI,
   KAKAO_CLIENT_KEY,
   KAKAO_CLIENT_SECRET,
   KAKAO_REDIRECT_URI,
@@ -26,14 +29,17 @@ import { deleteImage } from '@/utils/multer';
 import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import FormData from 'form-data';
 
 @Service()
 export class AuthService {
   public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
   public schoolService = Container.get(SchoolService);
   public adminService = Container.get(AdminService);
-
+  public connectionAccount = Container.get(PrismaClientService).connectionAccount;
   public image = Container.get(PrismaClientService).image;
+  public fight = Container.get(PrismaClientService).fight;
+  public fightRankingUser = Container.get(PrismaClientService).fightRankingUser;
   public socialLogin = Container.get(PrismaClientService).socialLogin;
   public users = Container.get(PrismaClientService).user;
   public phoneVerifyRequest = Container.get(PrismaClientService).phoneVerifyRequest;
@@ -164,6 +170,131 @@ export class AuthService {
     });
 
     return schoolverifyList;
+  }
+
+  public async instagramLoginCallback(user: UserWithSchool, code: string): Promise<any> {
+    const formData = new FormData();
+    formData.append('client_id', INSTAGRAM_CLIENT_KEY);
+    formData.append('client_secret', INSTAGRAM_CLIENT_SECRET);
+    formData.append('grant_type', 'authorization_code');
+    formData.append('redirect_uri', INSTAGRAM_REDIRECT_URI);
+    formData.append('code', code);
+
+    try {
+      const { data } = await axios.post('https://api.instagram.com/oauth/access_token', formData, {
+        headers: {
+          ...formData.getHeaders(),
+        },
+      });
+
+      const { access_token, user_id } = data;
+
+      const { data: userData } = await axios.get('https://graph.instagram.com/me', {
+        params: {
+          fields: 'id,username',
+          access_token: access_token,
+        },
+      });
+
+      const connectionAccount = await this.connectionAccount.findFirst({
+        where: {
+          userId: user.id,
+          provider: 'instagram',
+        },
+      });
+
+      const hasConnectionAccount = await this.connectionAccount.findFirst({
+        where: {
+          provider: 'instagram',
+          accountId: String(user_id),
+        },
+      });
+
+      if (hasConnectionAccount && hasConnectionAccount.userId !== user.id) {
+        throw new HttpException(409, '이미 연동된 계정입니다.');
+      }
+
+      // get instagram user detail, followers count, following count
+      const { data: userDetail } = await axios.get(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${userData.username}`, {
+        headers: {
+          'x-ig-app-id': '936619743392459',
+        },
+      });
+
+      if (connectionAccount) {
+        await this.connectionAccount.update({
+          where: {
+            id: connectionAccount.id,
+          },
+          data: {
+            accountId: String(user_id),
+            accessToken: access_token,
+            name: userData.username,
+            followerCount: userDetail.data.user.edge_followed_by.count,
+          },
+        });
+
+        if (connectionAccount.accountId !== String(user_id)) {
+          const instagramRanking = await this.fight.findMany({
+            where: {
+              needTo: {
+                has: 'instagram',
+              },
+            },
+          });
+
+          const instagramRankingUser = await this.fightRankingUser.findMany({
+            where: {
+              fightId: {
+                in: instagramRanking.map(fight => fight.id),
+              },
+              userId: user.id,
+            },
+          });
+
+          if (instagramRankingUser.length > 0) {
+            await this.fightRankingUser.updateMany({
+              where: {
+                id: {
+                  in: instagramRankingUser.map(fight => fight.id),
+                },
+              },
+              data: {
+                score: userDetail.data.user.edge_followed_by.count,
+              },
+            });
+          }
+        }
+      } else {
+        await this.connectionAccount.create({
+          data: {
+            provider: 'instagram',
+            accountId: String(user_id),
+            name: userData.username,
+            accessToken: access_token,
+            followerCount: userDetail.data.user.edge_followed_by.count,
+            userId: user.id,
+          },
+        });
+      }
+
+      return {
+        followersCount: userDetail.data.user.edge_followed_by.count,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new Error(error);
+    }
+  }
+
+  public async meConnectAccount(userData: User): Promise<any> {
+    const connectionAccount = await this.connectionAccount.findMany({
+      where: {
+        userId: userData.id,
+      },
+    });
+
+    return connectionAccount;
   }
 
   public async googleLogin(code: string): Promise<{

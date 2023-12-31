@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import AuthController from '@controllers/auth.controller';
 import { Routes } from '@interfaces/routes.interface';
-import authMiddleware from '@middlewares/auth.middleware';
+import authMiddleware, { authQueryMiddleware } from '@middlewares/auth.middleware';
 import validationMiddleware from '@middlewares/validation.middleware';
 import { imageUpload } from '@/utils/multer';
 import {
@@ -33,11 +33,14 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/me/asked`, authMiddleware, this.authController.meAsked);
     this.router.get(`${this.path}/me/askedquestions`, authMiddleware, this.authController.meAskedQuestions);
     this.router.get(`${this.path}/me/schoolverify`, authMiddleware, this.authController.meSchoolVerify);
+    this.router.get(`${this.path}/me/connectaccount`, authMiddleware, this.authController.meConnectAccount);
     this.router.get(`${this.path}/logout`, authMiddleware, this.authController.logOut);
     this.router.get(`${this.path}/kakao`, this.authController.kakaoLogin);
     this.router.get(`${this.path}/kakao/callback`, this.authController.kakaoLoginCallback);
     this.router.get(`${this.path}/google`, this.authController.googleLogin);
     this.router.get(`${this.path}/google/callback`, this.authController.googleLoginCallback);
+    this.router.get(`${this.path}/instagram`, authQueryMiddleware, this.authController.instagramLogin);
+    this.router.get(`${this.path}/instagram/callback`, authQueryMiddleware, this.authController.instagramLoginCallback);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginUserDto, 'body'), this.authController.login);
     this.router.post(`${this.path}/applogin`, this.authController.appLogin);

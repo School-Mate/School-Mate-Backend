@@ -36,21 +36,77 @@ model User {
   reportBlindArticle ReportBlindArticle[]
   reportBlindUser    ReportBlindUser[]
   userBlock          UserBlock[]
+  connectionAccount  ConnectionAccount[]
+  fightRankingUser   FightRankingUser[]
 
   @@index([createdAt])
 }
 
 model School {
-  schoolId    String       @id @unique
-  org         String
-  x           Float
-  y           Float
-  atptCode    String
-  defaultName String
-  name        String?
-  type        String
-  userSchool  UserSchool[]
-  article     Article[]
+  schoolId         String             @id @unique
+  org              String
+  x                Float
+  y                Float
+  atptCode         String
+  defaultName      String
+  name             String?
+  type             String
+  userSchool       UserSchool[]
+  article          Article[]
+  fightRanking     FightRanking[]
+  fightRankingUser FightRankingUser[]
+}
+
+model ConnectionAccount {
+  id            String  @id @default(uuid())
+  userId        String
+  accountId     String
+  name          String?
+  accessToken   String
+  refreshToken  String?
+  provider      String
+  followerCount Int     @default(0)
+  articleCount  Int     @default(0)
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Fight {
+  id               String             @id @default(uuid())
+  startAt          DateTime           @default(now())
+  endAt            DateTime?
+  needTo           String[]
+  title            String
+  description      String?
+  prize            String?
+  isVerified       Boolean            @default(false)
+  fightAreaType    FightAreaType
+  fightRanking     FightRanking[]
+  fightRankingUser FightRankingUser[]
+}
+
+model FightRanking {
+  id               String             @id @default(uuid())
+  userId           String
+  fightId          String
+  createdAt        DateTime           @default(now())
+  schoolId         String
+  fightRankingUser FightRankingUser[]
+  school           School             @relation(fields: [schoolId], references: [schoolId])
+  fight            Fight              @relation(fields: [fightId], references: [id])
+}
+
+model FightRankingUser {
+  id             String       @id @default(uuid())
+  userId         String
+  fightId        String
+  fightRankingId String
+  schoolId       String
+  score          Int          @default(0)
+  createdAt      DateTime     @default(now())
+  school         School       @relation(fields: [schoolId], references: [schoolId])
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fight          Fight        @relation(fields: [fightId], references: [id])
+  fightRanking   FightRanking @relation(fields: [fightRankingId], references: [id])
 }
 
 model Image {
@@ -444,6 +500,13 @@ enum ReportTargetType {
 enum ReportProcess {
   pending
   success
+}
+
+enum FightAreaType {
+  school
+  all
+  city
+  district
 }
 
 model Meal {

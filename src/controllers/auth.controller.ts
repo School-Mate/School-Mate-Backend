@@ -1,7 +1,16 @@
 import { NextFunction, Response } from 'express';
 import { User } from '@prisma/client';
 import { RequestWithUser } from '@interfaces/auth.interface';
-import { GOOGLE_REDIRECT_URI, GOOGLE_CLIENT_KEY, KAKAO_CLIENT_KEY, KAKAO_REDIRECT_URI, DOMAIN } from '@/config';
+import {
+  GOOGLE_REDIRECT_URI,
+  GOOGLE_CLIENT_KEY,
+  KAKAO_CLIENT_KEY,
+  KAKAO_REDIRECT_URI,
+  DOMAIN,
+  INSTAGRAM_CLIENT_KEY,
+  INSTAGRAM_REDIRECT_URI,
+  FTONT_DOMAIN,
+} from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import {
@@ -108,6 +117,17 @@ class AuthController {
     }
   };
 
+  public meConnectAccount = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userData: User = req.user;
+      const meConnectAccount = await this.authService.meConnectAccount(userData);
+
+      ResponseWrapper(req, res, { data: meConnectAccount });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public meAskedQuestions = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const userData: User = req.user;
@@ -161,6 +181,29 @@ class AuthController {
       res.redirect(
         `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_KEY}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email%20profile`,
       );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public instagramLogin = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.redirect(
+        `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_CLIENT_KEY}&redirect_uri=${INSTAGRAM_REDIRECT_URI}&scope=user_profile&response_type=code`,
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public instagramLoginCallback = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const code = req.query.code as string;
+      if (!code) return this.instagramLogin(req, res, next);
+      const fightData = await this.authService.instagramLoginCallback(user, code);
+      res.redirect(`${FTONT_DOMAIN}/me/connectaccount/connect/instagram`);
+      ResponseWrapper(req, res, { data: fightData });
     } catch (error) {
       next(error);
     }

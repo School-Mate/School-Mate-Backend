@@ -10,6 +10,7 @@ import AskedRoute from './routes/asked.route';
 import ReportRoute from './routes/report.route';
 import AdRoute from './routes/ad.route';
 import 'reflect-metadata';
+import FightRoute from './routes/fight.route';
 
 validateEnv();
 
@@ -22,6 +23,7 @@ const app = new App([
   new IndexRoute(),
   new ReportRoute(),
   new SchoolRoute(),
+  new FightRoute(),
   new AdRoute(),
 ]);
 
