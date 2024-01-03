@@ -9,83 +9,180 @@ export class FightService {
   public fightRanking = Container.get(PrismaClientService).fightRanking;
   public fightRankingUser = Container.get(PrismaClientService).fightRankingUser;
   public connectionAccount = Container.get(PrismaClientService).connectionAccount;
+  public prismaClient = Container.get(PrismaClientService);
+
   public async getFightList(user: UserWithSchool, page: string): Promise<any> {
     const fightList = await this.fight.findMany({
-      skip: (Number(page) - 1) * 20,
-      take: 20,
+      skip: (Number(page) - 1) * 10,
+      take: 10,
       orderBy: {
         startAt: 'desc',
       },
+      include: {
+        fightRanking: true,
+      },
     });
 
-    return '';
+    const fightListWithRanking = await Promise.all(
+      fightList.map(async fight => {
+        const fightListWithRanking = await this.fightRankingUser.groupBy({
+          by: ['fightId', 'schoolId'],
+          _sum: {
+            score: true,
+          },
+          where: {
+            fightId: fight.id,
+            schoolId: user.userSchoolId,
+          },
+        });
+
+        return {
+          ...fight,
+          score: fightListWithRanking[0] ? fightListWithRanking[0]._sum.score : 0,
+        };
+      }),
+    );
+
+    const fightCount = await this.fight.count();
+
+    return {
+      totalPage: fightCount === 0 ? 1 : Math.ceil(fightCount / 10),
+      numberPage: page ? Number(page) : 1,
+      contents: fightListWithRanking,
+    };
   }
 
-  public async fightRankingByFightId(fightId: string): Promise<any> {
-    const fightRanking = await this.fight.findUnique({
+  public async fightRankingByFightId(user: UserWithSchool, fightId: string): Promise<any> {
+    const fight = await this.fight.findUnique({
       where: {
         id: fightId,
       },
     });
 
-    return '';
+    const fightRanking = (await this.prismaClient.$queryRaw`
+      SELECT
+        FR.id AS rankingId,
+        FR."schoolId",
+        SUM(FRU.score) AS totalScore
+      FROM
+        "FightRanking" FR
+      JOIN
+        "FightRankingUser" FRU ON FRU."fightRankingId" = FR.id
+      WHERE
+        FR."fightId" = ${fightId}
+      GROUP BY
+        FR.id, FR."schoolId"
+      ORDER BY
+        totalScore DESC
+      LIMIT 30 
+    `) as {
+      rankingId: string;
+      schoolId: string;
+      totalscore: string;
+    }[];
+
+    const fightRankingWithSchool = await Promise.all(
+      fightRanking.map(async ranking => {
+        const school = await this.prismaClient.school.findUnique({
+          where: {
+            schoolId: ranking.schoolId,
+          },
+        });
+
+        return {
+          rankingid: ranking.rankingId,
+          schoolId: ranking.schoolId,
+          school: school,
+          totalScore: Number(ranking.totalscore),
+        };
+      }),
+    );
+
+    const isRegistration = await this.fightRankingUser.findFirst({
+      where: {
+        fightId,
+        userId: user.id,
+      },
+    });
+
+    const myScore = await this.prismaClient.fightRankingUser.groupBy({
+      by: ['schoolId', 'fightId'],
+      _sum: {
+        score: true,
+      },
+      where: {
+        fightId,
+        schoolId: user.userSchoolId,
+      },
+    });
+
+    return {
+      ...fight,
+      ranking: fightRankingWithSchool,
+      ourRanking: myScore[0] ? Number(myScore[0]._sum.score) : 0,
+      isRegistration: isRegistration ? true : false,
+    };
   }
 
-  public async fightRegistration(fightId: string, user: UserWithSchool): Promise<boolean> {
-    const fightData = await this.fight.findUnique({
+  public async fightRegistration(fightId: string, user: UserWithSchool): Promise<any> {
+    const findFight = await this.fight.findUnique({
       where: {
         id: fightId,
       },
     });
 
-    if (!fightData) {
+    if (!findFight) {
       throw new HttpException(404, '존재하지 않는 대결입니다.');
     }
 
-    if (fightData.needTo.includes('instagram')) {
-      const connectionAccount = await this.connectionAccount.findFirst({
+    let findFightRanking = await this.fightRanking.findFirst({
+      where: {
+        fightId,
+        schoolId: user.userSchoolId,
+      },
+    });
+
+    if (!findFightRanking) {
+      findFightRanking = await this.fightRanking.create({
+        data: {
+          fightId: findFight.id,
+          schoolId: user.userSchoolId,
+        },
+      });
+    }
+
+    const findFightRankingUser = await this.fightRankingUser.findFirst({
+      where: {
+        fightId: findFightRanking.fightId,
+        userId: user.id,
+      },
+    });
+
+    if (findFightRankingUser) {
+      throw new HttpException(403, '이미 등록된 대결입니다.');
+    }
+
+    if (findFight.needTo.includes('instagram')) {
+      const findConnectionAccount = await this.connectionAccount.findFirst({
         where: {
           userId: user.id,
           provider: 'instagram',
         },
       });
 
-      if (!connectionAccount) {
-        throw new HttpException(40, '인스타그램 계정을 먼저 연동해주세요.');
+      if (!findConnectionAccount) {
+        throw new HttpException(403, '인스타그램 연동이 필요합니다.');
       }
 
-      const registraionFight = await this.fightRankingUser.findFirst({
-        where: {
-          fightId: fightId,
+      await this.fightRankingUser.create({
+        data: {
+          fightRankingId: findFightRanking.id,
           userId: user.id,
+          fightId: findFight.id,
+          score: findConnectionAccount.followerCount,
+          schoolId: user.userSchoolId,
         },
       });
-
-      if (registraionFight) {
-        await this.fightRankingUser.update({
-          where: {
-            id: registraionFight.id,
-          },
-          data: {
-            score: connectionAccount.followerCount,
-          },
-        });
-      } else {
-        const fightRanking = await this.fightRanking.findFirst({
-          where: {
-            fightId: fightId,
-          },
-        });
-        await this.fightRankingUser.create({
-          data: {
-            fightId: fightId,
-            userId: user.id,
-            score: connectionAccount.followerCount,
-            schoolId: user.userSchoolId,
-            fightRankingId: fightRanking.id,
-          },
-        });
-      }
     }
 
     return true;

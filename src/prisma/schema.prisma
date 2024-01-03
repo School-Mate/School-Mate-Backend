@@ -79,6 +79,7 @@ model Fight {
   description      String?
   prize            String?
   isVerified       Boolean            @default(false)
+  icon             String?
   fightAreaType    FightAreaType
   fightRanking     FightRanking[]
   fightRankingUser FightRankingUser[]
@@ -86,7 +87,6 @@ model Fight {
 
 model FightRanking {
   id               String             @id @default(uuid())
-  userId           String
   fightId          String
   createdAt        DateTime           @default(now())
   schoolId         String

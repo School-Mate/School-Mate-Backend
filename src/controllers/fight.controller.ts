@@ -13,7 +13,22 @@ class FightController {
       const page = req.query.page as string;
       const fightData = await this.fightService.getFightList(user, page);
 
-      ResponseWrapper(req, res, fightData);
+      ResponseWrapper(req, res, {
+        data: fightData,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public fightDetail = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const fightId = req.params.fightId;
+      const fightData = await this.fightService.fightRankingByFightId(req.user, fightId);
+
+      ResponseWrapper(req, res, {
+        data: fightData,
+      });
     } catch (error) {
       next(error);
     }
