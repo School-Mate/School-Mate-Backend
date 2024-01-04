@@ -18,59 +18,44 @@ export class AskedService {
   public image = Container.get(PrismaClientService).image;
   public adminService = Container.get(AdminService);
 
-  public getAsked = async (
-    user: UserWithSchool,
-    page: string,
-  ): Promise<{
-    contents: AskedUser[];
-    totalPage: number;
-    numberPage: number;
-  }> => {
+  public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
     try {
-      const users = await this.user.findMany({
+      const askedUsers = await this.askedUser.findMany({
         where: {
-          AND: [
-            {
-              userSchoolId: user.userSchoolId,
-            },
-            {
-              askedUser: {
-                receiveAnonymous: true,
-              },
-            },
-          ],
+          user: {
+            userSchoolId: user.userSchoolId,
+          },
+          receiveAnonymous: true,
         },
         include: {
-          askedUser: true,
+          user: {
+            select: {
+              name: true,
+              profile: true,
+            },
+          },
         },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
         orderBy: {
-          askedUser: {
-            lastUpdateCustomId: 'desc',
+          user: {
+            createdAt: 'desc',
           },
         },
       });
 
-      const totalCnt = await this.user.count({
+      const totalCnt = await this.askedUser.count({
         where: {
-          userSchoolId: user.userSchoolId,
-          askedUser: {
-            receiveAnonymous: true,
+          user: {
+            userSchoolId: user.userSchoolId,
           },
+          receiveAnonymous: true,
         },
       });
 
       return {
-        contents: users.map(user => {
-          const askedUser = user.askedUser;
-          return {
-            ...askedUser,
-            user: {
-              name: user.name,
-              profile: user.profile,
-            },
-          };
-        }),
+        contents: askedUsers,
         totalPage: totalCnt === 0 ? 1 : Math.ceil(totalCnt / 10),
         numberPage: page ? Number(page) : 1,
       };
