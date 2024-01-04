@@ -30,10 +30,16 @@ export class AskedService {
     try {
       const users = await this.user.findMany({
         where: {
-          userSchoolId: user.userSchoolId,
-          askedUser: {
-            receiveAnonymous: true,
-          },
+          AND: [
+            {
+              userSchoolId: user.userSchoolId,
+            },
+            {
+              askedUser: {
+                receiveAnonymous: true,
+              },
+            },
+          ],
         },
         include: {
           askedUser: true,
