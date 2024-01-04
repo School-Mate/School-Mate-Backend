@@ -26,7 +26,7 @@ export const neisClient = axios.create({
 });
 
 export const lambdaClient = axios.create({
-  baseURL: 'https://lohc882o5j.execute-api.ap-northeast-2.amazonaws.com',
+  baseURL: 'https://c3qyis4yb6.execute-api.ap-northeast-2.amazonaws.com',
   headers:{
     'x-api-key': LAMBDA_API_KEY
   }

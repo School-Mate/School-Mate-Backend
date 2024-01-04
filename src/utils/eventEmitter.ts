@@ -13,7 +13,7 @@ const eventEmitter = new EventEmitter() as TypedEmitter<Events>;
 
 eventEmitter.on('imageResize', async (key, target) => {
   try {
-    const { data } = await lambdaClient.post('/default/schoolmate-resize', {
+    const { data } = await lambdaClient.post('/prod/image-resize', {
       key,
     });
 
