@@ -18,44 +18,53 @@ export class AskedService {
   public image = Container.get(PrismaClientService).image;
   public adminService = Container.get(AdminService);
 
-  public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
+  public getAsked = async (
+    user: UserWithSchool,
+    page: string,
+  ): Promise<{
+    contents: AskedUser[];
+    totalPage: number;
+    numberPage: number;
+  }> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
     try {
-      const askedUsers = await this.askedUser.findMany({
+      const users = await this.user.findMany({
         where: {
-          user: {
-            userSchoolId: user.userSchoolId,
+          userSchoolId: user.userSchoolId,
+          askedUser: {
+            receiveAnonymous: true,
           },
-          receiveAnonymous: true,
         },
         include: {
-          user: {
-            select: {
-              name: true,
-              profile: true,
-            },
-          },
+          askedUser: true,
         },
-        skip: page ? (Number(page) - 1) * 10 : 0,
-        take: 10,
         orderBy: {
-          user: {
-            createdAt: 'desc',
+          askedUser: {
+            lastUpdateCustomId: 'desc',
           },
         },
       });
 
-      const totalCnt = await this.askedUser.count({
+      const totalCnt = await this.user.count({
         where: {
-          user: {
-            userSchoolId: user.userSchoolId,
+          userSchoolId: user.userSchoolId,
+          askedUser: {
+            receiveAnonymous: true,
           },
-          receiveAnonymous: true,
         },
       });
 
       return {
-        contents: askedUsers,
+        contents: users.map(user => {
+          const askedUser = user.askedUser;
+          return {
+            ...askedUser,
+            user: {
+              name: user.name,
+              profile: user.profile,
+            },
+          };
+        }),
         totalPage: totalCnt === 0 ? 1 : Math.ceil(totalCnt / 10),
         numberPage: page ? Number(page) : 1,
       };
