@@ -73,7 +73,7 @@ export const imageUpload = multer({
   storage: uploadImage,
   limits: { fileSize: 100 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
-    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg', 'image/heic'];
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg', 'image/heic', 'image/dng'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {

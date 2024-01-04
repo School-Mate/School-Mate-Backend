@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { BUS_API_KEY, NEIS_API_KEY, KAKAO_CLIENT_KEY } from '@config';
+import { BUS_API_KEY, NEIS_API_KEY, KAKAO_CLIENT_KEY, LAMBDA_API_KEY } from '@config';
 
 export const busClient = axios.create({
   baseURL: 'http://apis.data.go.kr/',
@@ -23,4 +23,11 @@ export const neisClient = axios.create({
     KEY: NEIS_API_KEY,
     Type: 'json',
   },
+});
+
+export const lambdaClient = axios.create({
+  baseURL: 'https://lohc882o5j.execute-api.ap-northeast-2.amazonaws.com',
+  headers:{
+    'x-api-key': LAMBDA_API_KEY
+  }
 });

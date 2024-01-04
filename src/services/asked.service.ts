@@ -8,6 +8,7 @@ import { AxiosError } from 'axios';
 import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
+import eventEmitter from '@/utils/eventEmitter';
 
 @Service()
 export class AskedService {
@@ -87,7 +88,7 @@ export class AskedService {
         },
       },
       orderBy: {
-        createdAt: 'desc'
+        createdAt: 'desc',
       },
     });
 
@@ -360,6 +361,8 @@ export class AskedService {
           image: file.key,
         },
       });
+
+      eventEmitter.emit('imageResize', file.key, 'askedprofile');
 
       return file.key;
     } catch (error) {

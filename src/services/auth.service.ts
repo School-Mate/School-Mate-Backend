@@ -30,6 +30,7 @@ import { AdminService } from './admin.service';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import FormData from 'form-data';
+import eventEmitter from '@/utils/eventEmitter';
 
 @Service()
 export class AuthService {
@@ -833,6 +834,8 @@ export class AuthService {
         profile: file.key,
       },
     });
+
+    eventEmitter.emit('imageResize', file.key, 'profile');
 
     return file.key;
   }
