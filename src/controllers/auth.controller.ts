@@ -10,6 +10,8 @@ import {
   INSTAGRAM_CLIENT_KEY,
   INSTAGRAM_REDIRECT_URI,
   FTONT_DOMAIN,
+  RIOT_REDIRECT_URI,
+  RIOT_CLIENT_KEY,
 } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
@@ -191,6 +193,29 @@ class AuthController {
       res.redirect(
         `https://api.instagram.com/oauth/authorize?client_id=${INSTAGRAM_CLIENT_KEY}&redirect_uri=${INSTAGRAM_REDIRECT_URI}&scope=user_profile&response_type=code`,
       );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public connectRiotAccount = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.redirect(
+        `https://auth.riotgames.com/authorize?client_id=${RIOT_CLIENT_KEY}redirect_uri=${RIOT_REDIRECT_URI}&response_type=code&scope=openid`,
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public connectRiotAccountCallback = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const code = req.query.code as string;
+      if (!code) return this.connectRiotAccount(req, res, next);
+      const fightData = await this.authService.connectRiotAccountCallback(user, code);
+      res.redirect(`${FTONT_DOMAIN}/me/connectaccount/connect/riot`);
+      ResponseWrapper(req, res, { data: fightData });
     } catch (error) {
       next(error);
     }

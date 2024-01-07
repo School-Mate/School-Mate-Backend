@@ -173,6 +173,10 @@ export class AuthService {
     return schoolverifyList;
   }
 
+  public async connectRiotAccountCallback(userData: User, code: string): Promise<any> {
+    return ""
+  }
+
   public async instagramLoginCallback(user: UserWithSchool, code: string): Promise<any> {
     const formData = new FormData();
     formData.append('client_id', INSTAGRAM_CLIENT_KEY);
