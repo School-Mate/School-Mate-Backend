@@ -305,7 +305,7 @@ export class BoardService {
 
       const article = await this.article.create({
         data: {
-          schoolId: findBoard.schoolId,
+          schoolId: findBoard.boardType === BoardType.share ? user.userSchool.school.atptCode : user.userSchoolId,
           title: data.title,
           content: data.content,
           images: images.map(image => image.key),
