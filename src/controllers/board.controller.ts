@@ -61,6 +61,19 @@ class BoardController {
     }
   };
 
+  public getAllArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const allArticles = await this.boardService.getAllArticles(req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: allArticles,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public postArticle = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const boardId = req.params.boardId;
