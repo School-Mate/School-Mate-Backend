@@ -23,10 +23,10 @@ class BoardController {
     }
   };
 
-  public getBoard = async (req: RequestHandler, res: Response, next: NextFunction) => {
+  public getBoard = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const boardId = req.params.boardId;
-      const boardData = await this.boardService.getBoard(boardId);
+      const boardData = await this.boardService.getBoard(boardId, req.user);
 
       ResponseWrapper(req, res, {
         data: boardData,
@@ -55,6 +55,19 @@ class BoardController {
 
       ResponseWrapper(req, res, {
         data: hotArticles,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public getAllArticles = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    try {
+      const user = req.user;
+      const allArticles = await this.boardService.getAllArticles(req.query.page as string, user);
+
+      ResponseWrapper(req, res, {
+        data: allArticles,
       });
     } catch (error) {
       next(error);
@@ -103,7 +116,7 @@ class BoardController {
   public getComments = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const user = req.user;
-      const commentData = await this.boardService.getComments(req.params.articleId, req.query.page as string, user);
+      const commentData = await this.boardService.getComments(req.params.boardId, req.params.articleId, req.query.page as string, user);
 
       ResponseWrapper(req, res, {
         data: commentData,
@@ -177,7 +190,7 @@ class BoardController {
     try {
       const articleId = req.params.articleId;
       const user = req.user;
-      const likeArticleData = await this.boardService.likeArticle(articleId, user.id, LikeType.like);
+      const likeArticleData = await this.boardService.likeArticle(articleId, user, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeArticleData,
@@ -192,7 +205,7 @@ class BoardController {
     try {
       const articleId = req.params.articleId;
       const user = req.user;
-      const disLikeArticleData = await this.boardService.likeArticle(articleId, user.id, LikeType.dislike);
+      const disLikeArticleData = await this.boardService.likeArticle(articleId, user, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeArticleData,
@@ -233,8 +246,8 @@ class BoardController {
   public likeReComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const recommentId = req.params.recommentId;
-      const userId = req.user.id;
-      const likeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.like);
+      const user = req.user;
+      const likeReCommentData = await this.boardService.likeReComment(recommentId, user, LikeType.like);
 
       ResponseWrapper(req, res, {
         data: likeReCommentData,
@@ -247,8 +260,8 @@ class BoardController {
   public disLikeReComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const recommentId = req.params.recommentId;
-      const userId = req.user.id;
-      const disLikeReCommentData = await this.boardService.likeReComment(recommentId, userId, LikeType.dislike);
+      const user = req.user;
+      const disLikeReCommentData = await this.boardService.likeReComment(recommentId, user, LikeType.dislike);
 
       ResponseWrapper(req, res, {
         data: disLikeReCommentData,
@@ -275,8 +288,8 @@ class BoardController {
   public deleteComment = async (req: RequestWithUser, res: Response, next: NextFunction) => {
     try {
       const commentId = req.params.commentId;
-      const userId = req.user.id;
-      const deleteComment = await this.boardService.deleteComment(commentId, userId);
+      const user = req.user;
+      const deleteComment = await this.boardService.deleteComment(commentId, user);
 
       ResponseWrapper(req, res, {
         data: deleteComment,
