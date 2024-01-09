@@ -73,3 +73,11 @@ export function checkAdminFlag(base: number, required: number | keyof typeof Adm
 function checkFlag(base: number, required: number) {
   return (base & required) === required;
 }
+
+export function maskName(name: string): string {
+  if (name.length === 2) {
+    return name[0] + '*';
+  } else {
+    return name[0] + '*'.repeat(name.length - 2) + name.slice(-1);
+  }
+}

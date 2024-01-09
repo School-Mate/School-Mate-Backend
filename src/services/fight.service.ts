@@ -2,6 +2,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { Service, Container } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import { UserWithSchool } from '@/interfaces/auth.interface';
+import { maskName } from '@/utils/util';
 
 @Service()
 export class FightService {
@@ -186,5 +187,47 @@ export class FightService {
     }
 
     return true;
+  }
+
+  public async fightRankingByFightIdSchool(fightId: string, schoolId: string, page: string): Promise<any> {
+    const fightRanking = await this.fightRankingUser.findMany({
+      skip: (Number(page) - 1) * 10,
+      take: 10,
+      where: {
+        fightId,
+        schoolId,
+      },
+      orderBy: {
+        score: 'desc',
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+          }
+        },
+      },
+    });
+
+    const fightRankingCount = await this.fightRankingUser.count({
+      where: {
+        fightId,
+        schoolId,
+      },
+    });
+
+    return {
+      totalPage: Math.ceil(fightRankingCount / 10),
+      numberPage: page ? Number(page) : 1,
+      contents: fightRanking.map(ranking => {
+        return {
+          ...ranking,
+          user: {
+            name: maskName(ranking.user.name)
+          },
+          userId: undefined,
+        };
+      }),
+    };
   }
 }
