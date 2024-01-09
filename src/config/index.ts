@@ -33,5 +33,6 @@ export const {
   DISCORD_WEBHOOK_URL,
   SENTRY_DSN,
   FTONT_DOMAIN,
-  LAMBDA_API_KEY
+  LAMBDA_API_KEY,
+  REDIS_URL,
 } = process.env;

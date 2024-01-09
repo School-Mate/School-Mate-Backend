@@ -15,18 +15,21 @@ import { PrismaClientService } from './services/prisma.service';
 import * as Sentry from '@sentry/node';
 import { ProfilingIntegration } from '@sentry/profiling-node';
 import { limiter } from './middlewares/ratelimit.middleware';
+import { RedisClientService } from './services/redis.service';
 
 class App {
   public app: express.Application;
   public env: string;
   public port: string | number;
   public prismaClient: PrismaClientService;
+  public redisClient: RedisClientService;
 
   constructor(routes: Routes[]) {
     this.app = express();
     this.env = NODE_ENV || 'development';
     this.port = PORT || 3000;
     this.prismaClient = new PrismaClientService();
+    this.redisClient = new RedisClientService();
 
     this.initializeSentry();
     this.initializeDatabase();
@@ -86,6 +89,7 @@ class App {
 
   private initializeDatabase() {
     this.prismaClient.initializePrisma();
+    this.redisClient.initializeRedis();
   }
 
   private initializeRoutes(routes: Routes[]) {
