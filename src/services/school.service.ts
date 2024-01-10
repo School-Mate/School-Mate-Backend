@@ -204,15 +204,13 @@ export class SchoolService {
     try {
       const schoolInfo = await this.getSchoolInfoById(schoolId);
       if (!schoolInfo) throw new HttpException(404, '학교를 찾을 수 없습니다.');
-
       const { data: schoolDetailFetch } = await neisClient.get('/hub/classInfo', {
         params: {
           ATPT_OFCDC_SC_CODE: schoolInfo.atptCode,
-          SD_SCHUL_CODE: schoolId,
-          AY: dayjs().format('YYYY'),
+          SD_SCHUL_CODE: schoolInfo.schoolId,
+          AY: "2023",
         },
       });
-
       const schoolDetail: IClassInfoResponse = schoolDetailFetch.classInfo;
       if (!schoolDetail) throw new HttpException(404, '학급정보를 찾을 수 없습니다.');
 
@@ -265,7 +263,7 @@ export class SchoolService {
       await sendWebhook({
         type: WebhookType.VerifyRequest,
         data: createVerifyImage,
-      })
+      });
       return createVerifyImage;
     } catch (error) {
       console.log(error);
