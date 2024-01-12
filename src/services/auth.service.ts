@@ -47,6 +47,8 @@ export class AuthService {
   public schoolVerify = Container.get(PrismaClientService).userSchoolVerify;
   public pushDevice = Container.get(PrismaClientService).pushDevice;
 
+  // private lastCookie: string;
+
   public async meSchool(userData: User): Promise<
     UserSchool & {
       school: School;
@@ -215,12 +217,33 @@ export class AuthService {
         throw new HttpException(409, '이미 연동된 계정입니다.');
       }
 
-      // get instagram user detail, followers count, following count
-      const { data: userDetail } = await axios.get(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${userData.username}`, {
+      const { data: userDetail, headers } = await axios.get(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${userData.username}`, {
         headers: {
           'x-ig-app-id': '936619743392459',
+          accept: '*/*',
+          'accept-language': 'en-US,en;q=0.9',
+          referer: `https://www.instagram.com/${userData.username}/`,
+          'sec-ch-prefers-color-scheme': 'dark',
+          'sec-ch-ua': '"Not?A_Brand";v="8", "Chromium";v="108", "Microsoft Edge";v="108"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'same-origin',
+          'x-ig-www-claim': '0',
+          'x-requested-with': 'XMLHttpRequest',
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.1080.0 Safari/537.36 Edg/108.0.1080.0',
+          // cookie: this.lastCookie,
         },
       });
+
+      // if (headers) {
+      //   this.lastCookie = headers['set-cookie'].map((cookie: string) => {
+      //     if (/__to_be_deleted__/g.test(cookie)) return null;
+      //     return cookie.split(';')[0];
+      //   })
+      //     .filter(cookie => cookie)
+      //     .join('; ');
+      // }
 
       if (connectionAccount) {
         await this.connectionAccount.update({

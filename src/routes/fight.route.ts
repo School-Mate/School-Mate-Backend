@@ -17,6 +17,7 @@ class FightRoute implements Routes {
   private initializeRoutes() {
     this.router.get(`${this.path}`, validationMiddleware(FightSearchQuery, 'query'), authMiddleware, this.fightController.fightList);
     this.router.get(`${this.path}/:fightId`, authMiddleware, this.fightController.fightDetail);
+    this.router.get(`${this.path}/:fightId/:schoolId`, authMiddleware, this.fightController.fightDetailSchool);
     this.router.post(`${this.path}/:fightId/registration`, authMiddleware, this.fightController.fightRegistration);
   }
 }
