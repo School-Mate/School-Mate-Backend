@@ -44,6 +44,14 @@ const authMiddleware = async (req: RequestWithUser, res: Response, next: NextFun
   }
 };
 
+export const authVerifyMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
+  if (req.user.userSchool.verified) {
+    next();
+  } else {
+    next(new HttpException(401, '학교 인증 후 이용해주세요. (홈 -> 우츨 상단 프로필 > 학교 인증)'));
+  }
+};
+
 export const authQueryMiddleware = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     const Authorization =

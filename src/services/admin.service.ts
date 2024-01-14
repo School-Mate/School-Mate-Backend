@@ -271,6 +271,7 @@ export class AdminService {
           dept: findRequest.dept,
           class: findRequest.class,
           grade: findRequest.grade,
+          verified: true,
         },
       });
     } else {
@@ -281,6 +282,7 @@ export class AdminService {
           dept: findRequest.dept,
           class: findRequest.class,
           grade: findRequest.grade,
+          verified: true,
         },
       });
     }

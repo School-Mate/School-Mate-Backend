@@ -5,7 +5,7 @@ import { SchoolVerifyDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IClassInfoResponse, IMealInfoResponse, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient, kakaoClient } from '@/utils/client';
-import { School, User, Process, Meal, UserSchoolVerify } from '@prisma/client';
+import { School, User, Process, Meal, UserSchoolVerify, UserSchool } from '@prisma/client';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
@@ -20,6 +20,7 @@ export class SchoolService {
   public school = Container.get(PrismaClientService).school;
   public user = Container.get(PrismaClientService).user;
   public meal = Container.get(PrismaClientService).meal;
+  public userSchool = Container.get(PrismaClientService).userSchool;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {
@@ -208,7 +209,7 @@ export class SchoolService {
         params: {
           ATPT_OFCDC_SC_CODE: schoolInfo.atptCode,
           SD_SCHUL_CODE: schoolInfo.schoolId,
-          AY: "2023",
+          AY: '2023',
         },
       });
       const schoolDetail: IClassInfoResponse = schoolDetailFetch.classInfo;
@@ -226,45 +227,92 @@ export class SchoolService {
     }
   }
 
-  public async requestSchoolVerify(user: User, verifyData: SchoolVerifyDto): Promise<UserSchoolVerify> {
+  public async requestSchoolVerify(user: User, verifyData: SchoolVerifyDto): Promise<boolean> {
     try {
-      const findImage = await this.image.findUnique({
-        where: {
-          id: verifyData.imageId,
-        },
-      });
-      if (!findImage) throw new HttpException(404, '인증용 이미지를 업로드 해 주세요.');
+      const findSchool = await this.getSchoolInfoById(verifyData.schoolId);
+      if (!findSchool) throw new HttpException(404, '학교를 찾을 수 없습니다.');
 
       const findUser = await this.user.findUnique({
         where: {
           id: user.id,
         },
-      });
-
-      const findSchool = await this.getSchoolInfoById(verifyData.schoolId);
-      if (!findSchool) throw new HttpException(404, '학교를 찾을 수 없습니다.');
-
-      const createVerifyImage = await this.userSchoolVerify.create({
-        data: {
-          userId: user.id,
-          userName: findUser.name,
-          imageId: findImage.id,
-          process: Process.pending,
-          schoolId: verifyData.schoolId,
-          schoolName: findSchool.name ? findSchool.name : findSchool.defaultName,
-          grade: verifyData.grade,
-          class: verifyData.class,
-          ...(verifyData.dept && {
-            dept: verifyData.dept,
-          }),
+        include: {
+          userSchool: true,
         },
       });
 
-      await sendWebhook({
-        type: WebhookType.VerifyRequest,
-        data: createVerifyImage,
-      });
-      return createVerifyImage;
+      if (findUser.userSchool) {
+        await this.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            userSchool: {
+              update: {
+                schoolId: findSchool.schoolId,
+                grade: verifyData.grade,
+                class: verifyData.class,
+                ...(verifyData.dept && {
+                  dept: verifyData.dept,
+                }),
+                verified: false,
+              },
+            },
+            userSchoolId: findSchool.schoolId,
+          },
+        });
+      } else {
+        await this.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            userSchool: {
+              create: {
+                schoolId: findSchool.schoolId,
+                grade: verifyData.grade,
+                class: verifyData.class,
+                ...(verifyData.dept && {
+                  dept: verifyData.dept,
+                }),
+                verified: false,
+              },
+            },
+            userSchoolId: findSchool.schoolId,
+          },
+        });
+      }
+
+      if (verifyData.imageId) {
+        const findImage = await this.image.findUnique({
+          where: {
+            id: verifyData.imageId,
+          },
+        });
+        if (!findImage) throw new HttpException(404, '이미지를 찾을 수 없습니다.');
+        const createVerifyImage = await this.userSchoolVerify.create({
+          data: {
+            userId: user.id,
+            userName: findUser.name,
+            imageId: findImage.id,
+            process: Process.pending,
+            schoolId: verifyData.schoolId,
+            schoolName: findSchool.name ? findSchool.name : findSchool.defaultName,
+            grade: verifyData.grade,
+            class: verifyData.class,
+            ...(verifyData.dept && {
+              dept: verifyData.dept,
+            }),
+          },
+        });
+
+        await sendWebhook({
+          type: WebhookType.VerifyRequest,
+          data: createVerifyImage,
+        });
+      }
+
+      return true;
     } catch (error) {
       console.log(error);
       if (error instanceof HttpException) {

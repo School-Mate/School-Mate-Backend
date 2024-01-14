@@ -710,7 +710,7 @@ export class AuthService {
         data: {
           phone: userData.phone,
           name: userData.name,
-          email: userData.email,
+          // email: userData.email,
           provider: 'id',
           password: hashedPassword,
           isVerified: true,
@@ -742,7 +742,7 @@ export class AuthService {
         id: findSocialUser.user.id,
       },
       data: {
-        email: userData.email,
+        // email: userData.email,
         name: userData.name,
         phone: userData.phone,
         isVerified: true,

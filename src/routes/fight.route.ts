@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Routes } from '@interfaces/routes.interface';
 import FightController from '@/controllers/fight.controller';
-import authMiddleware from '@/middlewares/auth.middleware';
+import authMiddleware, { authVerifyMiddleware } from '@/middlewares/auth.middleware';
 import validationMiddleware from '@/middlewares/validation.middleware';
 import { FightSearchQuery } from '@/dtos/fight.dto';
 
@@ -18,7 +18,7 @@ class FightRoute implements Routes {
     this.router.get(`${this.path}`, validationMiddleware(FightSearchQuery, 'query'), authMiddleware, this.fightController.fightList);
     this.router.get(`${this.path}/:fightId`, authMiddleware, this.fightController.fightDetail);
     this.router.get(`${this.path}/:fightId/:schoolId`, authMiddleware, this.fightController.fightDetailSchool);
-    this.router.post(`${this.path}/:fightId/registration`, authMiddleware, this.fightController.fightRegistration);
+    this.router.post(`${this.path}/:fightId/registration`, authMiddleware, authVerifyMiddleware, this.fightController.fightRegistration);
   }
 }
 
