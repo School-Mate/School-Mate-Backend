@@ -48,7 +48,7 @@ export const authVerifyMiddleware = async (req: RequestWithUser, res: Response, 
   if (req.user.userSchool.verified) {
     next();
   } else {
-    next(new HttpException(401, '학교 인증 후 이용해주세요. (홈 -> 우츨 상단 프로필 > 학교 인증)'));
+    next(new HttpException(401, '학교 인증 후 이용해주세요. (홈 -> 우측상단 프로필 > 학교 인증)'));
   }
 };
 
