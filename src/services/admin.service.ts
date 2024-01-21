@@ -241,7 +241,7 @@ export class AdminService {
 
       try {
         await this.sendMessage('VERIFY_SCHOOL_REJECT', findRequest.user.phone, {
-          '#{접속링크}': 'schoolmate.kr/verfiy',
+          '#{접속링크}': 'schoolmate.kr/verify',
           '#{학교이름}': findRequest.schoolName,
           '#{학년}': findRequest.grade + '학년',
           '#{사유}': message,
@@ -304,7 +304,7 @@ export class AdminService {
 
     try {
       await this.sendPushNotification(findRequest.userId, '🎉 축하합니다!', `${schoolInfo.defaultName} 학생 인증이 완료되었어요!`, {
-        type: 'resetstack',
+        type: 'openstack',
         url: '/me',
       });
     } catch (error) {

@@ -1645,7 +1645,7 @@ export class BoardService {
         },
       });
 
-      if (likeCount >= 10) {
+      if (likeCount >= 5) {
         await this.hotArticle.create({
           data: {
             articleId: article.id,
