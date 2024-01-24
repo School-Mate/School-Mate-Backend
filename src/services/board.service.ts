@@ -1,5 +1,5 @@
 import { HttpException } from '@/exceptions/HttpException';
-import { Article, Board, Comment, User, LikeType, BoardRequest, ReComment } from '@prisma/client';
+import { Article, Board, Comment, User, LikeType, BoardRequest, ReComment, BoardType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
 import { ArticleWithImage, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
@@ -11,6 +11,7 @@ import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
 import { WebhookType } from '@/types';
 import eventEmitter from '@/utils/eventEmitter';
+import { logger } from '@/utils/logger';
 
 @Service()
 export class BoardService {
@@ -37,11 +38,40 @@ export class BoardService {
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
     try {
+      const boards: Board[] = [];
       const findBoards = await this.board.findMany({
         where: {
           schoolId: user.userSchoolId,
         },
       });
+
+      const findSharedBoards = await this.board.findMany({
+        where: {
+          boardType: BoardType.share,
+          schoolId: user.userSchool.school.atptCode,
+        },
+      });
+
+      if (findSharedBoards.length === 0) {
+        await this.board.create({
+          data: {
+            name: '지역 게시판',
+            description: '같은 지역의 학교들만 볼 수 있는 게시판입니다.',
+            schoolId: user.userSchool.school.atptCode,
+            boardType: BoardType.share,
+          },
+        });
+
+        const findSharedBoards = await this.board.findMany({
+          where: {
+            schoolId: user.userSchool.school.atptCode,
+          },
+        });
+
+        boards.push(...findSharedBoards);
+      } else {
+        boards.push(...findSharedBoards);
+      }
 
       if (findBoards.length === 0) {
         const createBoards = await this.defaultBoard.findMany();
@@ -63,10 +93,12 @@ export class BoardService {
           },
         });
 
-        return findBoards;
+        boards.push(...findBoards);
+      } else {
+        boards.push(...findBoards);
       }
 
-      return findBoards;
+      return boards;
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
@@ -76,17 +108,36 @@ export class BoardService {
     try {
       const findArticles = await this.article.findMany({
         where: {
-          schoolId: user.userSchoolId,
           OR: [
             {
-              title: {
-                contains: keyword,
-              },
+              schoolId: user.userSchoolId,
+              OR: [
+                {
+                  title: {
+                    contains: keyword,
+                  },
+                },
+                {
+                  content: {
+                    contains: keyword,
+                  },
+                },
+              ],
             },
             {
-              content: {
-                contains: keyword,
-              },
+              schoolId: user.userSchool.school.atptCode,
+              OR: [
+                {
+                  title: {
+                    contains: keyword,
+                  },
+                },
+                {
+                  content: {
+                    contains: keyword,
+                  },
+                },
+              ],
             },
           ],
         },
@@ -114,13 +165,21 @@ export class BoardService {
     }
   }
 
-  public async getBoard(boardId: string): Promise<Board> {
+  public async getBoard(boardId: string, user: UserWithSchool): Promise<Board> {
     try {
       const findBoard = await this.board.findUnique({
         where: {
           id: Number(boardId),
         },
       });
+
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode) {
+        throw new HttpException(404, '해당 게시판을 볼 권한이 없습니다.');
+      }
+
+      if (findBoard.boardType === BoardType.school && findBoard.schoolId !== user.userSchoolId) {
+        throw new HttpException(404, '해당 게시판을 볼 권한이 없습니다.');
+      }
 
       if (!findBoard) {
         throw new HttpException(404, '해당하는 게시판이 없습니다.');
@@ -219,7 +278,7 @@ export class BoardService {
     }
   }
 
-  public async postArticle(boardId: string, user: User, data: IArticleQuery): Promise<Article> {
+  public async postArticle(boardId: string, user: UserWithSchool, data: IArticleQuery): Promise<Article> {
     try {
       const findBoard = await this.board.findUnique({
         where: {
@@ -227,6 +286,14 @@ export class BoardService {
         },
       });
       if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
+
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode) {
+        throw new HttpException(404, '해당 게시판에 글을 작성할 수 없습니다.');
+      }
+
+      if (findBoard.boardType === BoardType.school && findBoard.schoolId !== user.userSchoolId) {
+        throw new HttpException(404, '해당 게시판에 글을 작성할 수 없습니다.');
+      }
 
       const images = await this.image.findMany({
         where: {
@@ -238,7 +305,7 @@ export class BoardService {
 
       const article = await this.article.create({
         data: {
-          schoolId: findBoard.schoolId,
+          schoolId: findBoard.boardType === BoardType.share ? user.userSchool.school.atptCode : user.userSchoolId,
           title: data.title,
           content: data.content,
           images: images.map(image => image.key),
@@ -259,7 +326,7 @@ export class BoardService {
     }
   }
 
-  public async getArticle(articleId: string, user: User): Promise<ArticleWithImage> {
+  public async getArticle(articleId: string, user: UserWithSchool): Promise<ArticleWithImage> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
@@ -271,7 +338,10 @@ export class BoardService {
         },
       });
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
-      if (findArticle.board.schoolId !== user.userSchoolId) throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+      if (findArticle.board.boardType === BoardType.share && findArticle.board.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+      if (findArticle.board.boardType === BoardType.school && findArticle.board.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
       const likeCounts = await this.articleLike.count({
         where: {
@@ -296,7 +366,7 @@ export class BoardService {
         ...findArticle,
         likeCounts: likeCounts,
         commentCounts: commentCounts + reCommentCounts,
-        comments: await this.getComments(articleId, '1', user),
+        comments: await this.getComments(String(findArticle.boardId), articleId, '1', user),
         isMe: findArticle.userId === user.id,
         ...(findArticle.isAnonymous
           ? {
@@ -320,8 +390,24 @@ export class BoardService {
     }
   }
 
-  public async getBoardPage(boardId: string, page: string, user: User): Promise<{ contents: Article[]; totalPage: number; numberPage: number }> {
+  public async getBoardPage(
+    boardId: string,
+    page: string,
+    user: UserWithSchool,
+  ): Promise<{ contents: Article[]; totalPage: number; numberPage: number }> {
     try {
+      const findBoard = await this.board.findUnique({
+        where: {
+          id: Number(boardId),
+        },
+      });
+
+      if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+      if (findBoard.boardType === BoardType.school && findBoard.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+
       const findArticles = await this.article.findMany({
         where: {
           boardId: Number(boardId),
@@ -449,15 +535,28 @@ export class BoardService {
   }
 
   public async getComments(
+    boardId: string,
     articleId: string,
     page: string,
-    user: User,
+    user: UserWithSchool,
   ): Promise<{
     contents: Comment[];
     totalPage: number;
     numberPage: number;
   }> {
     try {
+      const findBoard = await this.board.findUnique({
+        where: {
+          id: Number(boardId),
+        },
+      });
+
+      if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+      if (findBoard.boardType === BoardType.school && findBoard.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+
       const findComments = await this.comment.findMany({
         where: {
           articleId: Number(articleId),
@@ -567,7 +666,7 @@ export class BoardService {
 
   public async getComment(
     commentId: string,
-    user: User,
+    user: UserWithSchool,
   ): Promise<
     Comment & {
       isMe: boolean;
@@ -593,6 +692,11 @@ export class BoardService {
               },
             },
           },
+          article: {
+            include: {
+              board: true,
+            },
+          },
           user: {
             select: {
               name: true,
@@ -606,6 +710,10 @@ export class BoardService {
       if (!findComment) {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
+      if (findComment.article.board.boardType === BoardType.share && findComment.article.board.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+      if (findComment.article.board.boardType === BoardType.school && findComment.article.board.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
       const likeCount = await this.commentLike.count({
         where: {
@@ -667,7 +775,7 @@ export class BoardService {
   }
 
   public async getReComment(
-    user: User,
+    user: UserWithSchool,
     commentId: string,
     recommentId: string,
   ): Promise<
@@ -683,6 +791,11 @@ export class BoardService {
           id: Number(recommentId),
         },
         include: {
+          article: {
+            include: {
+              board: true,
+            },
+          },
           user: {
             select: {
               name: true,
@@ -696,6 +809,11 @@ export class BoardService {
       if (!findReComment) {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
+
+      if (findReComment.article.board.boardType === BoardType.share && findReComment.article.board.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 댓글을 볼 수 없습니다.');
+      if (findReComment.article.board.boardType === BoardType.school && findReComment.article.board.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 댓글을 볼 수 없습니다.');
 
       const likeCount = await this.reCommentLike.count({
         where: {
@@ -728,17 +846,25 @@ export class BoardService {
     }
   }
 
-  public async postComment(commentData: Comment, articleId: string, user: User): Promise<Comment> {
+  public async postComment(commentData: Comment, articleId: string, user: UserWithSchool): Promise<Comment> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
           id: Number(articleId),
+        },
+        include: {
+          board: true,
         },
       });
 
       if (!findArticle) {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
+
+      if (findArticle.board.boardType === BoardType.share && findArticle.board.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 게시글에 댓글을 작성할 수 없습니다.');
+      if (findArticle.board.boardType === BoardType.school && findArticle.board.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 게시글에 댓글을 작성할 수 없습니다.');
 
       const createComment = await this.comment.create({
         data: {
@@ -768,20 +894,29 @@ export class BoardService {
     }
   }
 
-  public async postReComment(reCommentData: Comment, commentId: string, user: User): Promise<Comment> {
+  public async postReComment(reCommentData: Comment, commentId: string, user: UserWithSchool): Promise<Comment> {
     try {
       const findComment = await this.comment.findUnique({
         where: {
           id: Number(commentId),
         },
         include: {
-          article: true,
+          article: {
+            include: {
+              board: true,
+            },
+          },
         },
       });
 
       if (!findComment) {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
+
+      if (findComment.article.board.boardType === BoardType.share && findComment.article.board.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 댓글에 댓글을 작성할 수 없습니다.');
+      if (findComment.article.board.boardType === BoardType.school && findComment.article.board.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 댓글에 댓글을 작성할 수 없습니다.');
 
       const createReComment = await this.reComment.create({
         data: {
@@ -814,20 +949,30 @@ export class BoardService {
     }
   }
 
-  public async likeArticle(articleId: string, userId: string, likeType: LikeType): Promise<any> {
+  public async likeArticle(articleId: string, user: UserWithSchool, likeType: LikeType): Promise<any> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
           id: Number(articleId),
+        },
+        include: {
+          board: true,
         },
       });
 
       if (!findArticle) {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
+
+      if (findArticle.board.boardType === BoardType.share && findArticle.board.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+
+      if (findArticle.board.boardType === BoardType.school && findArticle.board.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
+
       const ArticleLike = await this.articleLike.findFirst({
         where: {
-          userId: userId,
+          userId: user.id,
           articleId: findArticle.id,
         },
       });
@@ -835,7 +980,7 @@ export class BoardService {
       if (!ArticleLike) {
         const createArticleLike = await this.articleLike.create({
           data: {
-            userId: userId,
+            userId: user.id,
             articleId: findArticle.id,
             likeType: likeType,
           },
@@ -923,11 +1068,18 @@ export class BoardService {
     }
   };
 
-  public likeReComment = async (reCommentId: string, userId: string, likeType: LikeType): Promise<any> => {
+  public likeReComment = async (reCommentId: string, user: UserWithSchool, likeType: LikeType): Promise<any> => {
     try {
       const findReComment = await this.reComment.findUnique({
         where: {
           id: Number(reCommentId),
+        },
+        include: {
+          article: {
+            include: {
+              board: true,
+            },
+          },
         },
       });
 
@@ -935,9 +1087,15 @@ export class BoardService {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
       }
 
+      if (findReComment.article.board.boardType === BoardType.share && findReComment.article.board.schoolId !== user.userSchool.school.atptCode)
+        throw new HttpException(404, '해당 댓글을 볼 수 없습니다.');
+
+      if (findReComment.article.board.boardType === BoardType.school && findReComment.article.board.schoolId !== user.userSchoolId)
+        throw new HttpException(404, '해당 댓글을 볼 수 없습니다.');
+
       const hasReCommentLike = await this.reCommentLike.findFirst({
         where: {
-          userId: userId,
+          userId: user.id,
           recommentId: findReComment.id,
           likeType: likeType,
         },
@@ -955,7 +1113,7 @@ export class BoardService {
 
       const createReCommentLike = await this.reCommentLike.create({
         data: {
-          userId: userId,
+          userId: user.id,
           recommentId: findReComment.id,
           likeType: likeType,
         },
@@ -1035,7 +1193,7 @@ export class BoardService {
     }
   }
 
-  public async deleteComment(commentId: string, userId: string): Promise<any> {
+  public async deleteComment(commentId: string, user: UserWithSchool): Promise<any> {
     try {
       const findComment = await this.comment.findUnique({
         where: {
@@ -1047,7 +1205,7 @@ export class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      if (findComment.userId !== userId) {
+      if (findComment.userId !== user.id) {
         throw new HttpException(403, '권한이 없습니다.');
       }
 
@@ -1216,39 +1374,14 @@ export class BoardService {
         },
       });
 
-      const articlesWithImage = await Promise.all(
-        findLikes.map(async like => {
-          if (like.article.images.length === 0) {
-            return {
-              ...like.article,
-              keyOfImages: [],
-              commentCounts: like.article.comment.length + like.article.reComment.length,
-              likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
-              disLikeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-            } as unknown as ArticleWithImage;
-          }
-
-          const keyOfImages = await Promise.all(
-            like.article.images.map(async imageId => {
-              const findImage = await this.image.findUnique({
-                where: {
-                  id: imageId,
-                },
-              });
-              if (!findImage) return;
-              return findImage.key;
-            }),
-          );
-
-          return {
-            ...like.article,
-            keyOfImages: keyOfImages,
-            commentCounts: like.article.comment.length + like.article.reComment.length,
-            likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
-            disLikeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-          } as unknown as ArticleWithImage;
-        }),
-      );
+      const articlesWithImage = findLikes.map(like => {
+        return {
+          ...like.article,
+          commentCounts: like.article.comment.length + like.article.reComment.length,
+          likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
+          disLikeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+        } as unknown as ArticleWithImage;
+      });
 
       return articlesWithImage.map(article => {
         return {
@@ -1260,7 +1393,7 @@ export class BoardService {
       if (error instanceof HttpException) {
         throw error;
       } else {
-        throw new HttpException(500, error.message);
+        throw new HttpException(500, error);
       }
     }
   }
@@ -1327,13 +1460,13 @@ export class BoardService {
       if (error instanceof HttpException) {
         throw error;
       } else {
-        throw new HttpException(500, error.message);
+        throw new HttpException(500, error);
       }
     }
   }
 
   public async getHotArticles(
-    user: User,
+    user: UserWithSchool,
     page: string,
   ): Promise<{
     contents: ArticleWithImage[];
@@ -1343,7 +1476,14 @@ export class BoardService {
     try {
       const findHotArticles = await this.hotArticle.findMany({
         where: {
-          schoolId: user.userSchoolId,
+          OR: [
+            {
+              schoolId: user.userSchoolId,
+            },
+            {
+              schoolId: user.userSchool.school.atptCode,
+            },
+          ],
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
         take: 10,
@@ -1402,8 +1542,72 @@ export class BoardService {
       if (error instanceof HttpException) {
         throw error;
       } else {
-        throw new HttpException(500, error.message);
+        throw new HttpException(500, error);
       }
+    }
+  }
+
+  public async getAllArticles(
+    page: string,
+    user: UserWithSchool,
+  ): Promise<{
+    contents: ArticleWithImage[];
+    totalPage: number;
+    numberPage: number;
+  }> {
+    try {
+      const findArticles = await this.article.findMany({
+        where: {
+          OR: [
+            {
+              schoolId: user.userSchoolId,
+            },
+            {
+              schoolId: user.userSchool.school.atptCode,
+            },
+          ],
+        },
+        skip: page ? (Number(page) - 1) * 10 : 0,
+        take: 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          articleLike: true,
+          user: true,
+          _count: {
+            select: {
+              comment: true,
+              reComment: true,
+            },
+          },
+        },
+      });
+
+      const allArticleTotal = await this.article.count();
+      const allArticleTotalPage = allArticleTotal === 0 ? 1 : Math.ceil(allArticleTotal / 10);
+
+      return {
+        contents: findArticles.map(article => {
+          return {
+            ...article,
+            isMe: article.userId === user.id,
+            commentCounts: article._count.comment + article._count.reComment,
+            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
+            user: {
+              id: article.isAnonymous ? null : article.user.id,
+              name: article.isAnonymous ? null : article.user.name,
+              profile: article.isAnonymous ? null : article.user.profile,
+            },
+          };
+        }),
+        totalPage: allArticleTotalPage,
+        numberPage: page ? Number(page) : 1,
+      };
+    } catch (error) {
+      console.log(error);
+      throw new HttpException(500, error);
     }
   }
 
@@ -1428,7 +1632,7 @@ export class BoardService {
         },
       });
     } catch (error) {
-      throw new HttpException(500, error.message);
+      throw new HttpException(500, error);
     }
   }
 
@@ -1441,7 +1645,7 @@ export class BoardService {
         },
       });
 
-      if (likeCount >= 10) {
+      if (likeCount >= 5) {
         await this.hotArticle.create({
           data: {
             articleId: article.id,

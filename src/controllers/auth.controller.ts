@@ -228,7 +228,6 @@ class AuthController {
       if (!code) return this.instagramLogin(req, res, next);
       const fightData = await this.authService.instagramLoginCallback(user, code);
       res.redirect(`${FTONT_DOMAIN}/me/connectaccount/connect/instagram`);
-      ResponseWrapper(req, res, { data: fightData });
     } catch (error) {
       next(error);
     }

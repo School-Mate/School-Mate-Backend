@@ -522,6 +522,8 @@ export class AskedService {
         },
       });
 
+      eventEmitter.emit('imageResize', image.key, 'askedprofile');
+
       return createdAskedUser;
     } catch (error) {
       if (error instanceof HttpException) {

@@ -165,6 +165,7 @@ model UserSchool {
   class    String
   school   School  @relation(fields: [schoolId], references: [schoolId])
   user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified Boolean @default(true)
 }
 
 model BusStation {
@@ -242,6 +243,7 @@ model Board {
   name           String
   description    String
   icon           String?
+  boardType      BoardType      @default(school)
   default        Boolean        @default(false)
   defaultBoardId Int?
   noticeId       Int[]
@@ -516,4 +518,9 @@ model Meal {
   ORPLC_INFO String
   CAL_INFO   String
   NTR_INFO   String
+}
+
+enum BoardType {
+  share
+  school
 }
