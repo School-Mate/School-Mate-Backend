@@ -228,7 +228,7 @@ export class AuthService {
 
         try {
           const { data: userDetail } = await axios.get<LeagueOfLegendsStats[]>(
-            `https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/MB_c4tsSW3lxMW_uMoT0R2kb2fWXMHeLI6OAiY2RWP39xg`,
+            `https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/${id}`,
             {
               headers: {
                 'X-Riot-Token': RIOT_API_KEY,
