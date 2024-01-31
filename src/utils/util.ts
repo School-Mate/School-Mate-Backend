@@ -43,7 +43,7 @@ export const tierOfPoint = {
   'Diamond II': 32,
   'Diamond I': 34,
   Master: 40,
-  GrandMaster: 50,
+  Grandmaster: 50,
   Challenger: 55,
 };
 
