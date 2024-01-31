@@ -16,13 +16,17 @@ import {
   KAKAO_CLIENT_KEY,
   KAKAO_CLIENT_SECRET,
   KAKAO_REDIRECT_URI,
+  RIOT_API_KEY,
+  RIOT_CLIENT_KEY,
+  RIOT_CLIENT_SECRET,
+  RIOT_REDIRECT_URI,
   SECRET_KEY,
   SOL_API_KEY,
   SOL_API_SECRET,
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData, UserWithSchool } from '@interfaces/auth.interface';
-import { excludeUserPassword } from '@utils/util';
+import { connectAccountMap, excludeUserPassword, tierOfPoint } from '@utils/util';
 import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto } from '@/dtos/users.dto';
 import { SchoolService } from './school.service';
 import { deleteImage } from '@/utils/multer';
@@ -31,6 +35,8 @@ import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import FormData from 'form-data';
 import eventEmitter from '@/utils/eventEmitter';
+import { LeagueOfLegendsStats } from '@/types';
+import { logger } from '@/utils/logger';
 
 @Service()
 export class AuthService {
@@ -175,8 +181,172 @@ export class AuthService {
     return schoolverifyList;
   }
 
-  public async connectRiotAccountCallback(userData: User, code: string): Promise<any> {
-    return ""
+  public async connectLeagueoflegendsCallback(user: User, code: string): Promise<any> {
+    try {
+      const { data } = await axios({
+        method: 'POST',
+        url: 'https://auth.riotgames.com/token',
+        auth: {
+          username: RIOT_CLIENT_KEY,
+          password: RIOT_CLIENT_SECRET,
+        },
+        data: new URLSearchParams({
+          grant_type: 'authorization_code',
+          redirect_uri: RIOT_REDIRECT_URI,
+          code: code,
+        }),
+      });
+
+      const { access_token, expires_in, refresh_token } = data;
+
+      try {
+        const { data: userData } = await axios.get('https://kr.api.riotgames.com/lol/summoner/v4/summoners/me', {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+
+        const { id, accountId, name, puuid } = userData;
+
+        const connectionAccount = await this.connectionAccount.findFirst({
+          where: {
+            userId: user.id,
+            provider: connectAccountMap.leagueoflegends,
+          },
+        });
+
+        const hasConnectionAccount = await this.connectionAccount.findFirst({
+          where: {
+            provider: connectAccountMap.leagueoflegends,
+            accountId: id,
+          },
+        });
+
+        if (hasConnectionAccount && hasConnectionAccount.userId !== user.id) {
+          throw new HttpException(409, '이미 연동된 계정입니다.');
+        }
+
+        try {
+          const { data: userDetail } = await axios.get<LeagueOfLegendsStats[]>(
+            `https://kr.api.riotgames.com/lol/league/v4/entries/by-summoner/MB_c4tsSW3lxMW_uMoT0R2kb2fWXMHeLI6OAiY2RWP39xg`,
+            {
+              headers: {
+                'X-Riot-Token': RIOT_API_KEY,
+              },
+            },
+          );
+
+          const leagueRank = userDetail.find(league => league.queueType === 'RANKED_SOLO_5x5');
+
+          if (!leagueRank) {
+            throw new HttpException(400, '랭크게임 기록이 없는 소환사입니다');
+          }
+
+          const chnageTierText = leagueRank.tier[0].toUpperCase() + leagueRank.tier.slice(1).toLowerCase();
+          const tierOfPointChange =
+            tierOfPoint[
+              chnageTierText == 'Master' || chnageTierText == 'Grandmaster' || chnageTierText == 'Challenger'
+                ? chnageTierText
+                : `${chnageTierText} ${leagueRank.rank.toUpperCase()}`
+            ];
+
+          if (connectionAccount) {
+            await this.connectionAccount.update({
+              where: {
+                id: connectionAccount.id,
+              },
+              data: {
+                accountId: id,
+                accessToken: access_token,
+                name: name,
+                followerCount: tierOfPointChange,
+                additonalInfo:
+                  chnageTierText == 'Master' || chnageTierText == 'Grandmaster' || chnageTierText == 'Challenger'
+                    ? chnageTierText
+                    : `${chnageTierText} ${leagueRank.rank.toUpperCase()}`,
+              },
+            });
+
+            if (connectionAccount.accountId !== id) {
+              const leagueoflegendsRanking = await this.fight.findMany({
+                where: {
+                  needTo: {
+                    has: connectAccountMap.leagueoflegends,
+                  },
+                },
+              });
+
+              const leagueoflegendsRankingUser = await this.fightRankingUser.findMany({
+                where: {
+                  fightId: {
+                    in: leagueoflegendsRanking.map(fight => fight.id),
+                  },
+                  userId: user.id,
+                },
+              });
+
+              if (leagueoflegendsRankingUser.length > 0) {
+                await this.fightRankingUser.updateMany({
+                  where: {
+                    id: {
+                      in: leagueoflegendsRankingUser.map(fight => fight.id),
+                    },
+                  },
+                  data: {
+                    score: tierOfPointChange,
+                  },
+                });
+              }
+            }
+          } else {
+            await this.connectionAccount.create({
+              data: {
+                provider: connectAccountMap.leagueoflegends,
+                accountId: id,
+                name: name,
+                accessToken: access_token,
+                followerCount: tierOfPointChange,
+                userId: user.id,
+                additonalInfo:
+                  chnageTierText == 'Master' || chnageTierText == 'Grandmaster' || chnageTierText == 'Challenger'
+                    ? chnageTierText
+                    : `${chnageTierText} ${leagueRank.rank.toUpperCase()}`,
+              },
+            });
+          }
+        } catch (error) {
+          if (error instanceof AxiosError) {
+            if (error.response.status === 401) {
+              throw new HttpException(401, '소환사 정보를 가져올 수 없습니다.');
+            } else if (error.response.status === 404) {
+              throw new HttpException(404, '가입되지 않은 소환사입니다.');
+            } else {
+              throw new HttpException(500, error.response.data.status.message);
+            }
+          } else if (error instanceof HttpException) {
+            throw error;
+          }
+        }
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          if (error.response.status === 401) {
+            throw new HttpException(401, '소환사 정보를 가져올 수 없습니다.');
+          } else if (error.response.status === 404) {
+            throw new HttpException(404, '가입되지 않은 소환사입니다.');
+          } else {
+            throw new HttpException(500, error.response.data.status.message);
+          }
+        } else if (error instanceof HttpException) {
+          throw error;
+        }
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        throw new HttpException(400, error.response.data.status.message);
+      } else if (error instanceof HttpException) {
+        throw error;
+      }
+    }
   }
 
   public async instagramLoginCallback(user: UserWithSchool, code: string): Promise<any> {
@@ -206,13 +376,13 @@ export class AuthService {
       const connectionAccount = await this.connectionAccount.findFirst({
         where: {
           userId: user.id,
-          provider: 'instagram',
+          provider: connectAccountMap.instagram,
         },
       });
 
       const hasConnectionAccount = await this.connectionAccount.findFirst({
         where: {
-          provider: 'instagram',
+          provider: connectAccountMap.instagram,
           accountId: String(user_id),
         },
       });
@@ -266,7 +436,7 @@ export class AuthService {
           const instagramRanking = await this.fight.findMany({
             where: {
               needTo: {
-                has: 'instagram',
+                has: connectAccountMap.instagram,
               },
             },
           });
@@ -296,7 +466,7 @@ export class AuthService {
       } else {
         await this.connectionAccount.create({
           data: {
-            provider: 'instagram',
+            provider: connectAccountMap.instagram,
             accountId: String(user_id),
             name: userData.username,
             accessToken: access_token,
@@ -319,7 +489,7 @@ export class AuthService {
     const connectionAccount = await this.connectionAccount.findFirst({
       where: {
         userId: userData.id,
-        provider: 'instagram',
+        provider: connectAccountMap.instagram,
       },
     });
 
@@ -334,7 +504,51 @@ export class AuthService {
     const joinFightList = await this.fight.findMany({
       where: {
         needTo: {
-          has: 'instagram',
+          has: connectAccountMap.instagram,
+        },
+      },
+      select: {
+        fightRankingUser: {
+          where: {
+            userId: userData.id,
+          },
+        },
+      },
+    });
+
+    if (joinFightList.length > 0) {
+      await this.fightRankingUser.deleteMany({
+        where: {
+          id: {
+            in: joinFightList.map(fight => fight.fightRankingUser.map(user => user.id)).flat(),
+          },
+        },
+      });
+    }
+
+    return true;
+  }
+
+  public async disconnectLeagueoflegendsAccount(userData: User): Promise<boolean> {
+    const connectionAccount = await this.connectionAccount.findFirst({
+      where: {
+        userId: userData.id,
+        provider: connectAccountMap.leagueoflegends,
+      },
+    });
+
+    if (!connectionAccount) throw new HttpException(400, '연동된 계정이 없습니다.');
+
+    await this.connectionAccount.delete({
+      where: {
+        id: connectionAccount.id,
+      },
+    });
+
+    const joinFightList = await this.fight.findMany({
+      where: {
+        needTo: {
+          has: connectAccountMap.leagueoflegends,
         },
       },
       select: {

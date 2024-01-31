@@ -67,6 +67,7 @@ model ConnectionAccount {
   provider      String
   followerCount Int     @default(0)
   articleCount  Int     @default(0)
+  additonalInfo String?
   user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -103,6 +104,7 @@ model FightRankingUser {
   schoolId       String
   score          Int          @default(0)
   createdAt      DateTime     @default(now())
+  additonalInfo  String?
   school         School       @relation(fields: [schoolId], references: [schoolId])
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   fight          Fight        @relation(fields: [fightId], references: [id])

@@ -184,6 +184,28 @@ export class FightService {
           schoolId: user.userSchoolId,
         },
       });
+    } else if (findFight.needTo.includes('leagueoflegends')) {
+      const findConnectionAccount = await this.connectionAccount.findFirst({
+        where: {
+          userId: user.id,
+          provider: 'leagueoflegends',
+        },
+      });
+
+      if (!findConnectionAccount) {
+        throw new HttpException(403, '리그오브레전드 연동이 필요합니다.');
+      }
+
+      await this.fightRankingUser.create({
+        data: {
+          fightRankingId: findFightRanking.id,
+          userId: user.id,
+          fightId: findFight.id,
+          score: findConnectionAccount.followerCount,
+          schoolId: user.userSchoolId,
+          additonalInfo: findConnectionAccount.additonalInfo
+        },
+      });
     }
 
     return true;
@@ -204,7 +226,7 @@ export class FightService {
         user: {
           select: {
             name: true,
-          }
+          },
         },
       },
     });
@@ -223,7 +245,7 @@ export class FightService {
         return {
           ...ranking,
           user: {
-            name: maskName(ranking.user.name)
+            name: maskName(ranking.user.name),
           },
           userId: undefined,
         };

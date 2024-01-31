@@ -41,8 +41,8 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/google/callback`, this.authController.googleLoginCallback);
     this.router.get(`${this.path}/instagram`, authQueryMiddleware, this.authController.instagramLogin);
     this.router.get(`${this.path}/instagram/callback`, authQueryMiddleware, this.authController.instagramLoginCallback);
-    this.router.get(`${this.path}/connect/riot`, authMiddleware, this.authController.connectRiotAccount);
-    this.router.get(`${this.path}/connect/riot/callback`, authMiddleware, this.authController.connectRiotAccountCallback);
+    this.router.get(`${this.path}/connect/leagueoflegends`, authQueryMiddleware, this.authController.connectLeagueoflegendsAccount);
+    this.router.get(`${this.path}/connect/leagueoflegends/callback`, authQueryMiddleware, this.authController.connectLeagueoflegendsAccountCallback);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginUserDto, 'body'), this.authController.login);
     this.router.post(`${this.path}/applogin`, this.authController.appLogin);
@@ -86,6 +86,7 @@ class AuthRoute implements Routes {
       this.authController.updateNickname,
     );
     this.router.delete(`/auth/me/disconnectaccount/instagram`, authMiddleware, this.authController.disconnectInstagramAccount);
+    this.router.delete(`/auth/me/disconnectaccount/leagueoflegends`, authMiddleware, this.authController.disconnectLeagueoflegendsAccount);
     this.router.delete(`/image/:imageId`, authMiddleware, this.authController.deleteImage);
     this.router.delete(`${this.path}/me/profile`, authMiddleware, this.authController.updateProfile);
     this.router.delete(`${this.path}/me`, validationMiddleware(VerifyPhoneCodeDto, 'body'), authMiddleware, this.authController.deleteUser);
