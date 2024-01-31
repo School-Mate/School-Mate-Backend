@@ -8,6 +8,45 @@ export const processMap = {
   denied: Process.denied,
 };
 
+export const connectAccountMap = {
+  leagueoflegends: 'leagueoflegends',
+  instagram: 'instagram',
+};
+
+export const tierOfPoint = {
+  'Iron IV': 1,
+  'Iron III': 2,
+  'Iron II': 3,
+  'Iron I': 4,
+  'Bronze IV': 5,
+  'Bronze III': 6,
+  'Bronze II': 7,
+  'Bronze I': 8,
+  'Silver IV': 9,
+  'Silver III': 10,
+  'Silver II': 11,
+  'Silver I': 12,
+  'Gold IV': 13,
+  'Gold III': 14,
+  'Gold II': 15,
+  'Gold I': 16,
+  'Platinum IV': 17,
+  'Platinum III': 18,
+  'Platinum II': 19,
+  'Platinum I': 20,
+  'Emerald IV': 21,
+  'Emerald III': 22,
+  'Emerald II': 23,
+  'Emerald I': 24,
+  'Diamond IV': 28,
+  'Diamond III': 30,
+  'Diamond II': 32,
+  'Diamond I': 34,
+  Master: 40,
+  GrandMaster: 50,
+  Challenger: 55,
+};
+
 /**
  * @method isEmpty
  * @param {String | Number | Object} value

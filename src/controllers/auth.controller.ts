@@ -10,6 +10,8 @@ import {
   INSTAGRAM_CLIENT_KEY,
   INSTAGRAM_REDIRECT_URI,
   FTONT_DOMAIN,
+  RIOT_REDIRECT_URI,
+  RIOT_CLIENT_KEY,
 } from '@/config';
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
@@ -196,6 +198,28 @@ class AuthController {
     }
   };
 
+  public connectLeagueoflegendsAccount = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      res.redirect(
+        `https://auth.riotgames.com/authorize?client_id=${RIOT_CLIENT_KEY}&redirect_uri=${RIOT_REDIRECT_URI}&response_type=code&scope=openid`,
+      );
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public connectLeagueoflegendsAccountCallback = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const code = req.query.code as string;
+      if (!code) return this.connectLeagueoflegendsAccount(req, res, next);
+      await this.authService.connectLeagueoflegendsCallback(user, code);
+      res.redirect(`${FTONT_DOMAIN}/me/connectaccount/connect/leagueoflegends`);
+    } catch (error) {
+      res.redirect(`${FTONT_DOMAIN}/me/connectaccount/connect/leagueoflegends?message=${error.message}`);
+    }
+  };
+
   public instagramLoginCallback = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = req.user;
@@ -212,6 +236,16 @@ class AuthController {
     try {
       const user = req.user;
       const disconnect = await this.authService.disconnectInstagramAccount(user);
+      ResponseWrapper(req, res, { data: disconnect });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public disconnectLeagueoflegendsAccount = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const user = req.user;
+      const disconnect = await this.authService.disconnectLeagueoflegendsAccount(user);
       ResponseWrapper(req, res, { data: disconnect });
     } catch (error) {
       next(error);
