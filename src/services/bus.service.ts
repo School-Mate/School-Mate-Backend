@@ -7,7 +7,7 @@ import Container, { Service } from 'typedi';
 
 @Service()
 export class BusService {
-  public schoolService = Container.get(SchoolService);
+  private schoolService = Container.get(SchoolService);
 
   public async searchBusStation(long: string, lati: string): Promise<BusStationInfo[]> {
     try {
