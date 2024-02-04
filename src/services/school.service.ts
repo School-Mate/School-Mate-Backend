@@ -113,7 +113,6 @@ export class SchoolService {
       } else if (error instanceof AxiosError) {
         throw new HttpException(500, '나이스 서버에 오류가 발생했습니다.');
       } else {
-        console.log(error);
         throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
       }
     }
@@ -313,7 +312,6 @@ export class SchoolService {
 
       return true;
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else if (error instanceof AxiosError) {

@@ -478,7 +478,6 @@ export class AuthService {
         followersCount: userDetail.data?.user.edge_followed_by.count,
       };
     } catch (error) {
-      console.log(error);
       throw new Error(error);
     }
   }

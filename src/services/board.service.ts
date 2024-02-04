@@ -288,7 +288,6 @@ export class BoardService {
 
       return article;
     } catch (error) {
-      console.log(error);
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
   }
@@ -1513,7 +1512,6 @@ export class BoardService {
         numberPage: page ? Number(page) : 1,
       };
     } catch (error) {
-      console.log(error);
       throw new HttpException(500, error);
     }
   }

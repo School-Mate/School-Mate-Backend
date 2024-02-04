@@ -56,7 +56,6 @@ export class BusService {
 
       return await this.searchBusStation(x, y);
     } catch (error) {
-      console.log(error);
       if (error instanceof HttpException) {
         throw error;
       } else if (error instanceof AxiosError) {
