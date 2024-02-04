@@ -1,9 +1,7 @@
 import { sign, verify } from 'jsonwebtoken';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
-import { SolapiMessageService } from 'solapi';
 import bcrypt from 'bcrypt';
-
 import { Image, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
 import {
   DOMAIN,
@@ -21,8 +19,6 @@ import {
   RIOT_CLIENT_SECRET,
   RIOT_REDIRECT_URI,
   SECRET_KEY,
-  SOL_API_KEY,
-  SOL_API_SECRET,
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData, UserWithSchool } from '@interfaces/auth.interface';
@@ -36,22 +32,20 @@ import { PrismaClientService } from './prisma.service';
 import FormData from 'form-data';
 import eventEmitter from '@/utils/eventEmitter';
 import { LeagueOfLegendsStats } from '@/types';
-import { logger } from '@/utils/logger';
 
 @Service()
 export class AuthService {
-  public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
-  public schoolService = Container.get(SchoolService);
-  public adminService = Container.get(AdminService);
-  public connectionAccount = Container.get(PrismaClientService).connectionAccount;
-  public image = Container.get(PrismaClientService).image;
-  public fight = Container.get(PrismaClientService).fight;
-  public fightRankingUser = Container.get(PrismaClientService).fightRankingUser;
-  public socialLogin = Container.get(PrismaClientService).socialLogin;
-  public users = Container.get(PrismaClientService).user;
-  public phoneVerifyRequest = Container.get(PrismaClientService).phoneVerifyRequest;
-  public schoolVerify = Container.get(PrismaClientService).userSchoolVerify;
-  public pushDevice = Container.get(PrismaClientService).pushDevice;
+  private schoolService = Container.get(SchoolService);
+  private adminService = Container.get(AdminService);
+  private connectionAccount = Container.get(PrismaClientService).connectionAccount;
+  private image = Container.get(PrismaClientService).image;
+  private fight = Container.get(PrismaClientService).fight;
+  private fightRankingUser = Container.get(PrismaClientService).fightRankingUser;
+  private socialLogin = Container.get(PrismaClientService).socialLogin;
+  private users = Container.get(PrismaClientService).user;
+  private phoneVerifyRequest = Container.get(PrismaClientService).phoneVerifyRequest;
+  private schoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  private pushDevice = Container.get(PrismaClientService).pushDevice;
 
   // private lastCookie: string;
 
@@ -197,7 +191,7 @@ export class AuthService {
         }),
       });
 
-      const { access_token, expires_in, refresh_token } = data;
+      const { access_token } = data;
 
       try {
         const { data: userData } = await axios.get('https://kr.api.riotgames.com/lol/summoner/v4/summoners/me', {
@@ -206,7 +200,7 @@ export class AuthService {
           },
         });
 
-        const { id, accountId, name, puuid } = userData;
+        const { id, name } = userData;
 
         const connectionAccount = await this.connectionAccount.findFirst({
           where: {
@@ -391,7 +385,10 @@ export class AuthService {
         throw new HttpException(409, '이미 연동된 계정입니다.');
       }
 
-      const { data: userDetail, headers } = await axios.get(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${userData.username}`, {
+      const {
+        data: userDetail,
+        // headers
+      } = await axios.get(`https://i.instagram.com/api/v1/users/web_profile_info/?username=${userData.username}`, {
         headers: {
           'x-ig-app-id': '936619743392459',
           accept: '*/*',
