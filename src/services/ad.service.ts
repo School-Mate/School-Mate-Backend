@@ -5,8 +5,8 @@ import { PrismaClientService } from './prisma.service';
 
 @Service()
 export class AdService {
-  public prisma = Container.get(PrismaClientService);
-  public advertise = Container.get(PrismaClientService).advertise;
+  private prisma = Container.get(PrismaClientService);
+  private advertise = Container.get(PrismaClientService).advertise;
   public async getAd() {
     try {
       const currentDate = new Date();

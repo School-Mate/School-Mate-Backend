@@ -7,7 +7,7 @@ import { DataStoredInToken, TokenData } from '@/interfaces/auth.interface';
 import { PushMessage, SMS_TEMPLATE_ID, SmsEvent } from '@/interfaces/admin.interface';
 import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
-import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserBlock, UserSchoolVerify } from '@prisma/client';
+import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
 import { SchoolService } from './school.service';
 import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
@@ -21,27 +21,27 @@ import dayjs from 'dayjs';
 
 @Service()
 export class AdminService {
-  public schoolService = Container.get(SchoolService);
-  public prismaClient = Container.get(PrismaClientService);
-  public admin = Container.get(PrismaClientService).admin;
-  public article = Container.get(PrismaClientService).article;
-  public board = Container.get(PrismaClientService).board;
-  public boardRequest = Container.get(PrismaClientService).boardRequest;
-  public deletedArticle = Container.get(PrismaClientService).deletedArticle;
-  public deletedComment = Container.get(PrismaClientService).deletedComment;
-  public deletedReComment = Container.get(PrismaClientService).deletedReComment;
-  public image = Container.get(PrismaClientService).image;
-  public report = Container.get(PrismaClientService).report;
-  public users = Container.get(PrismaClientService).user;
-  public userSchool = Container.get(PrismaClientService).userSchool;
-  public userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
-  public userBlock = Container.get(PrismaClientService).userBlock;
-  public asked = Container.get(PrismaClientService).asked;
-  public school = Container.get(PrismaClientService).school;
-  public comment = Container.get(PrismaClientService).comment;
-  public recomment = Container.get(PrismaClientService).reComment;
-  public expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
-  public messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
+  private schoolService = Container.get(SchoolService);
+  private prismaClient = Container.get(PrismaClientService);
+  private admin = Container.get(PrismaClientService).admin;
+  private article = Container.get(PrismaClientService).article;
+  private board = Container.get(PrismaClientService).board;
+  private boardRequest = Container.get(PrismaClientService).boardRequest;
+  private deletedArticle = Container.get(PrismaClientService).deletedArticle;
+  private deletedComment = Container.get(PrismaClientService).deletedComment;
+  private deletedReComment = Container.get(PrismaClientService).deletedReComment;
+  private image = Container.get(PrismaClientService).image;
+  private report = Container.get(PrismaClientService).report;
+  private users = Container.get(PrismaClientService).user;
+  private userSchool = Container.get(PrismaClientService).userSchool;
+  private userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  private userBlock = Container.get(PrismaClientService).userBlock;
+  private asked = Container.get(PrismaClientService).asked;
+  private school = Container.get(PrismaClientService).school;
+  private comment = Container.get(PrismaClientService).comment;
+  private recomment = Container.get(PrismaClientService).reComment;
+  private expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+  private messageService = new SolapiMessageService(SOL_API_KEY, SOL_API_SECRET);
 
   public async signUpService(adminData: AdminDto): Promise<Admin> {
     const findAdmin: Admin = await this.admin.findUnique({ where: { loginId: adminData.id } });
