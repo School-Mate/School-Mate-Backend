@@ -22,7 +22,7 @@ export interface ICommentQuery {
   isAnonymous: boolean;
 }
 
-export interface ArticleWithImage extends Article {
+export interface ArticleWithDetail extends Article {
   commentCounts: number;
   likeCounts?: number;
   dislikeCounts?: number;

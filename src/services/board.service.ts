@@ -1,7 +1,7 @@
 import { HttpException } from '@/exceptions/HttpException';
 import { Article, Board, Comment, User, LikeType, BoardRequest, ReComment, BoardType } from '@prisma/client';
 import { UserWithSchool } from '@/interfaces/auth.interface';
-import { ArticleWithImage, IArticleQuery } from '@/interfaces/board.interface';
+import { ArticleWithDetail, IArticleQuery } from '@/interfaces/board.interface';
 import { deleteImage } from '@/utils/multer';
 import { SchoolService } from './school.service';
 import { SendBoardRequestDto } from '@/dtos/board.dto';
@@ -11,29 +11,26 @@ import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
 import { WebhookType } from '@/types';
 import eventEmitter from '@/utils/eventEmitter';
-import { logger } from '@/utils/logger';
 
 @Service()
 export class BoardService {
-  public schoolService = Container.get(SchoolService);
-  public adminService = Container.get(AdminService);
-  public article = Container.get(PrismaClientService).article;
-  public board = Container.get(PrismaClientService).board;
-  public boardRequest = Container.get(PrismaClientService).boardRequest;
-  public comment = Container.get(PrismaClientService).comment;
-  public image = Container.get(PrismaClientService).image;
-  public articleLike = Container.get(PrismaClientService).articleLike;
-  public commentLike = Container.get(PrismaClientService).commentLike;
-  public reCommentLike = Container.get(PrismaClientService).reCommentLike;
-  public manager = Container.get(PrismaClientService).boardManager;
-  public reComment = Container.get(PrismaClientService).reComment;
-  public school = Container.get(PrismaClientService).school;
-  public user = Container.get(PrismaClientService).user;
-  public defaultBoard = Container.get(PrismaClientService).defaultBoard;
-  public hotArticle = Container.get(PrismaClientService).hotArticle;
-  public deletedArticle = Container.get(PrismaClientService).deletedArticle;
-  public blindArticle = Container.get(PrismaClientService).reportBlindArticle;
-  public reportBlindUser = Container.get(PrismaClientService).reportBlindUser;
+  private schoolService = Container.get(SchoolService);
+  private adminService = Container.get(AdminService);
+  private article = Container.get(PrismaClientService).article;
+  private board = Container.get(PrismaClientService).board;
+  private boardRequest = Container.get(PrismaClientService).boardRequest;
+  private comment = Container.get(PrismaClientService).comment;
+  private image = Container.get(PrismaClientService).image;
+  private articleLike = Container.get(PrismaClientService).articleLike;
+  private commentLike = Container.get(PrismaClientService).commentLike;
+  private reCommentLike = Container.get(PrismaClientService).reCommentLike;
+  private reComment = Container.get(PrismaClientService).reComment;
+  private user = Container.get(PrismaClientService).user;
+  private defaultBoard = Container.get(PrismaClientService).defaultBoard;
+  private hotArticle = Container.get(PrismaClientService).hotArticle;
+  private deletedArticle = Container.get(PrismaClientService).deletedArticle;
+  private blindArticle = Container.get(PrismaClientService).reportBlindArticle;
+  private reportBlindUser = Container.get(PrismaClientService).reportBlindUser;
 
   public async getBoards(user: UserWithSchool): Promise<Board[]> {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -148,7 +145,7 @@ export class BoardService {
         take: 10,
       });
 
-      const filteredArticles: ArticleWithImage[] = [];
+      const filteredArticles: ArticleWithDetail[] = [];
 
       for await (const article of findArticles) {
         const filteredArticle = await this.getArticle(article.id.toString(), user);
@@ -195,7 +192,7 @@ export class BoardService {
     }
   }
 
-  public async getSuggestArticles(user: User): Promise<ArticleWithImage[]> {
+  public async getSuggestArticles(user: User): Promise<ArticleWithDetail[]> {
     try {
       const findArticle = await this.article.findMany({
         where: {
@@ -210,6 +207,7 @@ export class BoardService {
           comment: true,
           reComment: true,
           board: true,
+          user: true,
         },
       });
 
@@ -217,62 +215,31 @@ export class BoardService {
         return [];
       }
 
-      findArticle.sort((a, b) => {
-        if (a.articleLike.length > b.articleLike.length) return -1;
-        else if (a.articleLike.length < b.articleLike.length) return 1;
-        else return 0;
-      });
-
-      const articlesWithImage = await Promise.all(
-        findArticle.map(async article => {
-          if (article.images.length === 0) {
-            return {
-              ...article,
-              keyOfImages: [],
-              commentCounts: article.comment.length + article.reComment.length,
-              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-              disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-            } as unknown as ArticleWithImage;
-          }
-
-          const keyOfImages = await Promise.all(
-            article.images.map(async imageId => {
-              const findImage = await this.image.findUnique({
-                where: {
-                  id: imageId,
-                },
-              });
-              if (!findImage) return;
-              return findImage.key;
-            }),
-          );
-
+      return findArticle
+        .sort((a, b) => {
+          if (a.articleLike.length > b.articleLike.length) return -1;
+          else if (a.articleLike.length < b.articleLike.length) return 1;
+          else return 0;
+        })
+        .map(async article => {
           return {
             ...article,
-            keyOfImages: keyOfImages,
             commentCounts: article.comment.length + article.reComment.length,
             likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
             disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-          } as unknown as ArticleWithImage;
-        }),
-      );
-
-      return articlesWithImage.map(article => {
-        return {
-          ...article,
-          userId: null,
-          isMe: article.userId === user.id,
-          user: article.isAnonymous
-            ? {
-                name: '(익명)',
-                id: null,
-              }
-            : {
-                name: article.user.name,
-                id: article.user.id,
-              },
-        };
-      });
+            userId: null,
+            isMe: article.userId === user.id,
+            user: article.isAnonymous
+              ? {
+                  name: '(익명)',
+                  id: null,
+                }
+              : {
+                  name: article.user.name,
+                  id: article.user.id,
+                },
+          } as unknown as ArticleWithDetail;
+        }) as unknown as ArticleWithDetail[];
     } catch (error) {
       throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
     }
@@ -326,7 +293,7 @@ export class BoardService {
     }
   }
 
-  public async getArticle(articleId: string, user: UserWithSchool): Promise<ArticleWithImage> {
+  public async getArticle(articleId: string, user: UserWithSchool): Promise<ArticleWithDetail> {
     try {
       const findArticle = await this.article.findUnique({
         where: {
@@ -380,7 +347,7 @@ export class BoardService {
                 profile: findArticle.user.profile,
               } as User,
             }),
-      } as unknown as ArticleWithImage;
+      } as unknown as ArticleWithDetail;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -451,31 +418,8 @@ export class BoardService {
 
           if (blindedArticle) return null;
 
-          if (article.images.length == 0) {
-            return {
-              ...article,
-              keyOfImages: [],
-              commentCounts: article.comment.length + article.reComment.length,
-              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-              isMe: article.userId === user.id,
-            };
-          }
-
-          const keyOfImages = await Promise.all(
-            article.images.map(async imageId => {
-              const findImage = await this.image.findUnique({
-                where: {
-                  id: imageId,
-                },
-              });
-              if (!findImage) return;
-              return findImage.key;
-            }),
-          );
-
           return {
             ...article,
-            keyOfImages: keyOfImages,
             commentCounts: article.comment.length + article.reComment.length,
             likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
             isMe: article.userId === user.id,
@@ -1263,7 +1207,7 @@ export class BoardService {
     }
   }
 
-  public async getUserArticles(userId: string, page: string, user: User): Promise<ArticleWithImage[]> {
+  public async getUserArticles(userId: string, page: string, user: User): Promise<ArticleWithDetail[]> {
     try {
       const targetUser = await this.user.findUnique({
         where: {
@@ -1296,46 +1240,15 @@ export class BoardService {
         },
       });
 
-      const articlesWithImage = await Promise.all(
-        findArticles.map(async article => {
-          if (article.images.length === 0) {
-            return {
-              ...article,
-              keyOfImages: [],
-              commentCounts: article.comment.length + article.reComment.length,
-              likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-              disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-            } as unknown as ArticleWithImage;
-          }
-
-          const keyOfImages = await Promise.all(
-            article.images.map(async imageId => {
-              const findImage = await this.image.findUnique({
-                where: {
-                  id: imageId,
-                },
-              });
-              if (!findImage) return;
-              return findImage.key;
-            }),
-          );
-
-          return {
-            ...article,
-            keyOfImages: keyOfImages,
-            commentCounts: article.comment.length + article.reComment.length,
-            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-          } as unknown as ArticleWithImage;
-        }),
-      );
-
-      return articlesWithImage.map(article => {
+      return findArticles.map(async article => {
         return {
           ...article,
+          commentCounts: article.comment.length + article.reComment.length,
+          likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
+          disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
           isMe: article.userId === user.id,
-        };
-      });
+        } as unknown as ArticleWithDetail;
+      }) as unknown as ArticleWithDetail[];
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -1345,7 +1258,7 @@ export class BoardService {
     }
   }
 
-  public async getUserLikes(userId: string, page: string, user: User): Promise<ArticleWithImage[]> {
+  public async getUserLikes(userId: string, page: string, user: User): Promise<ArticleWithDetail[]> {
     try {
       const targetUser = await this.user.findUnique({
         where: {
@@ -1374,21 +1287,15 @@ export class BoardService {
         },
       });
 
-      const articlesWithImage = findLikes.map(like => {
+      return findLikes.map(like => {
         return {
           ...like.article,
           commentCounts: like.article.comment.length + like.article.reComment.length,
           likeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.like).length,
           disLikeCounts: like.article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-        } as unknown as ArticleWithImage;
-      });
-
-      return articlesWithImage.map(article => {
-        return {
-          ...article,
-          isMe: article.userId === user.id,
+          isMe: like.article.userId === user.id,
         };
-      });
+      }) as unknown as ArticleWithDetail[];
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -1469,7 +1376,7 @@ export class BoardService {
     user: UserWithSchool,
     page: string,
   ): Promise<{
-    contents: ArticleWithImage[];
+    contents: ArticleWithDetail[];
     totalPage: number;
     numberPage: number;
   }> {
@@ -1551,7 +1458,7 @@ export class BoardService {
     page: string,
     user: UserWithSchool,
   ): Promise<{
-    contents: ArticleWithImage[];
+    contents: ArticleWithDetail[];
     totalPage: number;
     numberPage: number;
   }> {
