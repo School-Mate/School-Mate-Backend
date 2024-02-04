@@ -12,11 +12,10 @@ import eventEmitter from '@/utils/eventEmitter';
 
 @Service()
 export class AskedService {
-  public asked = Container.get(PrismaClientService).asked;
-  public askedUser = Container.get(PrismaClientService).askedUser;
-  public user = Container.get(PrismaClientService).user;
-  public image = Container.get(PrismaClientService).image;
-  public adminService = Container.get(AdminService);
+  private adminService = Container.get(AdminService);
+  private asked = Container.get(PrismaClientService).asked;
+  private askedUser = Container.get(PrismaClientService).askedUser;
+  private image = Container.get(PrismaClientService).image;
 
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
