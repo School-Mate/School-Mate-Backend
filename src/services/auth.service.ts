@@ -22,7 +22,8 @@ import {
 } from '@config';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData, UserWithSchool } from '@interfaces/auth.interface';
-import { connectAccountMap, excludeUserPassword, tierOfPoint } from '@utils/util';
+import { excludeUserPassword } from '@utils/util';
+import { connectAccountMap, tierOfPoint } from '@/utils/constants';
 import { CreateUserDto, LoginUserDto, VerifyPhoneCodeDto } from '@/dtos/users.dto';
 import { SchoolService } from './school.service';
 import { deleteImage } from '@/utils/multer';

@@ -6,7 +6,7 @@ import { HttpException } from '@/exceptions/HttpException';
 import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET } from '@/config';
 import type { RequestWithUser } from '@/interfaces/auth.interface';
 import dayjs from 'dayjs';
-import { storages } from './util';
+import { storages } from './constants';
 import Container from 'typedi';
 import { PrismaClientService } from '@/services/prisma.service';
 

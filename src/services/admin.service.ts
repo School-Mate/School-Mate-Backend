@@ -9,7 +9,6 @@ import { deleteImage } from '@/utils/multer';
 import { excludeAdminPassword } from '@/utils/util';
 import { Admin, Article, BoardRequest, Process, Report, ReportTargetType, School, User, UserSchoolVerify } from '@prisma/client';
 import { SchoolService } from './school.service';
-import { processMap } from '@/utils/util';
 import Expo, { ExpoPushTicket } from 'expo-server-sdk';
 import { SolapiMessageService } from 'solapi';
 import Container, { Service } from 'typedi';
@@ -424,7 +423,7 @@ export class AdminService {
   }> => {
     const reports = await this.report.findMany({
       where: {
-        process: processMap[process],
+        process: Process[process],
         ...(targetType && { targetType: targetType }),
       },
       skip: isNaN(Number(page)) ? 0 : (Number(page) - 1) * 25,
@@ -497,7 +496,7 @@ export class AdminService {
 
     const totalRequests = await this.report.count({
       where: {
-        process: processMap[process],
+        process: Process[process],
         ...(targetType && { targetType: targetType }),
       },
     });
