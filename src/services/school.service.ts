@@ -5,7 +5,7 @@ import { SchoolVerifyDto } from '@/dtos/school.dto';
 import { HttpException } from '@/exceptions/HttpException';
 import { IClassInfoResponse, IMealInfoResponse, ISchoolInfoResponse, ISchoolInfoRow, ITimeTableResponse } from '@/interfaces/neisapi.interface';
 import { neisClient, kakaoClient } from '@/utils/client';
-import { School, User, Process, Meal, UserSchoolVerify, UserSchool } from '@prisma/client';
+import { School, User, Process, Meal } from '@prisma/client';
 import Container, { Service } from 'typedi';
 import { PrismaClientService } from './prisma.service';
 import { sendWebhook } from '@/utils/webhook';
@@ -15,12 +15,11 @@ dayjs.extend(isBetween);
 
 @Service()
 export class SchoolService {
-  public image = Container.get(PrismaClientService).image;
-  public userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
-  public school = Container.get(PrismaClientService).school;
-  public user = Container.get(PrismaClientService).user;
-  public meal = Container.get(PrismaClientService).meal;
-  public userSchool = Container.get(PrismaClientService).userSchool;
+  private image = Container.get(PrismaClientService).image;
+  private userSchoolVerify = Container.get(PrismaClientService).userSchoolVerify;
+  private school = Container.get(PrismaClientService).school;
+  private user = Container.get(PrismaClientService).user;
+  private meal = Container.get(PrismaClientService).meal;
 
   public async searchSchool(keyword: string): Promise<ISchoolInfoRow[]> {
     try {
