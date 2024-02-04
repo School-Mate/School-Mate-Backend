@@ -6,11 +6,11 @@ import { maskName } from '@/utils/util';
 
 @Service()
 export class FightService {
-  public fight = Container.get(PrismaClientService).fight;
-  public fightRanking = Container.get(PrismaClientService).fightRanking;
-  public fightRankingUser = Container.get(PrismaClientService).fightRankingUser;
-  public connectionAccount = Container.get(PrismaClientService).connectionAccount;
-  public prismaClient = Container.get(PrismaClientService);
+  private fight = Container.get(PrismaClientService).fight;
+  private fightRanking = Container.get(PrismaClientService).fightRanking;
+  private fightRankingUser = Container.get(PrismaClientService).fightRankingUser;
+  private connectionAccount = Container.get(PrismaClientService).connectionAccount;
+  private prismaClient = Container.get(PrismaClientService);
 
   public async getFightList(user: UserWithSchool, page: string): Promise<any> {
     const fightList = await this.fight.findMany({
@@ -203,7 +203,7 @@ export class FightService {
           fightId: findFight.id,
           score: findConnectionAccount.followerCount,
           schoolId: user.userSchoolId,
-          additonalInfo: findConnectionAccount.additonalInfo
+          additonalInfo: findConnectionAccount.additonalInfo,
         },
       });
     }
