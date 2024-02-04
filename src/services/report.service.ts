@@ -9,14 +9,14 @@ import { WebhookType } from '@/types';
 
 @Service()
 class ReportService {
-  public user = Container.get(PrismaClientService).user;
-  public article = Container.get(PrismaClientService).article;
-  public comment = Container.get(PrismaClientService).comment;
-  public report = Container.get(PrismaClientService).report;
-  public asked = Container.get(PrismaClientService).asked;
-  public reComment = Container.get(PrismaClientService).reComment;
-  public reportBlindArticle = Container.get(PrismaClientService).reportBlindArticle;
-  public reportBlindUser = Container.get(PrismaClientService).reportBlindUser;
+  private user = Container.get(PrismaClientService).user;
+  private article = Container.get(PrismaClientService).article;
+  private comment = Container.get(PrismaClientService).comment;
+  private report = Container.get(PrismaClientService).report;
+  private asked = Container.get(PrismaClientService).asked;
+  private reComment = Container.get(PrismaClientService).reComment;
+  private reportBlindArticle = Container.get(PrismaClientService).reportBlindArticle;
+  private reportBlindUser = Container.get(PrismaClientService).reportBlindUser;
 
   private targetTypes = {
     user: {
