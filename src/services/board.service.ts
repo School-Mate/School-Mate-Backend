@@ -45,11 +45,18 @@ export class BoardService {
       const findSharedBoards = await this.board.findMany({
         where: {
           boardType: BoardType.share,
-          schoolId: user.userSchool.school.atptCode,
+          OR: [
+            {
+              schoolId: user.userSchool.school.atptCode,
+            },
+            {
+              schoolId: 'all',
+            },
+          ],
         },
       });
 
-      if (findSharedBoards.length === 0) {
+      if (findSharedBoards.filter(board => board.schoolId == 'all').length === 0) {
         await this.board.create({
           data: {
             name: '지역 게시판',
@@ -136,6 +143,21 @@ export class BoardService {
                 },
               ],
             },
+            {
+              schoolId: 'all',
+              OR: [
+                {
+                  title: {
+                    contains: keyword,
+                  },
+                },
+                {
+                  content: {
+                    contains: keyword,
+                  },
+                },
+              ],
+            },
           ],
         },
         select: {
@@ -170,8 +192,8 @@ export class BoardService {
         },
       });
 
-      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode) {
-        throw new HttpException(404, '해당 게시판을 볼 권한이 없습니다.');
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode && findBoard.schoolId !== 'all') {
+        new HttpException(404, '해당 게시판을 볼 권한이 없습니다.');
       }
 
       if (findBoard.boardType === BoardType.school && findBoard.schoolId !== user.userSchoolId) {
@@ -192,59 +214,6 @@ export class BoardService {
     }
   }
 
-  public async getSuggestArticles(user: User): Promise<ArticleWithDetail[]> {
-    try {
-      const findArticle = await this.article.findMany({
-        where: {
-          schoolId: user.userSchoolId,
-        },
-        take: 100,
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          articleLike: true,
-          comment: true,
-          reComment: true,
-          board: true,
-          user: true,
-        },
-      });
-
-      if (findArticle.length === 0) {
-        return [];
-      }
-
-      return findArticle
-        .sort((a, b) => {
-          if (a.articleLike.length > b.articleLike.length) return -1;
-          else if (a.articleLike.length < b.articleLike.length) return 1;
-          else return 0;
-        })
-        .map(async article => {
-          return {
-            ...article,
-            commentCounts: article.comment.length + article.reComment.length,
-            likeCounts: article.articleLike.filter(like => like.likeType === LikeType.like).length,
-            disLikeCounts: article.articleLike.filter(like => like.likeType === LikeType.dislike).length,
-            userId: null,
-            isMe: article.userId === user.id,
-            user: article.isAnonymous
-              ? {
-                  name: '(익명)',
-                  id: null,
-                }
-              : {
-                  name: article.user.name,
-                  id: article.user.id,
-                },
-          } as unknown as ArticleWithDetail;
-        }) as unknown as ArticleWithDetail[];
-    } catch (error) {
-      throw new HttpException(500, '알 수 없는 오류가 발생했습니다.');
-    }
-  }
-
   public async postArticle(boardId: string, user: UserWithSchool, data: IArticleQuery): Promise<Article> {
     try {
       const findBoard = await this.board.findUnique({
@@ -254,7 +223,7 @@ export class BoardService {
       });
       if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
 
-      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode) {
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode && findBoard.schoolId !== 'all') {
         throw new HttpException(404, '해당 게시판에 글을 작성할 수 없습니다.');
       }
 
@@ -272,7 +241,8 @@ export class BoardService {
 
       const article = await this.article.create({
         data: {
-          schoolId: findBoard.boardType === BoardType.share ? user.userSchool.school.atptCode : user.userSchoolId,
+          schoolId:
+            findBoard.schoolId === 'all' ? 'all' : findBoard.boardType === BoardType.share ? user.userSchool.school.atptCode : user.userSchoolId,
           title: data.title,
           content: data.content,
           images: images.map(image => image.key),
@@ -304,7 +274,11 @@ export class BoardService {
         },
       });
       if (!findArticle) throw new HttpException(404, '해당하는 게시글이 없습니다.');
-      if (findArticle.board.boardType === BoardType.share && findArticle.board.schoolId !== user.userSchool.school.atptCode)
+      if (
+        findArticle.board.boardType === BoardType.share &&
+        findArticle.board.schoolId != 'all' &&
+        findArticle.board.schoolId !== user.userSchool.school.atptCode
+      )
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
       if (findArticle.board.boardType === BoardType.school && findArticle.board.schoolId !== user.userSchoolId)
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
@@ -369,7 +343,7 @@ export class BoardService {
       });
 
       if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
-      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode)
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId != 'all' && findBoard.schoolId !== user.userSchool.school.atptCode)
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
       if (findBoard.boardType === BoardType.school && findBoard.schoolId !== user.userSchoolId)
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
@@ -495,7 +469,7 @@ export class BoardService {
       });
 
       if (!findBoard) throw new HttpException(404, '해당하는 게시판이 없습니다.');
-      if (findBoard.boardType === BoardType.share && findBoard.schoolId !== user.userSchool.school.atptCode)
+      if (findBoard.boardType === BoardType.share && findBoard.schoolId != 'all' && findBoard.schoolId !== user.userSchool.school.atptCode)
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
       if (findBoard.boardType === BoardType.school && findBoard.schoolId !== user.userSchoolId)
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
@@ -653,7 +627,11 @@ export class BoardService {
       if (!findComment) {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
-      if (findComment.article.board.boardType === BoardType.share && findComment.article.board.schoolId !== user.userSchool.school.atptCode)
+      if (
+        findComment.article.board.boardType === BoardType.share &&
+        findComment.article.board.schoolId != 'all' &&
+        findComment.article.board.schoolId !== user.userSchool.school.atptCode
+      )
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
       if (findComment.article.board.boardType === BoardType.school && findComment.article.board.schoolId !== user.userSchoolId)
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
@@ -753,7 +731,11 @@ export class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      if (findReComment.article.board.boardType === BoardType.share && findReComment.article.board.schoolId !== user.userSchool.school.atptCode)
+      if (
+        findReComment.article.board.boardType === BoardType.share &&
+        findReComment.article.board.schoolId != 'all' &&
+        findReComment.article.board.schoolId != user.userSchool.school.atptCode
+      )
         throw new HttpException(404, '해당 댓글을 볼 수 없습니다.');
       if (findReComment.article.board.boardType === BoardType.school && findReComment.article.board.schoolId !== user.userSchoolId)
         throw new HttpException(404, '해당 댓글을 볼 수 없습니다.');
@@ -804,7 +786,11 @@ export class BoardService {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
 
-      if (findArticle.board.boardType === BoardType.share && findArticle.board.schoolId !== user.userSchool.school.atptCode)
+      if (
+        findArticle.board.boardType === BoardType.share &&
+        findArticle.board.schoolId != 'all' &&
+        findArticle.board.schoolId !== user.userSchool.school.atptCode
+      )
         throw new HttpException(404, '해당 게시글에 댓글을 작성할 수 없습니다.');
       if (findArticle.board.boardType === BoardType.school && findArticle.board.schoolId !== user.userSchoolId)
         throw new HttpException(404, '해당 게시글에 댓글을 작성할 수 없습니다.');
@@ -856,7 +842,11 @@ export class BoardService {
         throw new HttpException(404, '해당하는 댓글이 없습니다.');
       }
 
-      if (findComment.article.board.boardType === BoardType.share && findComment.article.board.schoolId !== user.userSchool.school.atptCode)
+      if (
+        findComment.article.board.boardType === BoardType.share &&
+        findComment.article.board.schoolId != 'all' &&
+        findComment.article.board.schoolId !== user.userSchool.school.atptCode
+      )
         throw new HttpException(404, '해당 댓글에 댓글을 작성할 수 없습니다.');
       if (findComment.article.board.boardType === BoardType.school && findComment.article.board.schoolId !== user.userSchoolId)
         throw new HttpException(404, '해당 댓글에 댓글을 작성할 수 없습니다.');
@@ -907,7 +897,11 @@ export class BoardService {
         throw new HttpException(404, '해당하는 게시글이 없습니다.');
       }
 
-      if (findArticle.board.boardType === BoardType.share && findArticle.board.schoolId !== user.userSchool.school.atptCode)
+      if (
+        findArticle.board.boardType === BoardType.share &&
+        findArticle.board.schoolId != 'all' &&
+        findArticle.board.schoolId !== user.userSchool.school.atptCode
+      )
         throw new HttpException(404, '해당 게시글을 볼 수 없습니다.');
 
       if (findArticle.board.boardType === BoardType.school && findArticle.board.schoolId !== user.userSchoolId)
@@ -1030,7 +1024,11 @@ export class BoardService {
         throw new HttpException(404, '해당하는 대댓글이 없습니다.');
       }
 
-      if (findReComment.article.board.boardType === BoardType.share && findReComment.article.board.schoolId !== user.userSchool.school.atptCode)
+      if (
+        findReComment.article.board.boardType === BoardType.share &&
+        findReComment.article.board.schoolId != 'all' &&
+        findReComment.article.board.schoolId !== user.userSchool.school.atptCode
+      )
         throw new HttpException(404, '해당 댓글을 볼 수 없습니다.');
 
       if (findReComment.article.board.boardType === BoardType.school && findReComment.article.board.schoolId !== user.userSchoolId)
@@ -1389,6 +1387,9 @@ export class BoardService {
             {
               schoolId: user.userSchool.school.atptCode,
             },
+            {
+              schoolId: 'all',
+            },
           ],
         },
         skip: page ? (Number(page) - 1) * 10 : 0,
@@ -1470,6 +1471,9 @@ export class BoardService {
             },
             {
               schoolId: user.userSchool.school.atptCode,
+            },
+            {
+              schoolId: 'all',
             },
           ],
         },
