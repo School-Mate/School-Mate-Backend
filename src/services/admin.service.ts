@@ -228,17 +228,17 @@ export class AdminService {
         },
       });
 
-      await this.sendPushNotification(findRequest.userId, '😢 인증이 거절되었어요!', `${schoolInfo.defaultName} 학생 인증이 거절되었습니다.`, {
-        type: 'resetstack',
-        url: '/verify',
-      });
-
-      await sendWebhook({
-        type: WebhookType.VerifyReject,
-        data: updateVerify,
-      });
-
       try {
+        await this.sendPushNotification(findRequest.userId, '😢 인증이 거절되었어요!', `${schoolInfo.defaultName} 학생 인증이 거절되었습니다.`, {
+          type: 'resetstack',
+          url: '/verify',
+        });
+
+        await sendWebhook({
+          type: WebhookType.VerifyReject,
+          data: updateVerify,
+        });
+        
         await this.sendMessage('VERIFY_SCHOOL_REJECT', findRequest.user.phone, {
           '#{접속링크}': 'schoolmate.kr/verify',
           '#{학교이름}': findRequest.schoolName,
@@ -251,45 +251,31 @@ export class AdminService {
 
       return false;
     }
-    const isUserSchool = await this.users.findUnique({
+
+    const isUserSchool = await this.users.update({
       where: {
         id: findRequest.userId,
       },
-      include: {
-        userSchool: true,
-      },
-    });
-
-    if (isUserSchool.userSchool) {
-      await this.userSchool.update({
-        where: {
-          userId: isUserSchool.id,
-        },
-        data: {
-          schoolId: schoolInfo.schoolId,
-          dept: findRequest.dept,
-          class: findRequest.class,
-          grade: findRequest.grade,
-          verified: true,
-        },
-      });
-    } else {
-      await this.userSchool.create({
-        data: {
-          userId: findRequest.userId,
-          schoolId: schoolInfo.schoolId,
-          dept: findRequest.dept,
-          class: findRequest.class,
-          grade: findRequest.grade,
-          verified: true,
-        },
-      });
-    }
-
-    await this.users.update({
-      where: { id: findRequest.userId },
       data: {
         userSchoolId: findRequest.schoolId,
+        userSchool: {
+          upsert: {
+            update: {
+              schoolId: schoolInfo.schoolId,
+              dept: findRequest.dept,
+              class: findRequest.class,
+              grade: findRequest.grade,
+              verified: true,
+            },
+            create: {
+              schoolId: schoolInfo.schoolId,
+              dept: findRequest.dept,
+              class: findRequest.class,
+              grade: findRequest.grade,
+              verified: true,
+            },
+          },
+        },
       },
     });
 
@@ -306,24 +292,20 @@ export class AdminService {
         type: 'openstack',
         url: '/me',
       });
-    } catch (error) {
-      logger.error(error);
-    }
 
-    try {
       await this.sendMessage('VERIFY_SCHOOL_APPROVE', isUserSchool.phone, {
         '#{접속링크}': '/me',
         '#{학교이름}': schoolInfo.defaultName,
         '#{학년}': findRequest.grade + '학년',
       });
+
+      await sendWebhook({
+        type: WebhookType.VerifyAccept,
+        data: findRequest,
+      });
     } catch (error) {
       logger.error(error);
     }
-
-    await sendWebhook({
-      type: WebhookType.VerifyAccept,
-      data: findRequest,
-    });
     return true;
   };
 
