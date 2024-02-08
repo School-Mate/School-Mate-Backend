@@ -43,6 +43,7 @@ export class LoginUserDto {
 }
 
 export class AppleLoginUser {
+  @IsOptional()
   @IsString({ message: '이름 정보가 제공되지 않았습니다.' })
   name: string;
 }
