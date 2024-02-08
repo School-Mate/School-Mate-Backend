@@ -5,6 +5,7 @@ import authMiddleware, { authQueryMiddleware } from '@middlewares/auth.middlewar
 import validationMiddleware from '@middlewares/validation.middleware';
 import { imageUpload } from '@/utils/multer';
 import {
+  AppleLoginUser,
   ChangeEmailDto,
   ChangePasswordDto,
   CreateUserDto,
@@ -34,7 +35,7 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/me/askedquestions`, authMiddleware, this.authController.meAskedQuestions);
     this.router.get(`${this.path}/me/schoolverify`, authMiddleware, this.authController.meSchoolVerify);
     this.router.get(`${this.path}/me/connectaccount`, authMiddleware, this.authController.meConnectAccount);
-    this.router.get(`${this.path}/logout`, authMiddleware, this.authController.logOut);
+    this.router.get(`${this.path}/logout`, this.authController.logOut);
     this.router.get(`${this.path}/kakao`, this.authController.kakaoLogin);
     this.router.get(`${this.path}/kakao/callback`, this.authController.kakaoLoginCallback);
     this.router.get(`${this.path}/google`, this.authController.googleLogin);
@@ -43,6 +44,7 @@ class AuthRoute implements Routes {
     this.router.get(`${this.path}/instagram/callback`, authQueryMiddleware, this.authController.instagramLoginCallback);
     this.router.get(`${this.path}/connect/leagueoflegends`, authQueryMiddleware, this.authController.connectLeagueoflegendsAccount);
     this.router.get(`${this.path}/connect/leagueoflegends/callback`, authQueryMiddleware, this.authController.connectLeagueoflegendsAccountCallback);
+    this.router.post(`${this.path}/apple/callback`, validationMiddleware(AppleLoginUser, 'body'), this.authController.appleLoginCallback);
     this.router.post(`/image`, authMiddleware, imageUpload.single('img'), this.authController.uploadImage);
     this.router.post(`${this.path}/login`, validationMiddleware(LoginUserDto, 'body'), this.authController.login);
     this.router.post(`${this.path}/applogin`, this.authController.appLogin);
@@ -70,6 +72,12 @@ class AuthRoute implements Routes {
       authMiddleware,
       validationMiddleware(VerifyPhoneMessageDto, 'body'),
       this.authController.sendAuthVerifyMessage,
+    );
+    this.router.post(
+      `${this.path}/oauth/verify/phone`,
+      authMiddleware,
+      validationMiddleware(VerifyPhoneCodeDto, 'body'),
+      this.authController.OuathLoginVerifyPhone,
     );
     this.router.patch(`${this.path}/me/profile`, authMiddleware, imageUpload.single('img'), this.authController.updateProfile);
     this.router.patch(`${this.path}/me/email`, authMiddleware, validationMiddleware(ChangeEmailDto, 'body'), this.authController.updateEmail);

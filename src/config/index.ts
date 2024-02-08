@@ -38,4 +38,7 @@ export const {
   RIOT_CLIENT_KEY,
   RIOT_CLIENT_SECRET,
   RIOT_REDIRECT_URI,
+  APPLE_KEY_ID,
+  APPLE_TEAM_ID,
+  APPLE_BUNDLE_ID,
 } = process.env;

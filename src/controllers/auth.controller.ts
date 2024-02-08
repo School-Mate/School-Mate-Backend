@@ -16,6 +16,7 @@ import {
 import ResponseWrapper from '@/utils/responseWarpper';
 import { RequestHandler } from '@/interfaces/routes.interface';
 import {
+  AppleLoginUser,
   ChangeEmailDto,
   ChangePasswordDto,
   CreateUserDto,
@@ -162,8 +163,27 @@ class AuthController {
   public kakaoLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { code } = req.query;
-      if (!code) return res.redirect('auth/kakao');
+      if (!code) return res.redirect('/auth/kakao');
       const { cookie, findUser, registered, token } = await this.authService.kakaoLogin(code as string);
+      
+      res.setHeader('Set-Cookie', [cookie]);
+      ResponseWrapper(req, res, {
+        data: {
+          user: findUser,
+          token: token,
+          registered: registered,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public appleLoginCallback = async (req: RequestHandler, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { code } = req.query;
+      const { name } = req.body as AppleLoginUser;
+      const { cookie, findUser, registered, token } = await this.authService.appleLogin(code as string, name);
 
       res.setHeader('Set-Cookie', [cookie]);
       ResponseWrapper(req, res, {
@@ -366,6 +386,17 @@ class AuthController {
     try {
       const { phone, code, token } = req.body as VerifyPhoneCodeDto;
       const verify = await this.authService.verifyPhoneCode(phone, code, token);
+
+      ResponseWrapper(req, res, { data: verify });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public OuathLoginVerifyPhone = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { phone, code, token } = req.body as VerifyPhoneCodeDto;
+      const verify = await this.authService.ouathLoginVerifyPhone(req.user, phone, code, token);
 
       ResponseWrapper(req, res, { data: verify });
     } catch (error) {

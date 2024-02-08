@@ -42,6 +42,11 @@ export class LoginUserDto {
   public password: string;
 }
 
+export class AppleLoginUser {
+  @IsString({ message: '이름 정보가 제공되지 않았습니다.' })
+  name: string;
+}
+
 export class ChangeEmailDto {
   @IsEmail({}, { message: '이메일 형식이 아닙니다.' })
   public email: string;
@@ -75,6 +80,9 @@ export class VerifyPhoneCodeDto {
 
   @IsString({ message: '인증 토큰를 입력해주세요.' })
   public token: string;
+  @IsOptional()
+  @IsString({ message: '애플 로그인 토큰을 입력해주세요.' })
+  public applelogoutcode: string;
 }
 
 export class UpdateProfileDto {

@@ -1,9 +1,12 @@
-import { sign, verify } from 'jsonwebtoken';
+import { decode, sign, verify } from 'jsonwebtoken';
 import qs from 'qs';
 import axios, { AxiosError } from 'axios';
 import bcrypt from 'bcrypt';
-import { Image, School, User, UserSchool, UserSchoolVerify } from '@prisma/client';
+import { Image, School, SocialLogin, SocialLoginProviderType, User, UserSchool, UserSchoolVerify } from '@prisma/client';
 import {
+  APPLE_BUNDLE_ID,
+  APPLE_KEY_ID,
+  APPLE_TEAM_ID,
   DOMAIN,
   GOOGLE_CLIENT_KEY,
   GOOGLE_CLIENT_SECRET,
@@ -11,15 +14,13 @@ import {
   INSTAGRAM_CLIENT_KEY,
   INSTAGRAM_CLIENT_SECRET,
   INSTAGRAM_REDIRECT_URI,
-  KAKAO_CLIENT_KEY,
-  KAKAO_CLIENT_SECRET,
-  KAKAO_REDIRECT_URI,
   RIOT_API_KEY,
   RIOT_CLIENT_KEY,
   RIOT_CLIENT_SECRET,
   RIOT_REDIRECT_URI,
   SECRET_KEY,
 } from '@config';
+import fs from 'fs';
 import { HttpException } from '@exceptions/HttpException';
 import { DataStoredInToken, TokenData, UserWithSchool } from '@interfaces/auth.interface';
 import { excludeUserPassword } from '@utils/util';
@@ -33,6 +34,8 @@ import { PrismaClientService } from './prisma.service';
 import FormData from 'form-data';
 import eventEmitter from '@/utils/eventEmitter';
 import { LeagueOfLegendsStats } from '@/types';
+import dayjs from 'dayjs';
+import { logger } from '@/utils/logger';
 
 @Service()
 export class AuthService {
@@ -47,6 +50,7 @@ export class AuthService {
   private phoneVerifyRequest = Container.get(PrismaClientService).phoneVerifyRequest;
   private schoolVerify = Container.get(PrismaClientService).userSchoolVerify;
   private pushDevice = Container.get(PrismaClientService).pushDevice;
+  private AppleKey = fs.readFileSync('./AppleAuthKey.p8', 'utf-8');
 
   // private lastCookie: string;
 
@@ -73,6 +77,90 @@ export class AuthService {
     };
   }
 
+  public async appleLogin(
+    code: string,
+    name: string,
+  ): Promise<{
+    cookie: string;
+    findUser: User & {
+      userSchool: UserSchool & {
+        school: School;
+      };
+    };
+    token: {
+      accessToken: string;
+      expiresIn: number;
+    };
+    registered: boolean;
+  }> {
+    try {
+      const formData = qs.stringify({
+        client_id: APPLE_BUNDLE_ID,
+        client_secret: this.createAppleToken(),
+        grant_type: 'authorization_code',
+        code: code,
+      });
+
+      const { data: appleTokenData } = await axios.post('https://appleid.apple.com/auth/token', formData);
+
+      const { access_token, id_token } = appleTokenData;
+      const decoded = decode(id_token) as {
+        sub: string;
+        email: string;
+      };
+
+      const socialLogin = await this.socialLogin.findUnique({
+        where: {
+          socialId: decoded.sub,
+        },
+      });
+      if (!socialLogin) {
+        const createUserData: User = await this.users.create({
+          data: {
+            email: decoded.email,
+            name: name,
+            provider: 'social',
+            socialLogin: {
+              create: {
+                provider: 'apple',
+                socialId: decoded.sub,
+                accessToken: access_token as string,
+              },
+            },
+          },
+          include: {
+            userSchool: true,
+            socialLogin: true,
+          },
+        });
+        const loginData = await this.initializeLoginData(createUserData, false);
+        return loginData;
+      } else {
+        const findUser = await this.users.update({
+          where: {
+            id: socialLogin.userId,
+          },
+          data: {
+            email: decoded.email,
+          },
+          include: {
+            userSchool: true,
+            socialLogin: true,
+          },
+        });
+        const loginData = await this.initializeLoginData(findUser, true);
+        return loginData;
+      }
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        console.log(error);
+        throw new HttpException(400, error.response.data.message);
+      } else {
+        throw new HttpException(400, '애플 로그인에 실패했습니다.');
+      }
+    }
+  }
+
   public async kakaoLogin(code: string): Promise<{
     cookie: string;
     findUser: User & {
@@ -86,21 +174,7 @@ export class AuthService {
     };
     registered: boolean;
   }> {
-    const query = qs.stringify({
-      grant_type: 'authorization_code',
-      client_id: KAKAO_CLIENT_KEY,
-      redirect_uri: KAKAO_REDIRECT_URI,
-      code,
-      client_secret: KAKAO_CLIENT_SECRET,
-    });
-
     try {
-      const { data } = await axios.post('https://kauth.kakao.com/oauth/token', query, {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-        },
-      });
-
       const { data: userData } = await axios.post(
         'https://kapi.kakao.com/v2/user/me',
         {
@@ -108,7 +182,7 @@ export class AuthService {
         },
         {
           headers: {
-            Authorization: `Bearer ${data.access_token}`,
+            Authorization: `Bearer ${code}`,
           },
         },
       );
@@ -128,7 +202,7 @@ export class AuthService {
               create: {
                 provider: 'kakao',
                 socialId: userData.id.toString(),
-                accessToken: data.access_token as string,
+                accessToken: code as string,
               },
             },
           },
@@ -689,6 +763,7 @@ export class AuthService {
       userSchool: UserSchool & {
         school: School;
       };
+      socialLogin?: SocialLogin;
     };
     token: {
       accessToken: string;
@@ -874,6 +949,7 @@ export class AuthService {
       },
       include: {
         userSchool: true,
+        socialLogin: true,
       },
     });
 
@@ -1033,9 +1109,37 @@ export class AuthService {
       where: {
         id: userData.id,
       },
+      include: {
+        socialLogin: true,
+      },
     });
 
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
+
+    if (findUser.socialLogin.provider === SocialLoginProviderType.apple) {
+      try {
+        const tokenformData = qs.stringify({
+          client_id: APPLE_BUNDLE_ID,
+          client_secret: this.createAppleToken(),
+          grant_type: 'authorization_code',
+          code: verfiyDto.applelogoutcode,
+        });
+
+        const { data: appleTokenData } = await axios.post('https://appleid.apple.com/auth/token', tokenformData);
+        const { access_token } = appleTokenData;
+
+        const revokeformData = qs.stringify({
+          client_id: APPLE_BUNDLE_ID,
+          client_secret: this.createAppleToken(),
+          token: access_token,
+        });
+
+        await axios.post('https://appleid.apple.com/auth/revoke', revokeformData);
+      } catch (error) {
+        logger.error(JSON.stringify(error));
+        throw new HttpException(400, '애플계정 탈퇴중 오류가 발생했습니다.');
+      }
+    }
 
     await this.users.delete({
       where: {
@@ -1183,6 +1287,24 @@ export class AuthService {
     return true;
   }
 
+  public async ouathLoginVerifyPhone(user: User, phone: string, code: string, token: string): Promise<boolean> {
+    const verifyPhone = await this.verifyPhoneCode(phone, code, token);
+
+    if (!verifyPhone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
+
+    await this.users.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        phone,
+        isVerified: true,
+      },
+    });
+
+    return true;
+  }
+
   public async deleteImage(imageId: string, userData: User): Promise<Image> {
     const findImage = await this.image.findUnique({
       where: {
@@ -1207,5 +1329,22 @@ export class AuthService {
 
   public createCookie(tokenData: TokenData): string {
     return `Authorization=${tokenData.token}; HttpOnly; Max-Age=${tokenData.expiresIn}; Domain=${DOMAIN}; Path=/`;
+  }
+
+  private createAppleToken(): string {
+    const payload = {
+      iss: APPLE_TEAM_ID,
+      iat: dayjs().unix(),
+      exp: dayjs().add(10, 'minute').unix(),
+      aud: 'https://appleid.apple.com',
+      sub: APPLE_BUNDLE_ID,
+    };
+
+    const header = {
+      alg: 'ES256',
+      kid: APPLE_KEY_ID,
+    };
+
+    return sign(payload, this.AppleKey, { algorithm: 'ES256', header });
   }
 }

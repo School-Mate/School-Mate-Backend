@@ -480,6 +480,7 @@ enum Process {
 enum SocialLoginProviderType {
   google
   kakao
+  apple
 }
 
 enum UserLoginProviderType {

@@ -134,3 +134,7 @@ dist
 migrate.command
 # Sentry Config File
 .sentryclirc
+
+
+Apple
+*.p8
