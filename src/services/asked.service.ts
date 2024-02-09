@@ -16,6 +16,7 @@ export class AskedService {
   private asked = Container.get(PrismaClientService).asked;
   private askedUser = Container.get(PrismaClientService).askedUser;
   private image = Container.get(PrismaClientService).image;
+  private user = Container.get(PrismaClientService).user;
 
   public getAsked = async (user: UserWithSchool, page: string): Promise<any> => {
     if (!user.userSchoolId) throw new HttpException(404, '학교 정보가 없습니다.');
@@ -509,25 +510,29 @@ export class AskedService {
 
       const forbiddenId = ['admin', 'administrator', 'root', 'esc', 'asked', 'ask', 'question', 'questions', '', 'intro', 'modify'];
       if (forbiddenId.includes(askedUser.id)) throw new HttpException(403, '사용할 수 없는 아이디입니다.');
-
-      const createdAskedUser = await this.askedUser.create({
+      const createdAskedUser = await this.user.update({
+        where: {
+          id: user.id,
+        },
         data: {
-          user: {
-            connect: {
-              id: user.id,
+          askedUser: {
+            create: {
+              receiveAnonymous: true,
+              receiveOtherSchool: askedUser.receiveOtherSchool,
+              tags: [askedUser.tag1, askedUser.tag2],
+              customId: askedUser.id,
+              ...(image && { image: image.key }),
             },
           },
-          receiveAnonymous: true,
-          receiveOtherSchool: askedUser.receiveOtherSchool,
-          tags: [askedUser.tag1, askedUser.tag2],
-          customId: askedUser.id,
-          ...(image && { image: image.key }),
+        },
+        include: {
+          askedUser: true,
         },
       });
 
       eventEmitter.emit('imageResize', image.key, 'askedprofile');
 
-      return createdAskedUser;
+      return createdAskedUser.askedUser;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
