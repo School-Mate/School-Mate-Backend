@@ -512,7 +512,11 @@ export class AskedService {
 
       const createdAskedUser = await this.askedUser.create({
         data: {
-          userId: user.id,
+          user: {
+            connect: {
+              id: user.id,
+            },
+          },
           receiveAnonymous: true,
           receiveOtherSchool: askedUser.receiveOtherSchool,
           tags: [askedUser.tag1, askedUser.tag2],
