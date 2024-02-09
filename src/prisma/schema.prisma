@@ -203,7 +203,7 @@ model BusArrival {
 }
 
 model AskedUser {
-  userId             String    @id
+  userId             String    @id @unique
   customId           String?
   statusMessage      String?
   image              String?
