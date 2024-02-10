@@ -81,9 +81,14 @@ export class VerifyPhoneCodeDto {
 
   @IsString({ message: '인증 토큰를 입력해주세요.' })
   public token: string;
-  @IsOptional()
+
+  @IsOptional({ message: '애플 회원 탈퇴시 필수입니다.' })
   @IsString({ message: '애플 로그인 토큰을 입력해주세요.' })
   public applelogoutcode: string;
+
+  @IsOptional({ message: '첫 로그인시에만 필수입니다.' })
+  @IsBoolean({ message: '마케팅 수신 동의 여부를 입력해주세요.' })
+  public marketingAgree: boolean;
 }
 
 export class UpdateProfileDto {

@@ -395,8 +395,7 @@ class AuthController {
 
   public OuathLoginVerifyPhone = async (req: RequestWithUser, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { phone, code, token } = req.body as VerifyPhoneCodeDto;
-      const verify = await this.authService.ouathLoginVerifyPhone(req.user, phone, code, token);
+      const verify = await this.authService.ouathLoginVerifyPhone(req.user, req.body);
 
       ResponseWrapper(req, res, { data: verify });
     } catch (error) {

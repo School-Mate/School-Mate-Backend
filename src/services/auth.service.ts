@@ -1287,8 +1287,8 @@ export class AuthService {
     return true;
   }
 
-  public async ouathLoginVerifyPhone(user: User, phone: string, code: string, token: string): Promise<boolean> {
-    const verifyPhone = await this.verifyPhoneCode(phone, code, token);
+  public async ouathLoginVerifyPhone(user: User, oauthRegisterDto: VerifyPhoneCodeDto): Promise<boolean> {
+    const verifyPhone = await this.verifyPhoneCode(oauthRegisterDto.phone, oauthRegisterDto.code, oauthRegisterDto.token);
 
     if (!verifyPhone) throw new HttpException(400, '인증번호가 일치하지 않습니다.');
 
@@ -1297,8 +1297,18 @@ export class AuthService {
         id: user.id,
       },
       data: {
-        phone,
+        phone: oauthRegisterDto.phone,
         isVerified: true,
+        agreement: {
+          upsert: {
+            create: {
+              receive: oauthRegisterDto.marketingAgree,
+            },
+            update: {
+              receive: oauthRegisterDto.marketingAgree,
+            },
+          },
+        },
       },
     });
 
