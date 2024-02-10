@@ -1116,7 +1116,7 @@ export class AuthService {
 
     if (!findUser) throw new HttpException(409, '가입되지 않은 사용자입니다.');
 
-    if (findUser.socialLogin.provider === SocialLoginProviderType.apple) {
+    if (findUser.socialLogin && findUser.socialLogin.provider === SocialLoginProviderType.apple) {
       try {
         const tokenformData = qs.stringify({
           client_id: APPLE_BUNDLE_ID,
