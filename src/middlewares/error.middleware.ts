@@ -14,7 +14,7 @@ const errorMiddleware = (error: HttpException, req: RequestWithUser, res: Respon
         req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'] : req.ip
       }, UserAgent:: ${req.headers['user-agent']} User :: ${
         req.user ? `${req.user.name} (${req.user.id})` : 'Not Logged In'
-      }, Details:: ${JSON.stringify(error)}}`,
+      }, Details:: ${JSON.stringify(error)}}, Cookies:: ${JSON.stringify(req.cookies)}, Body:: ${JSON.stringify(req.body)}`,
     );
     ResponseWrapper(req, res, { message, status });
   } catch (error) {
